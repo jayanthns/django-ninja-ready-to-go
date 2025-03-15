@@ -14,7 +14,11 @@ fi
 # Set default workers to 4 if UVICORN_WORKERS is not set
 WORKERS=${UVICORN_WORKERS:-4}
 
-uvicorn src.main.asgi:application \
+# Change directory to `src/`
+cd src || { echo "Failed to change directory to src"; exit 1; }
+
+# Start Uvicorn
+exec uvicorn main.asgi:application \
   --host 0.0.0.0 \
   --port 8000 \
   --workers $WORKERS \

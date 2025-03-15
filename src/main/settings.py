@@ -37,12 +37,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "src.apps.animals_app.v1",
-    "src.apps.users_app.v1",
+    "apps.animals_app.v1",
+    "apps.users_app.v1",
 ]
 
 MIDDLEWARE = [
-    "src.common.middleware.TraceIDMiddleware",
+    "common.middleware.TraceIDMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -52,7 +52,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "src.main.urls"
+ROOT_URLCONF = "main.urls"
 
 TEMPLATES = [
     {
@@ -70,7 +70,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "src.main.wsgi.application"
+WSGI_APPLICATION = "main.wsgi.application"
 
 
 # Database

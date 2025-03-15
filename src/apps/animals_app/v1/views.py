@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 
 from ninja import Router
 
-from src.common.base_schemas import create_api_response_schema
+from common.base_schemas import create_api_response_schema
 
 from .schemas import AnimalCreateSchema, AnimalSchema
 from .services import AnimalService

@@ -4,9 +4,9 @@ from typing import Type
 from django.http import HttpRequest, JsonResponse
 from ninja import Router
 
-from src.apps.users_app.v1.schemas import UserCreateSchema, UserSchema
-from src.apps.users_app.v1.services import UserService
-from src.common.base_schemas import create_api_response_schema
+from apps.users_app.v1.schemas import UserCreateSchema, UserSchema
+from apps.users_app.v1.services import UserService
+from common.base_schemas import create_api_response_schema
 
 router = Router()
 

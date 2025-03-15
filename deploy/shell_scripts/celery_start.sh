@@ -11,6 +11,9 @@ else
     echo "Warning: env/.env file not found. Skipping environment variable loading."
 fi
 
+# Change to `src/` directory
+cd src || { echo "Failed to change directory to src"; exit 1; }
+
 # Configuration Variables (Defaults if not set)
 CONCURRENCY=${CELERY_WORKER_CONCURRENCY:-4}
 PREFETCH_MULTIPLIER=${CELERY_PREFETCH_MULTIPLIER:-8}
@@ -21,9 +24,9 @@ CELERY_QUEUE_NAME=${CELERY_QUEUE_NAME:-django_ninja_queue}  # Default queue
 echo "Starting Celery worker on queue '${CELERY_QUEUE_NAME}' with concurrency=${CONCURRENCY}, pool=${POOL}, prefetch-multiplier=${PREFETCH_MULTIPLIER}"
 
 # Start a single Celery worker bound to the specified queue
-exec celery -A src.main worker --loglevel=info \
+exec celery -A main worker --loglevel=info \
     --concurrency=${CONCURRENCY} \
     --pool=${POOL} \
     --prefetch-multiplier=${PREFETCH_MULTIPLIER} \
     --without-gossip --without-mingle --without-heartbeat \
-    -Q ${CELERY_QUEUE_NAME}  # Bind to specific queue
+    -Q ${CELERY_QUEUE_NAME}

@@ -32,7 +32,7 @@ createsuperuser:
 
 run_uvicorn:
 	@echo "Running uvicorn..."
-	@$(VENV_ACTIVATE) && uvicorn src.main.asgi:application --host 0.0.0.0 --port 8000 --reload
+	@$(VENV_ACTIVATE) && cd src && uvicorn main.asgi:application --host 0.0.0.0 --port 8000 --workers 4 --reload
 
 
 # Initialize the venv and install the requirements
@@ -93,6 +93,8 @@ test-report: pytest-open-report
 
 run_docker_compose:
 	docker compose -f docker/docker-compose.yaml up --build
+
+start_docker_compose: run_docker_compose
 
 stop_docker_compose:
 	docker compose -f docker/docker-compose.yaml down

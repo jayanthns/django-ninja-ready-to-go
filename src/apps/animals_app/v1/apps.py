@@ -3,5 +3,5 @@ from django.apps import AppConfig
 
 class AnimalsAppConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "src.apps.animals_app.v1"
+    name = "apps.animals_app.v1"
     label = "apps_animals_app_v1"
