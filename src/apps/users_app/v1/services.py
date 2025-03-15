@@ -1,7 +1,7 @@
 from django.contrib.auth.hashers import make_password
 
-from src.apps.users_app.v1.models import User
-from src.apps.users_app.v1.schemas import UserCreateSchema, UserSchema
+from .models import User
+from .schemas import UserCreateSchema, UserSchema
 
 
 class UserService:
