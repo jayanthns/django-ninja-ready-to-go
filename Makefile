@@ -9,7 +9,7 @@ endif
 
 run:
 	@echo "Running Django development server..."
-	@$(VENV_ACTIVATE) && python manage.py runserver
+	@$(VENV_ACTIVATE) && cd src && python manage.py runserver
 
 makemigrations:
 	@echo "Creating Django database migrations..."
