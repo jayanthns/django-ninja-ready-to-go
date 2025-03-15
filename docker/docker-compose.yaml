@@ -1,0 +1,51 @@
+services:
+  django_ninja_api:
+    container_name: django_ninja_api_container
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile-local
+    ports:
+      - "8000:8000"
+    # volumes:
+    #   - .:/app
+    depends_on:
+      django_ninja_db:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    environment:
+      - DATABASE_HOST=django_ninja_db
+      - REDIS_HOST_AND_PORT=django_ninja_redis:6379
+    stdin_open: true
+    tty: true
+    networks:
+      - django_ninja_network
+
+  django_ninja_db:
+    image: postgres:16
+    container_name: django_ninja_db_container
+    restart: always
+    volumes:
+      - /var/lib/docker-data/django_ninja_db_data:/var/lib/postgresql/data  # Persistent DB storage
+      - ./deploy/db_scripts/init_schema.sh:/docker-entrypoint-initdb.d/init_schema.sh  # Initial schema setup
+    env_file:
+      - ../.env
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      retries: 5
+    networks:
+      - django_ninja_network
+
+networks:
+  django_ninja_network:
+    name: django_ninja_network
+    driver: bridge
