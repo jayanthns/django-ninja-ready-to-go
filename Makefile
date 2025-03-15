@@ -96,3 +96,6 @@ run_docker_compose:
 
 stop_docker_compose:
 	docker compose -f docker/docker-compose.yaml down
+
+d_shell:
+	docker exec -it django_ninja_api_container /bin/bash
