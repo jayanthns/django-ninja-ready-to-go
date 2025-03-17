@@ -6,7 +6,7 @@ asgiref==3.8.1
     # via django
 click==8.1.8
     # via uvicorn
-django==4.2.19
+django==4.2.20
     # via
     #   -r requirements_raw/prod_requirements.in
     #   django-ninja
@@ -30,6 +30,8 @@ pydantic==2.10.6
     #   django-shinobi
 pydantic-core==2.27.2
     # via pydantic
+python-json-logger==3.3.0
+    # via -r requirements_raw/prod_requirements.in
 sqlparse==0.5.3
     # via django
 typing-extensions==4.12.2
