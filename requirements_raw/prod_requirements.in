@@ -4,3 +4,4 @@ uvicorn
 pydantic>2
 pydantic[email]
 django-shinobi
+python-json-logger
