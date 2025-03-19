@@ -14,7 +14,11 @@ router = Router()
 @router.post("/", response=create_api_response_schema(AnimalSchema))
 async def create_animal(request, payload: AnimalCreateSchema):
     """Create a new animal (Async)."""
-    return await AnimalService.create_animal(payload.name, payload.species, payload.age)
+    return {
+        "data": await AnimalService.create_animal(payload.name, payload.species, payload.age),
+        "trace_id": str(request.trace_id),
+        "error": {},
+    }
 
 
 # @router.get("/", response=APIResponseSchema[List[AnimalSchema]])
