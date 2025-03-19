@@ -16,6 +16,10 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+SRC_DIR = BASE_DIR.resolve().parent
+
+ROOT_DIR = SRC_DIR.parent
+
 APP_ENV = os.getenv("APP_ENV", "local")
 
 
@@ -82,7 +86,7 @@ WSGI_APPLICATION = "main.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": ROOT_DIR / "db.sqlite3",
     }
 }
 

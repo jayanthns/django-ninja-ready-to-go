@@ -6,8 +6,8 @@ from django.conf import settings
 from pythonjsonlogger.jsonlogger import JsonFormatter
 
 # Define the path to the logs folder
-# Define path: BASE_DIR/../tmp/logs
-LOGS_FOLDER = os.path.join(settings.BASE_DIR.parent.parent, "tmp", "logs")
+# Define path: ROOT_DIR/tmp/logs
+LOGS_FOLDER = os.path.join(settings.ROOT_DIR, "tmp", "logs")
 
 # Create 'tmp' and 'logs' folders (ignore if they already exist)
 os.makedirs(LOGS_FOLDER, exist_ok=True)
