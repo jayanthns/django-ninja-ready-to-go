@@ -369,10 +369,6 @@ Shared utilities and middleware providing enterprise-grade functionality:
 - Document all public APIs
 - Follow the existing code style
 
-## 📄 **License**
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ---
 
 ## 🎉 **Ready to Build Amazing APIs!**
