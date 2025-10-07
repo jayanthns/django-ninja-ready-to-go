@@ -103,4 +103,43 @@ make run_docker_compose
 
 ---
 
+## **📱 Apps Overview**
+
+This project includes several Django apps demonstrating different aspects of Django Ninja development:
+
+### **🐾 Animals App** (`apps/animals_app/`)
+A complete CRUD application for managing animal records with async operations, demonstrating:
+- Django Ninja API endpoints
+- Async views and services
+- Pydantic schemas for validation
+- Database models and migrations
+- Admin interface integration
+
+### **👥 Users App** (`apps/users_app/`)
+User management system with authentication features:
+- User registration and management
+- JWT authentication (planned)
+- User profiles and permissions
+- Admin interface for user management
+
+### **🏓 Ping App** (`apps/ping_app/`)
+Comprehensive health check and monitoring system:
+- **Database Health Checks**: PostgreSQL connectivity, read/write permissions
+- **Redis Health Checks**: Cache connectivity and operations
+- **External Endpoint Pinging**: HTTP endpoint testing with aiohttp
+- **System Health Aggregation**: Overall system status monitoring
+- **Performance Analytics**: Response time tracking and statistics
+- **Admin Interface**: Django admin integration for monitoring
+
+📖 **[Read the complete Ping App documentation](src/apps/ping_app/README.md)** for detailed API endpoints, usage examples, and configuration.
+
+### **🔧 Common Utilities** (`common/`)
+Shared utilities and middleware:
+- **Trace ID Middleware**: Request tracing with unique identifiers
+- **Logger Helper**: Contextual logging with trace_id and correlation_id
+- **Base Schemas**: Common Pydantic schemas for API responses
+- **Background Tasks**: Async task processing examples
+
+---
+
 ### 🎉 **Happy Coding!**
