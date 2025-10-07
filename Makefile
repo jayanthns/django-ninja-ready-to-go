@@ -7,7 +7,11 @@ else
 	VENV_ACTIVATE = source ./venv/bin/activate
 endif
 
-run:
+kill-port:
+	@echo "Killing processes using port 8000..."
+	@lsof -ti:8000 | xargs kill -9 2>/dev/null || echo "No processes found on port 8000"
+
+run: kill-port
 	@echo "Running Django development server..."
 	@$(VENV_ACTIVATE) && cd src && python manage.py runserver
 
@@ -58,7 +62,7 @@ sync-packages: package-sync
 sync-package: package-sync
 
 
-.PHONY: run makemigrations migrate shell createsuperuser update-deps install update init
+.PHONY: run kill-port makemigrations migrate shell createsuperuser update-deps install update init
 
 isort_check:
 	@echo "Running isort check..."
@@ -153,7 +157,8 @@ d-exec:
 
 help:
 	@echo "Available Makefile commands:"
-	@echo "  run: Run the Django development server"
+	@echo "  run: Run the Django development server (automatically kills port 8000 first)"
+	@echo "  kill-port: Kill processes using port 8000"
 	@echo "  makemigrations: Create Django database migrations"
 	@echo "  migrate: Apply Django database migrations"
 	@echo "  shell: Log into the Django shell"
