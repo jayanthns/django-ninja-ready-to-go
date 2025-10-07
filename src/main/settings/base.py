@@ -131,3 +131,11 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# DB Settings Keys
+DATABASE_ENGINE = os.getenv("DB_ENGINE", "django.db.backends.sqlite3")
+DATABASE_NAME = os.getenv("DB_NAME", "django.db.sqlite3")
+DATABASE_USER = os.getenv("DB_USER", "django.db.sqlite3")
+DATABASE_PASSWORD = os.getenv("DB_PASSWORD", "django.db.sqlite3")
+DATABASE_HOST = os.getenv("DB_HOST", "django.db.sqlite3")
+DATABASE_PORT = os.getenv("DB_PORT", "django.db.sqlite3")

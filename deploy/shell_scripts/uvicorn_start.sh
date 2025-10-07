@@ -4,7 +4,7 @@
 echo "Loading the environment variables..."
 if [ -f env/.env ]; then
     set -a
-    . env/.env || handle_error "Failed to load environment variables"
+    . env/.env || { echo "Failed to load environment variables"; exit 1; }
     set +a
     echo "Environment variables loaded successfully."
 else
@@ -17,12 +17,14 @@ WORKERS=${UVICORN_WORKERS:-4}
 # Change directory to `src/`
 cd src || { echo "Failed to change directory to src"; exit 1; }
 
-# Start Uvicorn
-exec uvicorn main.asgi:application \
-  --host 0.0.0.0 \
-  --port 8000 \
+# Start Gunicorn with Uvicorn workers
+exec gunicorn main.asgi:application \
+  -k uvicorn.workers.UvicornWorker \
+  -b 0.0.0.0:8000 \
   --workers $WORKERS \
-  --timeout-keep-alive 60 \
-  --timeout-graceful-shutdown 130 \
+  --timeout 130 \
+  --graceful-timeout 130 \
+  --keep-alive 60 \
   --log-level info \
-  --access-log
+  --access-logfile - \
+  --error-logfile -

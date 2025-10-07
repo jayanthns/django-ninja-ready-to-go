@@ -2,8 +2,8 @@ services:
   django_ninja_api:
     container_name: django_ninja_api_container
     build:
-      context: ..
-      dockerfile: docker/Dockerfile-local
+      context: .
+      dockerfile: Dockerfile-local
     ports:
       - "8000:8000"
     # volumes:
@@ -12,7 +12,7 @@ services:
       django_ninja_db:
         condition: service_healthy
     env_file:
-      - ../.env
+      - .env
     environment:
       - DATABASE_HOST=django_ninja_db
       - REDIS_HOST_AND_PORT=django_ninja_redis:6379
@@ -29,7 +29,7 @@ services:
       - /var/lib/docker-data/django_ninja_db_data:/var/lib/postgresql/data  # Persistent DB storage
       - ./deploy/db_scripts/init_schema.sh:/docker-entrypoint-initdb.d/init_schema.sh  # Initial schema setup
     env_file:
-      - ../.env
+      - .env
     ports:
       - "${DATABASE_PORT:-5432}:5432"
     expose:
@@ -42,6 +42,32 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       retries: 5
+    networks:
+      - django_ninja_network
+
+  django_ninja_redis_svc:
+    image: redis:7-alpine
+    container_name: django_ninja_redis_container
+    restart: always
+    command: >
+      redis-server --requirepass redis --appendonly yes --save 60 1
+    ports:
+      - "6379:6379"
+    expose:
+      - 6379
+    volumes:
+      - /var/lib/docker-data/django_ninja_redis_data:/data  # Store Redis data persistently
+      # - ./local_scripts/redis.conf:/usr/local/etc/redis/redis.conf
+      # - ./local_scripts/redis-entrypoint.sh:/usr/local/bin/redis-entrypoint.sh # Mount entrypoint script
+    env_file:
+      - .env
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - django_ninja_network
 

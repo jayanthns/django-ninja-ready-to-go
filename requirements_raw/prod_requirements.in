@@ -1,7 +1,0 @@
-django<5
-django-ninja
-uvicorn
-pydantic>2
-pydantic[email]
-django-shinobi
-python-json-logger

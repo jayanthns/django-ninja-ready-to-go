@@ -17,7 +17,7 @@ makemigrations:
 
 migrate:
 	@echo "Applying Django database migrations..."
-	@$(VENV_ACTIVATE) && python manage.py migrate
+	@$(VENV_ACTIVATE) && cd src && python manage.py migrate
 
 shell:
 	@echo "Logging into the Django shell..."
@@ -45,16 +45,17 @@ init:
 
 install:
 	@$(VENV_ACTIVATE) && uv pip install --upgrade pip-tools pip wheel
-	@$(VENV_ACTIVATE) && uv pip install --upgrade -r requirements/prod_requirements.txt -r requirements/test_requirements.txt -r requirements/dev_requirements.txt
+	@$(VENV_ACTIVATE) && uv pip install --upgrade -r requirements/requirements.txt -r requirements/local_requirements.txt
 
 
 update-deps:
-	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/prod_requirements.txt requirements_raw/prod_requirements.in
-	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/test_requirements.txt requirements_raw/test_requirements.in
-	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/dev_requirements.txt requirements_raw/dev_requirements.in
+	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/requirements.txt requirements_raw/requirements.in
+	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/local_requirements.txt requirements_raw/local_requirements.in
 
 
-update: update-deps install
+package-sync: update-deps install
+sync-packages: package-sync
+sync-package: package-sync
 
 
 .PHONY: run makemigrations migrate shell createsuperuser update-deps install update init
@@ -92,12 +93,104 @@ test-report: pytest-open-report
 # Docker related
 
 run_docker_compose:
-	docker compose -f docker/docker-compose.yaml up --build
+	docker compose -f docker-compose.yaml up --build
 
 start_docker_compose: run_docker_compose
 
 stop_docker_compose:
-	docker compose -f docker/docker-compose.yaml down
+	docker compose -f docker-compose.yaml down
 
 d_shell:
 	docker exec -it django_ninja_api_container /bin/bash
+
+d-db:
+	docker compose -f docker-compose.yaml up -d django_ninja_db
+
+d-redis:
+	docker compose -f docker-compose.yaml up -d django_ninja_redis_svc
+
+d-db-logs:
+	docker compose -f docker-compose.yaml logs django_ninja_db
+
+d-redis-logs:
+	docker compose -f docker-compose.yaml logs django_ninja_redis_svc
+
+d-db-and-redis:
+	docker compose -f docker-compose.yaml up -d django_ninja_db django_ninja_redis_svc
+
+d-db-and-redis-down:
+	docker compose -f docker-compose.yaml down django_ninja_db django_ninja_redis_svc
+
+d-db-and-redis-restart:
+	docker compose -f docker-compose.yaml restart django_ninja_db django_ninja_redis_svc
+
+d-up:
+	docker compose -f docker-compose.yaml up -d
+
+d-down:
+	docker compose -f docker-compose.yaml down
+
+d-restart:
+	docker compose -f docker-compose.yaml restart
+
+d-logs:
+	docker compose -f docker-compose.yaml logs
+
+d-ps:
+	docker compose -f docker-compose.yaml ps
+
+d-build:
+	docker compose -f docker-compose.yaml build
+
+d-pull:
+	docker compose -f docker-compose.yaml pull
+
+d-push:
+	docker compose -f docker-compose.yaml push
+
+d-exec:
+	docker exec -it django_ninja_api_container /bin/bash
+
+help:
+	@echo "Available Makefile commands:"
+	@echo "  run: Run the Django development server"
+	@echo "  makemigrations: Create Django database migrations"
+	@echo "  migrate: Apply Django database migrations"
+	@echo "  shell: Log into the Django shell"
+	@echo "  shell_plus: Log into the Django Shell Plus"
+	@echo "  createsuperuser: Create a superuser"
+	@echo "  run_uvicorn: Run the uvicorn server"
+	@echo "  init: Initialize the venv and install the requirements"
+	@echo "  install: Install the requirements"
+	@echo "  update-deps: Update the dependencies"
+	@echo "  package-sync: Update the dependencies and install the requirements"
+	@echo "  isort_check: Run isort check"
+	@echo "  black_check: Run black check"
+	@echo "  flake8: Run flake8 check"
+	@echo "  static-tests: Run isort, black, and flake8 checks"
+	@echo "  pytest-run: Run pytest"
+	@echo "  dynamic-test: Run pytest"
+	@echo "  run-tests: Run pytest"
+	@echo "  pytest: Run pytest"
+	@echo "  pytest-open-report: Open the pytest report"
+	@echo "  test-report: Open the pytest report"
+	@echo "  d-shell: Log into the Django shell"
+	@echo "  d-db: Start the Django database"
+	@echo "  d-redis: Start the Redis service"
+	@echo "  d-db-logs: Show the Django database logs"
+	@echo "  d-redis-logs: Show the Redis logs"
+	@echo "  d-db-and-redis: Start the Django database and Redis service"
+	@echo "  d-db-and-redis-down: Stop the Django database and Redis service"
+	@echo "  d-db-and-redis-restart: Restart the Django database and Redis service"
+	@echo "  d-up: Start the services"
+	@echo "  d-down: Stop the services"
+	@echo "  d-restart: Restart the services"
+	@echo "  d-logs: Show the logs"
+	@echo "  d-ps: Show the services"
+	@echo "  d-build: Build the services"
+	@echo "  d-pull: Pull the services"
+	@echo "  d-push: Push the services"
+	@echo "  d-exec: Execute a command in the services"
+	@echo "  help: Show this help message"
+
+.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_uvicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help

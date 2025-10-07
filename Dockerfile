@@ -14,12 +14,9 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 WORKDIR $APP_HOME
 
 # Install dependencies
-COPY requirements/ requirements/
+COPY requirements/requirements.txt requirements/requirements.txt
 RUN python -m pip install --upgrade uv pip wheel
-RUN python -m uv pip install \
-    -r requirements/dev_requirements.txt \
-    -r requirements/test_requirements.txt \
-    -r requirements/prod_requirements.txt
+RUN python -m uv pip install -r requirements/requirements.txt
 
 # Copy project
 COPY . .
@@ -33,8 +30,8 @@ COPY deploy/supervisor_scripts/celery_supervisord.conf /etc/supervisor/conf.d/ce
 COPY deploy/supervisor_scripts/uvicorn_supervisord.conf /etc/supervisor/conf.d/uvicorn_supervisord.conf
 
 # Change permissions for deploy folder scripts
-RUN sed -i 's/\r$//g' /app/deploy/shell_scripts/*.sh /app/deploy/entrypoint_scripts/*.sh /app/deploy/db_scripts/*.sh
-RUN chmod +x /app/deploy/shell_scripts/*.sh /app/deploy/entrypoint_scripts/*.sh /app/deploy/db_scripts/*.sh
+RUN sed -i 's/\r$//g' /app/deploy/shell_scripts/*.sh /app/deploy/entrypoint_scripts/*.sh
+RUN chmod +x /app/deploy/shell_scripts/*.sh /app/deploy/entrypoint_scripts/*.sh
 
 # Ensure that supervisord runs as appuser and log directories are owned by appuser
 RUN mkdir -p /var/log/supervisor \
