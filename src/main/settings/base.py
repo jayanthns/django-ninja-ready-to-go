@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "apps.animals_app.v1",
     "apps.users_app.v1",
+    "apps.ping_app.v1",
 ]
 
 MIDDLEWARE = [

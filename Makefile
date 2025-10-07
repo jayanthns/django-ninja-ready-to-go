@@ -17,7 +17,7 @@ run: kill-port
 
 makemigrations:
 	@echo "Creating Django database migrations..."
-	@$(VENV_ACTIVATE) && python manage.py makemigrations
+	@$(VENV_ACTIVATE) && cd src && python manage.py makemigrations
 
 migrate:
 	@echo "Applying Django database migrations..."
