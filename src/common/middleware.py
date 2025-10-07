@@ -4,6 +4,8 @@ from typing import Callable, Optional
 
 from django.http import HttpRequest, HttpResponse
 
+from .logger_helper import logger_helper
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
@@ -31,7 +33,7 @@ class TraceIDMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
-        """Process request and attach trace ID and correlation ID."""
+        """Process request and attach trace ID, correlation ID, and logger adapter."""
         # Generate or extract trace ID
         trace_id = self._get_or_generate_trace_id(request)
         correlation_id = self._get_correlation_id(request)
@@ -40,21 +42,53 @@ class TraceIDMiddleware:
         request.trace_id = trace_id
         request.correlation_id = correlation_id
 
-        # Log request with trace ID
-        self._log_request(request, trace_id, correlation_id)
+        # Create and attach logger adapter to request
+        request.logger = logger_helper.create_logger_adapter(
+            trace_id=trace_id,
+            correlation_id=correlation_id,
+            logger_name="request",
+            method=request.method,
+            path=request.path,
+            user_agent=request.META.get("HTTP_USER_AGENT", ""),
+            remote_addr=self._get_client_ip(request),
+            user_id=getattr(request, "user", {}).get("id") if hasattr(request, "user") else None,
+        )
 
-        # Process the request
-        response = self.get_response(request)
+        # Log request with trace ID using the request logger
+        request.logger.info(
+            f"Request started - {request.method} {request.path}",
+            extra={
+                "user_agent": request.META.get("HTTP_USER_AGENT", ""),
+                "remote_addr": self._get_client_ip(request),
+            },
+        )
 
-        # Add trace headers to response
-        response[TRACE_ID_RESPONSE_HEADER] = str(trace_id)
-        if correlation_id:
-            response[CORRELATION_ID_RESPONSE_HEADER] = str(correlation_id)
+        try:
+            # Process the request
+            response = self.get_response(request)
 
-        # Log response with trace ID
-        self._log_response(request, response, trace_id)
+            # Add trace headers to response
+            response[TRACE_ID_RESPONSE_HEADER] = str(trace_id)
+            if correlation_id:
+                response[CORRELATION_ID_RESPONSE_HEADER] = str(correlation_id)
 
-        return response
+            # Log response with trace ID
+            request.logger.info(
+                f"Request completed - {request.method} {request.path} - Status: {response.status_code}",
+                extra={"status_code": response.status_code},
+            )
+
+            return response
+
+        except Exception as e:
+            # Log error with trace ID
+            request.logger.exception(
+                f"Request failed - {request.method} {request.path}", extra={"error": str(e)}
+            )
+            raise
+        finally:
+            # Clean up the logger context
+            logger_helper.clear_logger()
 
     def _get_or_generate_trace_id(self, request: HttpRequest) -> str:
         """
@@ -92,49 +126,6 @@ class TraceIDMiddleware:
             logger.debug(f"Using correlation ID from header: {correlation_id}")
         return correlation_id
 
-    def _log_request(self, request: HttpRequest, trace_id: str, correlation_id: Optional[str]) -> None:
-        """
-        Log incoming request with trace information.
-
-        Args:
-            request: The HTTP request object
-            trace_id: The trace ID for this request
-            correlation_id: The correlation ID if present
-        """
-        extra_data = {
-            "trace_id": trace_id,
-            "method": request.method,
-            "path": request.path,
-            "user_agent": request.META.get("HTTP_USER_AGENT", ""),
-            "remote_addr": self._get_client_ip(request),
-        }
-
-        if correlation_id:
-            extra_data["correlation_id"] = correlation_id
-
-        logger.info(f"Request started - {request.method} {request.path}", extra=extra_data)
-
-    def _log_response(self, request: HttpRequest, response: HttpResponse, trace_id: str) -> None:
-        """
-        Log response with trace information.
-
-        Args:
-            request: The HTTP request object
-            response: The HTTP response object
-            trace_id: The trace ID for this request
-        """
-        extra_data = {
-            "trace_id": trace_id,
-            "method": request.method,
-            "path": request.path,
-            "status_code": response.status_code,
-        }
-
-        logger.info(
-            f"Request completed - {request.method} {request.path} - Status: {response.status_code}",
-            extra=extra_data,
-        )
-
     def _get_client_ip(self, request: HttpRequest) -> str:
         """
         Get the client IP address from the request.
@@ -161,14 +152,14 @@ class TraceIDContextFilter(logging.Filter):
 
     def filter(self, record):
         """Add trace ID to log record if available."""
-        # Try to get trace ID from the current request context
+        # Try to get trace ID from the current logger context
         try:
-            from django.utils.deprecation import get_current_request
+            from .logger_helper import get_request_logger
 
-            request = get_current_request()
-            if hasattr(request, "trace_id"):
-                record.trace_id = str(request.trace_id)
-                record.correlation_id = getattr(request, "correlation_id", None)
+            request_logger = get_request_logger()
+            if request_logger:
+                record.trace_id = request_logger.trace_id
+                record.correlation_id = request_logger.correlation_id
             else:
                 record.trace_id = "no-trace-id"
                 record.correlation_id = None

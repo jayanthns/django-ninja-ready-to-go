@@ -14,11 +14,26 @@ router = Router()
 @router.post("/", response=create_api_response_schema(AnimalSchema))
 async def create_animal(request, payload: AnimalCreateSchema):
     """Create a new animal (Async)."""
-    return {
-        "data": await AnimalService.create_animal(payload.name, payload.species, payload.age),
-        "trace_id": str(request.trace_id),
-        "error": {},
-    }
+    # Use request.logger directly (automatically includes trace_id and correlation_id)
+    request.logger.info(f"Creating new animal: {payload.name} ({payload.species})")
+
+    try:
+        # Create the animal
+        animal = await AnimalService.create_animal(payload.name, payload.species, payload.age)
+
+        # Log successful creation
+        request.logger.info(f"Successfully created animal with ID: {animal.id}")
+
+        return {
+            "data": animal,
+            "trace_id": str(request.trace_id),
+            "error": {},
+        }
+
+    except Exception as e:
+        # Log the error with automatic trace context
+        request.logger.exception(f"Failed to create animal: {payload.name}")
+        raise
 
 
 # @router.get("/", response=APIResponseSchema[List[AnimalSchema]])
@@ -52,7 +67,57 @@ async def update_animal(request, animal_id: int, payload: AnimalCreateSchema):
 @router.delete("/{animal_id}/", response={200: Dict[str, str], 404: Dict[str, str]})
 async def delete_animal(request, animal_id: int):
     """Delete an animal (Async)."""
-    success = await AnimalService.delete_animal(animal_id)
-    if not success:
-        return 404, {"error": "Animal not found"}
-    return {"message": "Animal deleted successfully"}
+    # Use request.logger directly
+    request.logger.info(f"Attempting to delete animal with ID: {animal_id}")
+
+    try:
+        success = await AnimalService.delete_animal(animal_id)
+        if not success:
+            request.logger.warning(f"Animal not found for deletion: {animal_id}")
+            return 404, {"error": "Animal not found"}
+
+        # Log successful deletion
+        request.logger.info(f"Successfully deleted animal with ID: {animal_id}")
+        return {"message": "Animal deleted successfully"}
+
+    except Exception as e:
+        # Log the error
+        request.logger.exception(f"Failed to delete animal: {animal_id}")
+        raise
+
+
+@router.get("/logger-demo/", response=Dict[str, Any])
+async def logger_demo(request):
+    """Demo endpoint to showcase the logger helper functionality."""
+    # Use request.logger directly
+    request.logger.debug("This is a debug message - usually not shown in production")
+    request.logger.info("This is an info message - normal operation flow")
+    request.logger.warning("This is a warning message - something unusual but not critical")
+
+    # Demonstrate updating context
+    request.logger.update_context(demo_step="context_update", custom_field="custom_value")
+
+    request.logger.info("This message includes updated context")
+
+    # Demonstrate error logging (without actually raising)
+    try:
+        # Simulate some operation
+        result = 42 / 1  # This will succeed
+        request.logger.info(f"Operation completed successfully: {result}")
+    except Exception as e:
+        request.logger.exception("This would log an exception with full traceback")
+
+    # Get current context
+    current_context = request.logger.get_context()
+
+    return {
+        "message": "Logger helper demo completed successfully!",
+        "trace_id": str(request.trace_id),
+        "correlation_id": getattr(request, "correlation_id", None),
+        "current_context": current_context,
+        "request_info": {
+            "method": request.method,
+            "path": request.path,
+            "user_agent": request.META.get("HTTP_USER_AGENT", ""),
+        },
+    }
