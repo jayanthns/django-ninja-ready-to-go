@@ -32,9 +32,12 @@ src/apps/ping_app/
 │   ├── models.py         # Database models
 │   ├── schemas.py        # Pydantic schemas
 │   ├── services.py       # Business logic
-│   ├── views.py          # API endpoints
+│   ├── views.py          # Main router and system health endpoints
+│   ├── cache_views.py    # Redis/cache health check endpoints
+│   ├── database_views.py # Database health check endpoints
+│   ├── external_views.py # External endpoint pinging endpoints
 │   ├── tests.py          # Test cases
-│   └── urls.py           # URL routing
+│   └── urls.py           # URL routing (if needed)
 └── README.md             # This documentation
 ```
 
@@ -77,9 +80,20 @@ class SystemHealth(models.Model):
 
 ## 🚀 API Endpoints
 
+The ping app provides a well-organized API structure with separate endpoints for different types of health checks:
+
+```
+/api/v1/pings/
+├── /                    # Basic ping endpoint
+├── /health/            # Overall system health
+├── /cache/             # Redis health checks
+├── /db/                # Database health checks
+└── /external/          # External endpoint pinging
+```
+
 ### Base Ping Endpoints
 
-#### `GET /api/ping/`
+#### `GET /api/v1/pings/`
 Basic connectivity test for the ping service itself.
 
 **Response:**
@@ -94,94 +108,7 @@ Basic connectivity test for the ping service itself.
 }
 ```
 
-### External Endpoint Pinging
-
-#### `POST /api/ping/endpoint/`
-Ping external HTTP endpoints with configurable parameters.
-
-**Request Body:**
-```json
-{
-  "endpoint": "https://httpbin.org/get",
-  "method": "GET",
-  "headers": {
-    "User-Agent": "Django-Ninja-Ping/1.0"
-  },
-  "timeout": 10
-}
-```
-
-**Response:**
-```json
-{
-  "data": {
-    "endpoint": "https://httpbin.org/get",
-    "method": "GET",
-    "status_code": 200,
-    "response_time_ms": 245.67,
-    "success": true,
-    "error_message": null,
-    "response_headers": {
-      "content-type": "application/json",
-      "content-length": "1234"
-    }
-  },
-  "trace_id": "uuid-string",
-  "error": {}
-}
-```
-
-#### `GET /api/ping/logs/`
-Retrieve recent ping logs with optional limit.
-
-**Query Parameters:**
-- `limit` (optional): Maximum number of logs to return (default: 100)
-
-**Response:**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "endpoint": "https://httpbin.org/get",
-      "method": "GET",
-      "status_code": 200,
-      "response_time_ms": 245.67,
-      "success": true,
-      "error_message": null,
-      "created_at": "2025-01-07T10:30:00Z"
-    }
-  ],
-  "trace_id": "uuid-string",
-  "error": {}
-}
-```
-
-#### `GET /api/ping/stats/`
-Get comprehensive ping statistics and analytics.
-
-**Response:**
-```json
-{
-  "data": {
-    "total_pings": 150,
-    "successful_pings": 142,
-    "failed_pings": 8,
-    "average_response_time_ms": 234.56,
-    "min_response_time_ms": 45.23,
-    "max_response_time_ms": 1234.56,
-    "last_24h_pings": 45,
-    "last_24h_successful": 43,
-    "last_24h_success_rate": 95.56
-  },
-  "trace_id": "uuid-string",
-  "error": {}
-}
-```
-
-### System Health Checks
-
-#### `GET /api/ping/health/`
+#### `GET /api/v1/pings/health/`
 Comprehensive system health check covering all services.
 
 **Response:**
@@ -222,9 +149,9 @@ Comprehensive system health check covering all services.
 }
 ```
 
-### Database Health Checks
+### Database Health Checks (`/api/v1/pings/db/`)
 
-#### `GET /api/ping/health/database/`
+#### `GET /api/v1/pings/db/ping`
 Comprehensive database health check with read/write permission testing.
 
 **Response:**
@@ -242,8 +169,97 @@ Comprehensive database health check with read/write permission testing.
 }
 ```
 
-#### `POST /api/ping/health/database/test-write/`
-Test database write permissions specifically.
+#### `GET /api/v1/pings/db/read`
+Test database read access (SELECT operations).
+
+**Response:**
+```json
+{
+  "data": {
+    "status": "healthy",
+    "message": "Database read successful",
+    "timestamp": "uuid-string"
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `GET /api/v1/pings/db/write`
+Test database write access (INSERT/UPDATE/DELETE operations).
+
+**Response:**
+```json
+{
+  "data": {
+    "status": "healthy",
+    "message": "Database write successful",
+    "timestamp": "uuid-string"
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `GET /api/v1/pings/db/ddl`
+Test database DDL operations (CREATE/DROP/ALTER).
+
+**Response:**
+```json
+{
+  "data": {
+    "status": "healthy",
+    "message": "Database DDL successful",
+    "timestamp": "uuid-string"
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `GET /api/v1/pings/db/info`
+Get comprehensive database information and status.
+
+**Response:**
+```json
+{
+  "data": {
+    "is_healthy": true,
+    "response_time_ms": 12.34,
+    "error_message": null,
+    "connection_count": 5,
+    "database_name": "myapp_db"
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `GET /api/v1/pings/db/tables`
+List all tables in the current database.
+
+**Response:**
+```json
+{
+  "data": {
+    "status": "healthy",
+    "total_tables": 3,
+    "tables": [
+      {
+        "name": "animals_app_animal",
+        "type": "BASE TABLE",
+        "rows": 5,
+        "size_mb": 0.1
+      }
+    ]
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `POST /api/v1/pings/db/test-write/`
+Test database write permissions specifically (POST endpoint).
 
 **Response:**
 ```json
@@ -258,8 +274,8 @@ Test database write permissions specifically.
 }
 ```
 
-#### `POST /api/ping/health/database/test-read/`
-Test database read permissions specifically.
+#### `POST /api/v1/pings/db/test-read/`
+Test database read permissions specifically (POST endpoint).
 
 **Response:**
 ```json
@@ -274,9 +290,9 @@ Test database read permissions specifically.
 }
 ```
 
-### Redis Health Checks
+### Redis Health Checks (`/api/v1/pings/cache/`)
 
-#### `GET /api/ping/health/redis/`
+#### `GET /api/v1/pings/cache/`
 Comprehensive Redis health check with read/write permission testing.
 
 **Response:**
@@ -295,7 +311,60 @@ Comprehensive Redis health check with read/write permission testing.
 }
 ```
 
-#### `POST /api/ping/health/redis/test-write/`
+#### `GET /api/v1/pings/cache/info`
+Get cache service information and statistics.
+
+**Response:**
+```json
+{
+  "data": {
+    "is_healthy": true,
+    "response_time_ms": 2.45,
+    "error_message": null,
+    "redis_version": "7.0.0",
+    "memory_usage": "2.1M",
+    "connected_clients": 3
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `GET /api/v1/pings/cache/keys`
+Get cache keys matching a pattern.
+
+**Query Parameters:**
+- `pattern` (optional): Key pattern to match (default: "*")
+- `limit` (optional): Maximum number of keys to return (default: 100)
+
+**Response:**
+```json
+{
+  "data": {
+    "cache_type": "Redis",
+    "use_redis": true,
+    "pattern": "*",
+    "total_keys": 10,
+    "safe_keys": 8,
+    "sensitive_keys_filtered": 2,
+    "returned_keys": 8,
+    "limit": 100,
+    "keys": [
+      {
+        "key": "key_1",
+        "type": "string",
+        "ttl": null,
+        "ttl_human": "no expiration"
+      }
+    ],
+    "status": "healthy"
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `POST /api/v1/pings/cache/test-write/`
 Test Redis write permissions specifically.
 
 **Response:**
@@ -304,6 +373,7 @@ Test Redis write permissions specifically.
   "data": {
     "success": true,
     "error_message": null,
+    "test_type": "redis_write",
     "timestamp": "uuid-string"
   },
   "trace_id": "uuid-string",
@@ -311,7 +381,7 @@ Test Redis write permissions specifically.
 }
 ```
 
-#### `POST /api/ping/health/redis/test-read/`
+#### `POST /api/v1/pings/cache/test-read/`
 Test Redis read permissions specifically.
 
 **Response:**
@@ -320,7 +390,126 @@ Test Redis read permissions specifically.
   "data": {
     "success": true,
     "error_message": null,
+    "test_type": "redis_read",
     "timestamp": "uuid-string"
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+### External Endpoint Pinging (`/api/v1/pings/external/`)
+
+#### `GET /api/v1/pings/external/`
+Basic status endpoint for the external ping service.
+
+**Response:**
+```json
+{
+  "data": {
+    "message": "external ping service ready",
+    "status": "healthy"
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `POST /api/v1/pings/external/endpoint/`
+Ping external HTTP endpoints with configurable parameters.
+
+**Request Body:**
+```json
+{
+  "endpoint": "https://httpbin.org/get",
+  "method": "GET",
+  "headers": {
+    "User-Agent": "Django-Ninja-Ping/1.0"
+  },
+  "timeout": 10
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "endpoint": "https://httpbin.org/get",
+    "method": "GET",
+    "status_code": 200,
+    "response_time_ms": 245.67,
+    "success": true,
+    "error_message": null,
+    "response_headers": {
+      "content-type": "application/json",
+      "content-length": "1234"
+    }
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `GET /api/v1/pings/external/logs/`
+Retrieve recent ping logs with optional limit.
+
+**Query Parameters:**
+- `limit` (optional): Maximum number of logs to return (default: 100)
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "endpoint": "https://httpbin.org/get",
+      "method": "GET",
+      "status_code": 200,
+      "response_time_ms": 245.67,
+      "success": true,
+      "error_message": null,
+      "response_headers": {
+        "content-type": "application/json"
+      }
+    }
+  ],
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `GET /api/v1/pings/external/stats/`
+Get comprehensive ping statistics and analytics.
+
+**Response:**
+```json
+{
+  "data": {
+    "total_pings": 150,
+    "successful_pings": 142,
+    "failed_pings": 8,
+    "average_response_time_ms": 234.56,
+    "min_response_time_ms": 45.23,
+    "max_response_time_ms": 1234.56,
+    "last_24h_pings": 45,
+    "last_24h_successful": 43,
+    "last_24h_success_rate": 95.56
+  },
+  "trace_id": "uuid-string",
+  "error": {}
+}
+```
+
+#### `GET /api/v1/pings/external/health/`
+Get external ping service health status.
+
+**Response:**
+```json
+{
+  "data": {
+    "status": "healthy",
+    "message": "External ping service is operational",
+    "recent_success_rate": 95.56,
+    "last_check": "2025-01-07T10:30:00Z"
   },
   "trace_id": "uuid-string",
   "error": {}
