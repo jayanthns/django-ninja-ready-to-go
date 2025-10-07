@@ -52,7 +52,7 @@ T = TypeVar("T", bound=Schema)  # ✅ Ensure T is a subclass of Schema
 
 
 class APIResponseBase(Schema):
-    trace_id: UUID
+    trace_id: str
     error: Optional[dict] = None
 
 

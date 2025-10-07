@@ -17,7 +17,8 @@ class FlexibleJsonFormatter(JsonFormatter):
     def add_fields(self, log_record: Any, record: Any, message_dict: Any) -> None:
         super().add_fields(log_record, record, message_dict)
         # Add default values for missing fields to ensure compatibility
-        log_record.setdefault("trace_id", "00000000-0000-0000-0000-000000000000")
+        log_record.setdefault("trace_id", getattr(record, "trace_id", "no-trace-id"))
+        log_record.setdefault("correlation_id", getattr(record, "correlation_id", None))
         log_record.setdefault("request", None)
         log_record.setdefault("server_time", None)
         log_record.setdefault("status_code", None)
@@ -27,13 +28,9 @@ class CustomFormatter(logging.Formatter):
     def format(self, record: Any) -> Any:
         # Add default values for missing fields to ensure compatibility
         if not hasattr(record, "trace_id"):
-            record.trace_id = "00000000-0000-0000-0000-000000000000"
-        if not hasattr(record, "request"):
-            record.request = None
-        if not hasattr(record, "server_time"):
-            record.server_time = None
-        if not hasattr(record, "status_code"):
-            record.status_code = None
+            record.trace_id = getattr(record, "trace_id", "no-trace-id")
+        if not hasattr(record, "correlation_id"):
+            record.correlation_id = getattr(record, "correlation_id", None)
         return super(CustomFormatter, self).format(record)
 
 
@@ -85,11 +82,7 @@ def get_base_logging_config() -> dict:
     """
     Returns the base logging configuration
     """
-    LOG_FORMAT = (
-        "{levelname} {asctime} {module} {trace_id} "
-        "{process} {thread} {message} {request} "
-        "{server_time} {status_code}"
-    )
+    LOG_FORMAT = "{levelname} {asctime} {module} {trace_id} {correlation_id} " "{process} {thread} {message}"
     return {
         "version": 1,
         "disable_existing_loggers": False,
@@ -109,15 +102,15 @@ def get_base_logging_config() -> dict:
             "json": {
                 "()": FlexibleJsonFormatter,  # Use the flexible formatter
                 "format": '{"levelname": "%(levelname)s", "asctime": "%(asctime)s", "module": "%(module)s", '
-                '"trace_id": "%(trace_id)s", "process": %(process)d, "thread": %(thread)d, '
-                '"message": "%(message)s", "request": "%(request)s", "server_time": "%(server_time)s", '
-                '"status_code": "%(status_code)s"}',
+                '"trace_id": "%(trace_id)s", "correlation_id": "%(correlation_id)s", "process": %(process)d, "thread": %(thread)d, '
+                '"message": "%(message)s"}',
             },
         },
         "handlers": {
             "console": {
                 "class": "logging.StreamHandler",
                 "formatter": "verbose",
+                "filters": ["trace_id_filter"],
             },
             "file": {
                 "class": "logging.handlers.TimedRotatingFileHandler",
@@ -126,7 +119,13 @@ def get_base_logging_config() -> dict:
                 "filename": f"{LOGS_FOLDER}/service.log",
                 "backupCount": 10,
                 "formatter": "verbose",
+                "filters": ["trace_id_filter"],
                 # "formatter": "json",
+            },
+        },
+        "filters": {
+            "trace_id_filter": {
+                "()": "common.middleware.TraceIDContextFilter",
             },
         },
         "loggers": base_loggers.copy(),
