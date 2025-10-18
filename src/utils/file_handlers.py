@@ -40,19 +40,24 @@ class BaseFileHandler(ABC):
 
     # ---------- Helper ----------
     def _log_operation(self, operation: str, start_time: float, success: bool, extra: Optional[dict] = None):
-        """Helper for structured logging of read/write operations."""
+        """Helper for structured logging of read/write operations (compact inline style)."""
         elapsed = round((time.time() - start_time) * 1000, 2)
         msg = f"{self.__class__.__name__}.{operation} {'succeeded' if success else 'failed'}"
-        self.logger.info(
-            msg,
-            extra={
-                "trace_id": self.trace_id,
-                "file_path": str(self.file_path),
-                "elapsed_ms": elapsed,
-                "success": success,
-                **(extra or {}),
-            },
-        )
+
+        # Prepare extra dict
+        full_extra = {
+            "trace_id": getattr(self, "trace_id", "no-trace-id"),
+            "file_path": str(self.file_path),
+            "elapsed_ms": elapsed,
+            "success": success,
+            **(extra or {}),
+        }
+
+        # Convert to compact string representation
+        extra_str = " ".join(f"{k}={v}" for k, v in full_extra.items())
+
+        # Log it inline
+        self.logger.info(f"{msg} | {extra_str}")
 
 
 # ----------------------- JSON -----------------------
@@ -178,10 +183,12 @@ class FileHandlerFactory:
     }
 
     @classmethod
-    def get_handler(cls, file_path: Union[str, Path]) -> BaseFileHandler:
+    def get_handler(
+        cls, file_path: Union[str, Path], logger: Optional[LoggerAdapter], trace_id: Optional[uuid.UUID]
+    ) -> BaseFileHandler:
         file_path = Path(file_path)
         ext = file_path.suffix.lower()
         handler_class = cls.handlers_map.get(ext)
         if not handler_class:
             raise ValueError(f"Unsupported file extension: {ext}")
-        return handler_class(file_path, logger=None, trace_id=None)
+        return handler_class(file_path, logger=logger, trace_id=trace_id)
