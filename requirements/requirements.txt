@@ -44,8 +44,12 @@ multidict==6.7.0
     # via
     #   aiohttp
     #   yarl
+numpy==2.3.4
+    # via pandas
 packaging==25.0
     # via gunicorn
+pandas==2.3.3
+    # via -r requirements_raw/requirements.in
 propcache==0.4.1
     # via yarl
 psycopg2-binary==2.9.9
@@ -57,12 +61,18 @@ pydantic==2.9.2
     #   django-shinobi
 pydantic-core==2.23.4
     # via pydantic
+python-dateutil==2.9.0.post0
+    # via pandas
 python-dotenv==1.0.1
     # via -r requirements_raw/requirements.in
 python-json-logger==2.0.7
     # via -r requirements_raw/requirements.in
+pytz==2025.2
+    # via pandas
 redis==6.4.0
     # via django-redis
+six==1.17.0
+    # via python-dateutil
 sqlparse==0.5.3
     # via django
 typing-extensions==4.15.0
@@ -70,6 +80,8 @@ typing-extensions==4.15.0
     #   aiosignal
     #   pydantic
     #   pydantic-core
+tzdata==2025.2
+    # via pandas
 uvicorn==0.30.6
     # via -r requirements_raw/requirements.in
 yarl==1.22.0

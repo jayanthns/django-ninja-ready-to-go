@@ -58,7 +58,7 @@ async def process_animal_data(trace_id: str, correlation_id: Optional[str] = Non
 
     except Exception as e:
         # Log error with trace context
-        task_logger.exception("Failed to process animal data")
+        task_logger.exception(f"Failed to process animal data with error: {str(e)}")
         raise
 
 
@@ -93,7 +93,7 @@ async def send_notification(trace_id: str, correlation_id: Optional[str] = None,
 
     except Exception as e:
         # Log error with trace context
-        task_logger.exception("Failed to send notification")
+        task_logger.exception(f"Failed to send notification with error: {str(e)}")
         raise
 
 

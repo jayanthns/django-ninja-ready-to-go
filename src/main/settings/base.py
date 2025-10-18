@@ -145,3 +145,6 @@ DATABASE_PORT = os.getenv("DB_PORT", "django.db.sqlite3")
 REDIS_PASSWORD = os.getenv("REDIS_PASSOWRD")
 REDIS_HOST_AND_PORT = os.getenv("REDIS_HOST_AND_PORT")
 USE_REDIS = os.getenv("USE_REDIS", "0") == "1"
+
+# TMP Path
+PROJECT_TEMP_PATH = ROOT_DIR.joinpath("tmp")

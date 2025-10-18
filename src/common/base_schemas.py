@@ -44,7 +44,6 @@
 
 
 from typing import List, Optional, Type, TypeVar, Union
-from uuid import UUID
 
 from ninja import Schema
 
