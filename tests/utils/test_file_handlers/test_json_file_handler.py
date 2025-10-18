@@ -44,9 +44,9 @@ class TestJSONFileHandler:
 
         # Assert the fake_logger captured the log
         fake_logger.info.assert_called_once()
-        log_data = fake_logger.info.call_args[1]["extra"]
-        assert log_data["success"] is True
-        assert log_data["file_path"] == str(file_path)
+        log_data = fake_logger.info.call_args[0][0]
+        assert "success=True" in log_data
+        assert str(file_path) in log_data
         assert "elapsed_ms" in log_data
         assert "file_size" in log_data
 
@@ -76,11 +76,14 @@ class TestJSONFileHandler:
 
         # Logging assertions
         mock_logger.info.assert_called_once()
-        log_data = mock_logger.info.call_args[1]["extra"]
-        assert log_data["success"] is True
-        assert log_data["file_path"] == str(file_path)
+        log_data = mock_logger.info.call_args[0][0]
+        assert "success=True" in log_data
+        assert str(file_path) in log_data
         assert "elapsed_ms" in log_data
         assert "file_size" in log_data
+        """
+        'JSONFileHandler.read succeeded | trace_id=ba9785e0-f6a5-46c5-ac1d-c27339d28472 file_path=/private/var/folders/cr/_cffpwjj4tj81h6fnjg7008c0000gq/T/pytest-of-jayanth.ns/pytest-22/test_read_success0/sample.json elapsed_ms=3.23 success=True file_size=28'
+        """
 
     def test_read_failure_invalid_json(self):
         """Invalid JSON triggers exception and logs failure."""
@@ -97,8 +100,8 @@ class TestJSONFileHandler:
 
         # Logging assertions
         mock_logger.info.assert_called_once()
-        log_data = mock_logger.info.call_args[1]["extra"]
-        assert log_data["success"] is False
+        log_data = mock_logger.info.call_args[0][0]
+        assert "success=False" in log_data
         assert "error" in log_data
 
     def test_write_success(self):
@@ -116,9 +119,9 @@ class TestJSONFileHandler:
 
         # Logging assertions
         mock_logger.info.assert_called_once()
-        log_data = mock_logger.info.call_args[1]["extra"]
-        assert log_data["success"] is True
-        assert log_data["data_type"] == "dict"
+        log_data = mock_logger.info.call_args[0][0]
+        assert "success=True" in log_data
+        assert "data_type=dict" in log_data
 
     def test_write_failure_permission_error(self):
         """Simulate write permission error and assert failure logging."""
@@ -135,6 +138,6 @@ class TestJSONFileHandler:
 
         # Logging assertions
         mock_logger.info.assert_called_once()
-        log_data = mock_logger.info.call_args[1]["extra"]
-        assert log_data["success"] is False
+        log_data = mock_logger.info.call_args[0][0]
+        assert "success=False" in log_data
         assert "error" in log_data

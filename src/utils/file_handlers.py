@@ -40,19 +40,24 @@ class BaseFileHandler(ABC):
 
     # ---------- Helper ----------
     def _log_operation(self, operation: str, start_time: float, success: bool, extra: Optional[dict] = None):
-        """Helper for structured logging of read/write operations."""
+        """Helper for structured logging of read/write operations (compact inline style)."""
         elapsed = round((time.time() - start_time) * 1000, 2)
         msg = f"{self.__class__.__name__}.{operation} {'succeeded' if success else 'failed'}"
-        self.logger.info(
-            msg,
-            extra={
-                "trace_id": self.trace_id,
-                "file_path": str(self.file_path),
-                "elapsed_ms": elapsed,
-                "success": success,
-                **(extra or {}),
-            },
-        )
+
+        # Prepare extra dict
+        full_extra = {
+            "trace_id": getattr(self, "trace_id", "no-trace-id"),
+            "file_path": str(self.file_path),
+            "elapsed_ms": elapsed,
+            "success": success,
+            **(extra or {}),
+        }
+
+        # Convert to compact string representation
+        extra_str = " ".join(f"{k}={v}" for k, v in full_extra.items())
+
+        # Log it inline
+        self.logger.info(f"{msg} | {extra_str}")
 
 
 # ----------------------- JSON -----------------------
@@ -111,11 +116,11 @@ class CSVFileHandler(BaseFileHandler):
 
 # ----------------------- Excel -----------------------
 class ExcelFileHandler(BaseFileHandler):
-    def read(self, sheet_name: Union[str, int, None] = None) -> pd.DataFrame:
+    def read(self, sheet_name: Union[str, int, None] = 0) -> pd.DataFrame:
         start = time.time()
         try:
             df = pd.read_excel(self.file_path, sheet_name=sheet_name)
-            self._log_operation("read", start, True, {"rows": len(df), "columns": len(df.columns)})
+            self._log_operation("read", start, True, {"rows": len(df), "columns": len(df.keys())})
             return df
         except Exception as e:
             self._log_operation("read", start, False, {"error": str(e)})
@@ -133,13 +138,13 @@ class ExcelFileHandler(BaseFileHandler):
             raise
 
     # Convenience methods remain unchanged
-    def read_as_dicts(self, sheet_name: Union[str, int, None] = None) -> List[Dict[str, Any]]:
+    def read_as_dicts(self, sheet_name: Union[str, int, None] = 0) -> List[Dict[str, Any]]:
         return self.read(sheet_name).to_dict(orient="records")
 
-    def read_as_json(self, sheet_name: Union[str, int, None] = None) -> str:
+    def read_as_json(self, sheet_name: Union[str, int, None] = 0) -> str:
         return self.read(sheet_name).to_json(orient="records", indent=4)
 
-    def read_as_columns(self, sheet_name: Union[str, int, None] = None) -> Dict[str, List[Any]]:
+    def read_as_columns(self, sheet_name: Union[str, int, None] = 0) -> Dict[str, List[Any]]:
         return self.read(sheet_name).to_dict(orient="list")
 
 
@@ -178,10 +183,12 @@ class FileHandlerFactory:
     }
 
     @classmethod
-    def get_handler(cls, file_path: Union[str, Path]) -> BaseFileHandler:
+    def get_handler(
+        cls, file_path: Union[str, Path], logger: Optional[LoggerAdapter], trace_id: Optional[uuid.UUID]
+    ) -> BaseFileHandler:
         file_path = Path(file_path)
         ext = file_path.suffix.lower()
         handler_class = cls.handlers_map.get(ext)
         if not handler_class:
             raise ValueError(f"Unsupported file extension: {ext}")
-        return handler_class(file_path, logger=None, trace_id=None)
+        return handler_class(file_path, logger=logger, trace_id=trace_id)
