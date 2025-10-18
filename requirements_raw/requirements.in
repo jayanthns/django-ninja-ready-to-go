@@ -11,3 +11,5 @@ psycopg2-binary==2.9.9
 aiohttp==3.9.1
 django-redis==6.0.0
 pandas==2.3.3
+openpyxl==3.1.5
+xlrd==2.0.2
