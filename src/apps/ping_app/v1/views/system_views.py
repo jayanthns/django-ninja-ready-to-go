@@ -1,25 +1,17 @@
 """
-Main ping app router - combines cache, database, and external health checks.
+System health check endpoints.
 """
 
-from typing import Any, Dict
+from typing import Dict
 
 from ninja import Router
 
 from common.base_schemas import create_api_response_schema
 
-from .cache_views import router as cache_router
-from .database_views import router as database_router
-from .external_views import router as external_router
-from .schemas import SystemStatusSchema
-from .services import SystemHealthService
+from ..schemas import SystemStatusSchema
+from ..services import SystemHealthService
 
 router = Router()
-
-# Include sub-routers
-router.add_router("/cache", cache_router, tags=["cache-health"])
-router.add_router("/db", database_router, tags=["database-health"])
-router.add_router("/external", external_router, tags=["external-pings"])
 
 
 @router.get("/", response=create_api_response_schema(Dict[str, str]))
@@ -62,5 +54,5 @@ async def get_system_health(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error performing system health check")
+        request.logger.exception(f"Error performing system health check: {e}")
         raise

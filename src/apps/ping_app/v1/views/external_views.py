@@ -8,8 +8,8 @@ from ninja import Router
 
 from common.base_schemas import create_api_response_schema
 
-from .schemas import PingRequestSchema, PingResponseSchema, PingStatsSchema
-from .services import PingService
+from ..schemas import PingRequestSchema, PingResponseSchema, PingStatsSchema
+from ..services import PingService
 
 router = Router()
 
@@ -55,7 +55,7 @@ async def ping_endpoint(request, payload: PingRequestSchema):
         }
 
     except Exception as e:
-        request.logger.exception(f"Error pinging endpoint {payload.endpoint}")
+        request.logger.exception(f"Error pinging endpoint {payload.endpoint}: {e}")
         raise
 
 
@@ -75,7 +75,7 @@ async def get_ping_logs(request, limit: int = 100):
         }
 
     except Exception as e:
-        request.logger.exception("Error retrieving ping logs")
+        request.logger.exception(f"Error retrieving ping logs: {e}")
         raise
 
 
@@ -97,7 +97,7 @@ async def get_ping_stats(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error retrieving ping statistics")
+        request.logger.exception(f"Error retrieving ping statistics: {e}")
         raise
 
 
@@ -142,5 +142,5 @@ async def get_external_ping_health(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error getting external ping service health")
+        request.logger.exception(f"Error getting external ping service health: {e}")
         raise

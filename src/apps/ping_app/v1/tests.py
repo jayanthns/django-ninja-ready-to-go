@@ -3,7 +3,7 @@ from django.test import TestCase
 
 from .models import PingLog, SystemHealth
 from .schemas import PingRequestSchema
-from .services import DatabaseHealthService, PingService, RedisHealthService, SystemHealthService
+from .services import CacheHealthService, DatabaseHealthService, PingService, SystemHealthService
 
 
 class PingServiceTestCase(TestCase):
@@ -86,17 +86,17 @@ class DatabaseHealthServiceTestCase(TestCase):
         self.assertIsNone(error)
 
 
-class RedisHealthServiceTestCase(TestCase):
-    """Test cases for RedisHealthService."""
+class CacheHealthServiceTestCase(TestCase):
+    """Test cases for CacheHealthService."""
 
     def setUp(self):
         """Set up test data."""
         # Clear cache before each test
         cache.clear()
 
-    async def test_check_redis_health(self):
+    async def test_check_cache_health(self):
         """Test Redis health check."""
-        health = await RedisHealthService.check_redis_health()
+        health = await CacheHealthService.check_cache_health()
 
         # Redis might not be configured, so we just check the structure
         self.assertIsInstance(health.is_healthy, bool)
@@ -104,14 +104,14 @@ class RedisHealthServiceTestCase(TestCase):
 
     async def test_redis_write_permissions(self):
         """Test Redis write permissions."""
-        success, error = await RedisHealthService.test_redis_write()
+        success, error = await CacheHealthService.test_cache_write()
 
         # Redis might not be configured, so we just check the structure
         self.assertIsInstance(success, bool)
 
     async def test_redis_read_permissions(self):
         """Test Redis read permissions."""
-        success, error = await RedisHealthService.test_redis_read()
+        success, error = await CacheHealthService.test_cache_read()
 
         # Redis might not be configured, so we just check the structure
         self.assertIsInstance(success, bool)
