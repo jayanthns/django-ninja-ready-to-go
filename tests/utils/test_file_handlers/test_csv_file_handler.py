@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.utils.file_handlers import CSVFileHandler  # adjust import to your actual path
+from utils.file_handlers import CSVFileHandler  # adjust import to your actual path
 
 
 @pytest.mark.usefixtures("tmp_path")
@@ -18,7 +18,7 @@ class TestCSVFileHandler:
     # -------------------------
     # Base Initialization Tests
     # -------------------------
-    @patch("src.utils.file_handlers.get_logger_with_trace")
+    @patch("utils.file_handlers.get_logger_with_trace")
     def test_init_uses_default_logger(self, mock_get_logger):
         """Should call get_logger_with_trace when no logger is provided."""
         fake_logger = MagicMock()
@@ -127,7 +127,7 @@ class TestCSVFileHandler:
         handler = CSVFileHandler(file_path, logger=mock_logger, trace_id=None)
 
         # Patch the open inside CSVFileHandler
-        with patch("src.utils.file_handlers.open", side_effect=PermissionError("Access denied")):
+        with patch("utils.file_handlers.open", side_effect=PermissionError("Access denied")):
             with pytest.raises(PermissionError):
                 handler.write([{"name": "Alice"}])
 

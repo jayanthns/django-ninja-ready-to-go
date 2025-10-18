@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.utils.file_handlers import TextFileHandler  # adjust import to your path
+from utils.file_handlers import TextFileHandler  # adjust import to your path
 
 
 @pytest.mark.usefixtures("tmp_path")
@@ -17,7 +17,7 @@ class TestTextFileHandler:
     # -------------------------
     # Initialization Tests
     # -------------------------
-    @patch("src.utils.file_handlers.get_logger_with_trace")
+    @patch("utils.file_handlers.get_logger_with_trace")
     def test_init_uses_default_logger(self, mock_get_logger):
         fake_logger = MagicMock()
         mock_get_logger.return_value = fake_logger
@@ -92,7 +92,7 @@ class TestTextFileHandler:
         mock_logger = MagicMock()
         handler = TextFileHandler(file_path, logger=mock_logger, trace_id=None)
 
-        with patch("src.utils.file_handlers.open", side_effect=PermissionError("Access denied")):
+        with patch("utils.file_handlers.open", side_effect=PermissionError("Access denied")):
             import pytest
 
             with pytest.raises(PermissionError):

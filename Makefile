@@ -13,15 +13,15 @@ kill-port:
 
 run: kill-port
 	@echo "Running Django development server..."
-	@$(VENV_ACTIVATE) && cd src && python manage.py runserver
+	@$(VENV_ACTIVATE) && python manage.py runserver
 
 makemigrations:
 	@echo "Creating Django database migrations..."
-	@$(VENV_ACTIVATE) && cd src && python manage.py makemigrations
+	@$(VENV_ACTIVATE) && python manage.py makemigrations
 
 migrate:
 	@echo "Applying Django database migrations..."
-	@$(VENV_ACTIVATE) && cd src && python manage.py migrate
+	@$(VENV_ACTIVATE) && python manage.py migrate
 
 shell:
 	@echo "Logging into the Django shell..."
@@ -36,7 +36,7 @@ createsuperuser:
 
 run_uvicorn:
 	@echo "Running uvicorn..."
-	@$(VENV_ACTIVATE) && cd src && uvicorn main.asgi:application --host 0.0.0.0 --port 8000 --workers 4 --reload
+	@$(VENV_ACTIVATE) && uvicorn main.asgi:application --host 0.0.0.0 --port 8000 --workers 4 --reload
 
 
 # Initialize the venv and install the requirements

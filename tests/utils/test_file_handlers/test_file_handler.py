@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.utils.file_handlers import (
+from utils.file_handlers import (
     CSVFileHandler,
     ExcelFileHandler,
     FileHandlerFactory,
