@@ -9,3 +9,4 @@ gunicorn==22.0.0
 python-dotenv==1.0.1
 psycopg2-binary==2.9.9
 aiohttp==3.9.1
+django-redis==6.0.0

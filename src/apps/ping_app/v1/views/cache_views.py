@@ -6,10 +6,11 @@ from typing import Any, Dict
 
 from ninja import Router
 
+# from apps.ping_app.v1.services import CacheHealthService, SystemHealthService
 from common.base_schemas import create_api_response_schema
 
-from .schemas import RedisHealthSchema
-from .services import RedisHealthService, SystemHealthService
+from ..schemas import RedisHealthSchema
+from ..services import CacheHealthService, SystemHealthService
 
 router = Router()
 
@@ -26,10 +27,10 @@ async def ping_cache(request):
 
     try:
         # Check basic connectivity
-        redis_health = await RedisHealthService.check_redis_health()
+        redis_health = await CacheHealthService.check_cache_health()
 
         # Test read permissions
-        read_success, read_error = await RedisHealthService.test_redis_read()
+        read_success, read_error = await CacheHealthService.test_cache_read()
         if not read_success:
             redis_health.error_message = (
                 f"{redis_health.error_message or ''} Read test failed: {read_error}".strip()
@@ -37,7 +38,7 @@ async def ping_cache(request):
             redis_health.is_healthy = False
 
         # Test write permissions
-        write_success, write_error = await RedisHealthService.test_redis_write()
+        write_success, write_error = await CacheHealthService.test_cache_write()
         if not write_success:
             redis_health.error_message = (
                 f"{redis_health.error_message or ''} Write test failed: {write_error}".strip()
@@ -72,7 +73,7 @@ async def ping_cache(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error pinging cache service")
+        request.logger.exception(f"Error pinging cache service: {e}")
         raise
 
 
@@ -88,7 +89,7 @@ async def get_cache_info(request):
 
     try:
         # Check basic connectivity first
-        redis_health = await RedisHealthService.check_redis_health()
+        redis_health = await CacheHealthService.check_cache_health()
 
         if not redis_health.is_healthy:
             raise Exception("Cache service is not responding")
@@ -115,7 +116,7 @@ async def get_cache_info(request):
         }
 
     except Exception as e:
-        request.logger.exception("Failed to get cache info")
+        request.logger.exception(f"Failed to get cache info: {e}")
         raise
 
 
@@ -134,34 +135,50 @@ async def get_cache_keys(request, pattern: str = "*", limit: int = 100):
     request.logger.info(f"Getting cache keys with pattern: {pattern}, limit: {limit}")
 
     try:
-        # For Django cache, we can't easily list keys like Redis
-        # This is a simplified implementation
+        from asgiref.sync import sync_to_async
+        from django.conf import settings
         from django.core.cache import cache
 
-        # Test connection first
+        # Basic read/write test
         test_key = "cache_keys_test"
         test_value = f"test_{int(request.timestamp) if hasattr(request, 'timestamp') else 123456}"
-
         await cache.aset(test_key, test_value, timeout=10)
         retrieved_value = await cache.aget(test_key)
-
         if retrieved_value != test_value:
             raise Exception("Cache read/write test failed")
-
-        # Clean up test key
         await cache.adelete(test_key)
 
-        # For Django cache, we can't list keys, so return a message
-        response_data = {
-            "cache_type": "Django Cache",
-            "pattern": pattern,
-            "limit": limit,
-            "message": "Django cache doesn't support key listing. Use Redis for key enumeration.",
-            "status": "healthy",
-        }
+        # Check backend type
+        use_redis = getattr(settings, "USE_REDIS", False)
+
+        if use_redis:
+            # Redis backend: attempt key listing
+            client = cache.client.get_client(write=True)
+            redis_conn = (
+                client.client.get_connection("write") if hasattr(client.client, "get_connection") else client
+            )
+            keys = await sync_to_async(redis_conn.keys)(pattern)
+            keys = [k.decode() if isinstance(k, bytes) else k for k in keys]
+            keys = keys[:limit]
+
+            response_data = {
+                "cache_type": "Redis",
+                "pattern": pattern,
+                "limit": limit,
+                "keys": keys,
+                "status": "healthy",
+            }
+        else:
+            # Memory backend: no key listing support
+            response_data = {
+                "cache_type": "LocalMemoryCache",
+                "pattern": pattern,
+                "limit": limit,
+                "message": "Local memory cache doesn't support key listing. Use Redis for key enumeration.",
+                "status": "healthy",
+            }
 
         request.logger.info("Cache keys request completed")
-
         return {
             "data": response_data,
             "trace_id": str(request.trace_id),
@@ -169,7 +186,7 @@ async def get_cache_keys(request, pattern: str = "*", limit: int = 100):
         }
 
     except Exception as e:
-        request.logger.exception("Failed to get cache keys")
+        request.logger.exception(f"Failed to get cache keys: {e}")
         raise
 
 
@@ -179,7 +196,7 @@ async def test_cache_write(request):
     request.logger.info("Testing cache write permissions")
 
     try:
-        success, error_message = await RedisHealthService.test_redis_write()
+        success, error_message = await CacheHealthService.test_cache_write()
 
         result = {
             "success": success,
@@ -199,7 +216,7 @@ async def test_cache_write(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error testing cache write permissions")
+        request.logger.exception(f"Error testing cache write permissions: {e}")
         raise
 
 
@@ -209,7 +226,7 @@ async def test_cache_read(request):
     request.logger.info("Testing cache read permissions")
 
     try:
-        success, error_message = await RedisHealthService.test_redis_read()
+        success, error_message = await CacheHealthService.test_cache_read()
 
         result = {
             "success": success,
@@ -229,5 +246,5 @@ async def test_cache_read(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error testing cache read permissions")
+        request.logger.exception(f"Error testing cache read permissions: {e}")
         raise

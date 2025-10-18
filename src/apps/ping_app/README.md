@@ -539,7 +539,7 @@ Comprehensive database health monitoring.
 Redis cache health monitoring and testing.
 
 **Key Methods:**
-- `check_redis_health()`: Full Redis connectivity check
+- `check_cache_health()`: Full Redis connectivity check
 - `test_redis_read()`: Test read operations
 - `test_redis_write()`: Test write operations
 
@@ -658,7 +658,7 @@ if not db_health.is_healthy:
 ### Redis Health Monitoring
 ```python
 # Check Redis health
-redis_health = await RedisHealthService.check_redis_health()
+redis_health = await RedisHealthService.check_cache_health()
 print(f"Redis version: {redis_health.redis_version}")
 ```
 

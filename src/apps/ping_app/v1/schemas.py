@@ -6,6 +6,7 @@ from ninja import Schema
 
 class PingLogSchema(Schema):
     """Schema for ping log data."""
+
     id: int
     endpoint: str
     method: str
@@ -20,6 +21,7 @@ class PingLogSchema(Schema):
 
 class PingRequestSchema(Schema):
     """Schema for ping request."""
+
     endpoint: str
     method: str = "GET"
     timeout: int = 5
@@ -28,6 +30,7 @@ class PingRequestSchema(Schema):
 
 class PingResponseSchema(Schema):
     """Schema for ping response."""
+
     endpoint: str
     method: str
     status_code: int
@@ -39,6 +42,7 @@ class PingResponseSchema(Schema):
 
 class SystemHealthSchema(Schema):
     """Schema for system health check data."""
+
     id: int
     service_name: str
     service_type: str
@@ -51,6 +55,7 @@ class SystemHealthSchema(Schema):
 
 class HealthCheckResponseSchema(Schema):
     """Schema for health check response."""
+
     service_name: str
     service_type: str
     is_healthy: bool
@@ -61,6 +66,7 @@ class HealthCheckResponseSchema(Schema):
 
 class DatabaseHealthSchema(Schema):
     """Schema for database health check."""
+
     is_healthy: bool
     response_time_ms: Optional[float] = None
     error_message: Optional[str] = None
@@ -70,16 +76,24 @@ class DatabaseHealthSchema(Schema):
 
 class RedisHealthSchema(Schema):
     """Schema for Redis health check."""
+
     is_healthy: bool
     response_time_ms: Optional[float] = None
     error_message: Optional[str] = None
     redis_version: Optional[str] = None
     memory_usage: Optional[str] = None
     connected_clients: Optional[int] = None
+    uptime_in_seconds: Optional[int] = None
+    total_commands_processed: Optional[int] = None
+    evicted_keys: Optional[int] = None
+    keyspace_hits: Optional[int] = None
+    keyspace_misses: Optional[int] = None
+    role: Optional[str] = None
 
 
 class SystemStatusSchema(Schema):
     """Schema for overall system status."""
+
     overall_status: str  # "healthy", "degraded", "unhealthy"
     services: List[HealthCheckResponseSchema]
     checked_at: datetime
@@ -88,6 +102,7 @@ class SystemStatusSchema(Schema):
 
 class PingStatsSchema(Schema):
     """Schema for ping statistics."""
+
     total_pings: int
     successful_pings: int
     failed_pings: int

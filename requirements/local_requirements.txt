@@ -4,11 +4,11 @@ black==24.8.0
     # via -r requirements_raw/local_requirements.in
 certifi==2025.10.5
     # via requests
-charset-normalizer==3.4.3
+charset-normalizer==3.4.4
     # via requests
 click==8.3.0
     # via black
-coverage==7.10.7
+coverage==7.11.0
     # via pytest-cov
 flake8==7.1.1
     # via
@@ -16,7 +16,7 @@ flake8==7.1.1
     #   flake8-pyproject
 flake8-pyproject==1.2.3
     # via -r requirements_raw/local_requirements.in
-idna==3.10
+idna==3.11
     # via requests
 iniconfig==2.1.0
     # via pytest
@@ -37,7 +37,7 @@ packaging==25.0
     #   pytest
 pathspec==0.12.1
     # via black
-platformdirs==4.4.0
+platformdirs==4.5.0
     # via black
 pluggy==1.6.0
     # via pytest

@@ -140,3 +140,8 @@ DATABASE_USER = os.getenv("DB_USER", "django.db.sqlite3")
 DATABASE_PASSWORD = os.getenv("DB_PASSWORD", "django.db.sqlite3")
 DATABASE_HOST = os.getenv("DB_HOST", "django.db.sqlite3")
 DATABASE_PORT = os.getenv("DB_PORT", "django.db.sqlite3")
+
+# Redis
+REDIS_PASSWORD = os.getenv("REDIS_PASSOWRD")
+REDIS_HOST_AND_PORT = os.getenv("REDIS_HOST_AND_PORT")
+USE_REDIS = os.getenv("USE_REDIS", "0") == "1"

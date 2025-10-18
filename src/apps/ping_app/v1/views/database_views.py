@@ -8,8 +8,8 @@ from ninja import Router
 
 from common.base_schemas import create_api_response_schema
 
-from .schemas import DatabaseHealthSchema
-from .services import DatabaseHealthService, SystemHealthService
+from ..schemas import DatabaseHealthSchema
+from ..services import DatabaseHealthService, SystemHealthService
 
 router = Router()
 
@@ -74,7 +74,7 @@ async def ping_database(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error pinging database service")
+        request.logger.exception(f"Error pinging database service: {e}")
         raise
 
 
@@ -114,7 +114,7 @@ async def test_database_read(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error testing database read access")
+        request.logger.exception(f"Error testing database read access: {e}")
         raise
 
 
@@ -154,7 +154,7 @@ async def test_database_write(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error testing database write access")
+        request.logger.exception(f"Error testing database write access: {e}")
         raise
 
 
@@ -243,7 +243,7 @@ async def test_database_ddl(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error testing database DDL operations")
+        request.logger.exception(f"Error testing database DDL operations: {e}")
         raise
 
 
@@ -289,7 +289,7 @@ async def get_database_info(request):
         }
 
     except Exception as e:
-        request.logger.exception("Failed to get database info")
+        request.logger.exception(f"Failed to get database info: {e}")
         raise
 
 
@@ -358,7 +358,7 @@ async def list_database_tables(request):
         }
 
     except Exception as e:
-        request.logger.exception("Failed to list database tables")
+        request.logger.exception(f"Failed to list database tables: {e}")
         raise
 
 
@@ -388,7 +388,7 @@ async def test_database_write_post(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error testing database write permissions")
+        request.logger.exception(f"Error testing database write permissions: {e}")
         raise
 
 
@@ -418,5 +418,5 @@ async def test_database_read_post(request):
         }
 
     except Exception as e:
-        request.logger.exception("Error testing database read permissions")
+        request.logger.exception(f"Error testing database read permissions: {e}")
         raise

@@ -16,8 +16,11 @@ django==4.2.16
     # via
     #   -r requirements_raw/requirements.in
     #   django-ninja
+    #   django-redis
     #   django-shinobi
 django-ninja==1.1.0
+    # via -r requirements_raw/requirements.in
+django-redis==6.0.0
     # via -r requirements_raw/requirements.in
 django-shinobi==1.4.0
     # via -r requirements_raw/requirements.in
@@ -33,7 +36,7 @@ gunicorn==22.0.0
     # via -r requirements_raw/requirements.in
 h11==0.16.0
     # via uvicorn
-idna==3.10
+idna==3.11
     # via
     #   email-validator
     #   yarl
@@ -43,7 +46,7 @@ multidict==6.7.0
     #   yarl
 packaging==25.0
     # via gunicorn
-propcache==0.4.0
+propcache==0.4.1
     # via yarl
 psycopg2-binary==2.9.9
     # via -r requirements_raw/requirements.in
@@ -58,6 +61,8 @@ python-dotenv==1.0.1
     # via -r requirements_raw/requirements.in
 python-json-logger==2.0.7
     # via -r requirements_raw/requirements.in
+redis==6.4.0
+    # via django-redis
 sqlparse==0.5.3
     # via django
 typing-extensions==4.15.0
