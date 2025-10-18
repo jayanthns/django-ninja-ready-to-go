@@ -30,6 +30,12 @@ source = ["."]
 [tool.coverage.report]
 show_missing = true
 fail_under = 96
+exclude_also = [
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if False:",
+]
 
 [tool.coverage.html]
 directory = "coverage_html_report"
