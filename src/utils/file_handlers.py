@@ -116,11 +116,11 @@ class CSVFileHandler(BaseFileHandler):
 
 # ----------------------- Excel -----------------------
 class ExcelFileHandler(BaseFileHandler):
-    def read(self, sheet_name: Union[str, int, None] = None) -> pd.DataFrame:
+    def read(self, sheet_name: Union[str, int, None] = 0) -> pd.DataFrame:
         start = time.time()
         try:
             df = pd.read_excel(self.file_path, sheet_name=sheet_name)
-            self._log_operation("read", start, True, {"rows": len(df), "columns": len(df.columns)})
+            self._log_operation("read", start, True, {"rows": len(df), "columns": len(df.keys())})
             return df
         except Exception as e:
             self._log_operation("read", start, False, {"error": str(e)})
@@ -138,13 +138,13 @@ class ExcelFileHandler(BaseFileHandler):
             raise
 
     # Convenience methods remain unchanged
-    def read_as_dicts(self, sheet_name: Union[str, int, None] = None) -> List[Dict[str, Any]]:
+    def read_as_dicts(self, sheet_name: Union[str, int, None] = 0) -> List[Dict[str, Any]]:
         return self.read(sheet_name).to_dict(orient="records")
 
-    def read_as_json(self, sheet_name: Union[str, int, None] = None) -> str:
+    def read_as_json(self, sheet_name: Union[str, int, None] = 0) -> str:
         return self.read(sheet_name).to_json(orient="records", indent=4)
 
-    def read_as_columns(self, sheet_name: Union[str, int, None] = None) -> Dict[str, List[Any]]:
+    def read_as_columns(self, sheet_name: Union[str, int, None] = 0) -> Dict[str, List[Any]]:
         return self.read(sheet_name).to_dict(orient="list")
 
 
