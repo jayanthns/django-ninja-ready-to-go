@@ -5,6 +5,7 @@ Cache health check endpoints for Redis connectivity and operations.
 from typing import Any, Dict
 
 from ninja import Router
+from ninja.responses import Response
 
 # from apps.ping_app.v1.services import CacheHealthService, SystemHealthService
 from common.base_schemas import create_api_response_schema
@@ -66,15 +67,29 @@ async def ping_cache(request):
         else:
             request.logger.warning(f"Cache ping failed - {redis_health.error_message}")
 
-        return {
-            "data": redis_health,
-            "trace_id": str(request.trace_id),
-            "error": {},
-        }
+        return Response(
+            {
+                "data": redis_health,
+                "trace_id": str(request.trace_id),
+                "error": {},
+            },
+            status=200,
+        )
 
     except Exception as e:
         request.logger.exception(f"Error pinging cache service: {e}")
-        raise
+
+        return Response(
+            {
+                "data": {},
+                "trace_id": str(request.trace_id),
+                "error": {
+                    "message": "Cache ping failed",
+                    "details": str(e),
+                },
+            },
+            status=400,
+        )
 
 
 @router.get("/info", response=create_api_response_schema(Dict[str, Any]))
