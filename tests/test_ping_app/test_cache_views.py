@@ -30,23 +30,6 @@ class TestCacheViewsPingCache:
         mock_cache_health_service.test_cache_read = AsyncMock()
         mock_cache_health_service.test_cache_write = AsyncMock()
 
-        # Fake Healt Check
-
-        # fake_health_check = type(
-        #     "FakeHealth",
-        #     (),
-        #     {
-        #         "service_name": "Redis",
-        #         "service_type": "redis",
-        #         "error_message": None,
-        #         "is_healthy": True,
-        #         "response_time_ms": 3,
-        #         "redis_version": "1",
-        #         "memory_usage": "100m",
-        #         "connected_clients": "1",
-        #     },
-        # )()
-
         fake_health_check = RedisHealthSchema(
             service_name="Redis",
             service_type="redis",
