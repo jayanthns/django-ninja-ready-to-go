@@ -55,4 +55,12 @@ async def get_system_health(request):
 
     except Exception as e:
         request.logger.exception(f"Error performing system health check: {e}")
-        raise
+
+        return {
+            "data": {},
+            "trace_id": str(request.trace_id),
+            "error": {
+                "message": "System health check failed",
+                "details": str(e),
+            },
+        }
