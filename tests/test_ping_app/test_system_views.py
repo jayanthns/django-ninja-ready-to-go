@@ -174,3 +174,40 @@ class TestSystemHealth:
         # Log assertions
         mock_request.logger.info.assert_called_once_with("Performing system health check")
         mock_request.logger.exception.assert_called_once()
+
+    # ---------------- Same above tests in the parameterized pattern ----------------
+
+    @pytest.mark.parametrize("exception_message", ["DB connection failed", "Cache connection failed"])
+    async def test_system_health_endpoint_returns_error_response_on_exception(
+        self,
+        exception_message,
+    ):
+        # Step 1: Prepare fake request
+        mock_request = MagicMock()
+        mock_request.logger = MagicMock()
+        mock_request.trace_id = str(uuid.uuid4())
+
+        # Step 2: Patch SystemHealthService as context manager
+        from apps.ping_app.v1.views import system_views
+
+        with pytest.MonkeyPatch.context() as mp:
+            # Assign AsyncMock to the methods
+            system_views.SystemHealthService.check_system_health = AsyncMock(
+                side_effect=Exception(exception_message)
+            )
+            system_views.SystemHealthService.log_health_check = AsyncMock()
+
+            # Step 3: Call the view
+            response = await get_system_health(mock_request)
+
+        # Step 4: Assertions
+        assert isinstance(response, dict)
+        assert set(response.keys()) == {"data", "trace_id", "error"}
+        assert response["data"] == {}
+        assert "System health check failed" in response["error"]["message"]
+        assert exception_message in response["error"]["details"]
+        assert str(mock_request.trace_id) == response["trace_id"]
+
+        # Verify logs
+        mock_request.logger.info.assert_called_once_with("Performing system health check")
+        mock_request.logger.exception.assert_called_once()
