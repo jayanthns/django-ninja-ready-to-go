@@ -436,6 +436,131 @@
 #         mock_cache_health_service.test_cache_read.assert_called_once()
 #         mock_cache_health_service.test_cache_write.assert_called_once()
 
+# @pytest.mark.asyncio
+# class TestCacheViewsGetCacheInfo:
+#     @pytest.fixture
+#     def mock_request(self):
+#         """Mock a minimal Django-Ninja style request."""
+#         mock = MagicMock()
+#         mock.logger = MagicMock()
+#         mock.trace_id = uuid.uuid4()
+#         return mock
+
+#     def _assert_basic_response_data(self, response_data):
+#         assert "data" in response_data
+#         assert "trace_id" in response_data
+#         assert "error" in response_data
+
+#     @patch("apps.ping_app.v1.views.cache_views.CacheHealthService")
+#     async def test_get_cache_info_success_response(self, mock_cache_health_service, mock_request):
+#         mock_cache_health_service.check_cache_health = AsyncMock()
+
+#         fake_health_check = RedisHealthSchema(
+#             service_name="Redis",
+#             service_type="redis",
+#             is_healthy=True,
+#             response_time_ms=3,
+#             redis_version="1",
+#             memory_usage="100m",
+#             connected_clients="1",
+#         )
+
+#         mock_cache_health_service.check_cache_health.return_value = fake_health_check
+
+#         response = await get_cache_info(mock_request)
+
+#         assert response.status_code == 200
+
+#         response_data = json.loads(response.content)
+
+#         self._assert_basic_response_data(response_data)
+
+#         assert response_data["data"] == {
+#             "cache_type": "Redis",
+#             "is_healthy": True,
+#             "response_time_ms": 3.0,
+#             "server": {"version": "1", "memory_usage": "100m", "connected_clients": 1},
+#             "status": "healthy",
+#         }
+
+#         assert response_data["trace_id"] == str(mock_request.trace_id)
+#         assert response_data["error"] == {}
+
+#         assert mock_request.logger.mock_calls == [
+#             call.info("Getting cache service information"),
+#             call.info("Cache info retrieved successfully"),
+#         ]
+
+#         mock_cache_health_service.check_cache_health.assert_called_once()
+
+#     @patch("apps.ping_app.v1.views.cache_views.CacheHealthService")
+#     async def test_get_cache_info_not_healthy_error_response(self, mock_cache_health_service, mock_request):
+#         mock_cache_health_service.check_cache_health = AsyncMock()
+
+#         fake_health_check = RedisHealthSchema(
+#             service_name="Redis",
+#             service_type="redis",
+#             is_healthy=False,
+#             response_time_ms=3,
+#             redis_version="1",
+#             memory_usage="100m",
+#             connected_clients="1",
+#         )
+
+#         mock_cache_health_service.check_cache_health.return_value = fake_health_check
+
+#         response = await get_cache_info(mock_request)
+
+#         assert response.status_code == 400
+
+#         response_data = json.loads(response.content)
+
+#         self._assert_basic_response_data(response_data)
+
+#         assert response_data["data"] == {}
+#         assert response_data["trace_id"] == str(mock_request.trace_id)
+#         assert response_data["error"] == {
+#             "message": "Failed to get cache info",
+#             "details": "Cache service is not responding",
+#         }
+
+#         assert mock_request.logger.mock_calls == [
+#             call.info("Getting cache service information"),
+#             call.exception("Failed to get cache info: Cache service is not responding"),
+#         ]
+
+#         mock_cache_health_service.check_cache_health.assert_called_once()
+
+#     @patch("apps.ping_app.v1.views.cache_views.CacheHealthService")
+#     async def test_get_cache_info_cache_exception_error_response(
+#         self, mock_cache_health_service, mock_request
+#     ):
+#         mock_cache_health_service.check_cache_health.side_effect = AsyncMock(
+#             side_effect=Exception("Cache unreachable exception")
+#         )
+
+#         response = await get_cache_info(mock_request)
+
+#         assert response.status_code == 400
+
+#         response_data = json.loads(response.content)
+
+#         self._assert_basic_response_data(response_data)
+
+#         assert response_data["data"] == {}
+#         assert response_data["trace_id"] == str(mock_request.trace_id)
+#         assert response_data["error"] == {
+#             "message": "Failed to get cache info",
+#             "details": "Cache unreachable exception",
+#         }
+
+#         assert mock_request.logger.mock_calls == [
+#             call.info("Getting cache service information"),
+#             call.exception("Failed to get cache info: Cache unreachable exception"),
+#         ]
+
+#         mock_cache_health_service.check_cache_health.assert_called_once()
+
 
 # --------- Refactored with SRP Principle ---------------
 import json
@@ -764,6 +889,16 @@ class TestCacheViewsPingCache:
 
 @pytest.mark.asyncio
 class TestCacheViewsGetCacheInfo:
+    """Test suite for get_cache_info functionality."""
+
+    # Constants for reusable test data
+    SERVICE_NAME = "Redis"
+    SERVICE_TYPE = "redis"
+    REDIS_VERSION = "1"
+    MEMORY_USAGE = "100m"
+    CONNECTED_CLIENTS = "1"
+    RESPONSE_TIME_MS = 3.0
+
     @pytest.fixture
     def mock_request(self):
         """Mock a minimal Django-Ninja style request."""
@@ -772,117 +907,155 @@ class TestCacheViewsGetCacheInfo:
         mock.trace_id = uuid.uuid4()
         return mock
 
-    def _assert_basic_response_data(self, response_data):
+    @pytest.fixture
+    def healthy_redis_schema(self):
+        """Fixture for a healthy Redis health schema."""
+        return RedisHealthSchema(
+            service_name=self.SERVICE_NAME,
+            service_type=self.SERVICE_TYPE,
+            is_healthy=True,
+            response_time_ms=self.RESPONSE_TIME_MS,
+            redis_version=self.REDIS_VERSION,
+            memory_usage=self.MEMORY_USAGE,
+            connected_clients=self.CONNECTED_CLIENTS,
+        )
+
+    @pytest.fixture
+    def unhealthy_redis_schema(self):
+        """Fixture for an unhealthy Redis health schema."""
+        return RedisHealthSchema(
+            service_name=self.SERVICE_NAME,
+            service_type=self.SERVICE_TYPE,
+            is_healthy=False,
+            response_time_ms=self.RESPONSE_TIME_MS,
+            redis_version=self.REDIS_VERSION,
+            memory_usage=self.MEMORY_USAGE,
+            connected_clients=self.CONNECTED_CLIENTS,
+        )
+
+    @pytest.fixture
+    def mock_cache_service(self):
+        """Fixture for mocked cache health service."""
+        with patch("apps.ping_app.v1.views.cache_views.CacheHealthService") as mock:
+            mock.check_cache_health = AsyncMock()
+            yield mock
+
+    def _assert_basic_response_structure(self, response_data):
+        """Assert common response structure exists."""
         assert "data" in response_data
         assert "trace_id" in response_data
         assert "error" in response_data
 
-    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService")
-    async def test_get_cache_info_success_response(self, mock_cache_health_service, mock_request):
-        mock_cache_health_service.check_cache_health = AsyncMock()
-
-        fake_health_check = RedisHealthSchema(
-            service_name="Redis",
-            service_type="redis",
-            is_healthy=True,
-            response_time_ms=3,
-            redis_version="1",
-            memory_usage="100m",
-            connected_clients="1",
-        )
-
-        mock_cache_health_service.check_cache_health.return_value = fake_health_check
-
-        response = await get_cache_info(mock_request)
-
-        assert response.status_code == 200
-
-        response_data = json.loads(response.content)
-
-        self._assert_basic_response_data(response_data)
-
-        assert response_data["data"] == {
+    def _assert_successful_response_data(self, response_data, trace_id):
+        """Assert response data for successful cache info retrieval."""
+        expected_data = {
             "cache_type": "Redis",
             "is_healthy": True,
-            "response_time_ms": 3.0,
-            "server": {"version": "1", "memory_usage": "100m", "connected_clients": 1},
+            "response_time_ms": self.RESPONSE_TIME_MS,
+            "server": {
+                "version": self.REDIS_VERSION,
+                "memory_usage": self.MEMORY_USAGE,
+                "connected_clients": int(self.CONNECTED_CLIENTS),
+            },
             "status": "healthy",
         }
-
-        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["data"] == expected_data
+        assert response_data["trace_id"] == trace_id
         assert response_data["error"] == {}
 
-        assert mock_request.logger.mock_calls == [
-            call.info("Getting cache service information"),
-            call.info("Cache info retrieved successfully"),
-        ]
-
-        mock_cache_health_service.check_cache_health.assert_called_once()
-
-    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService")
-    async def test_get_cache_info_not_healthy_error_response(self, mock_cache_health_service, mock_request):
-        mock_cache_health_service.check_cache_health = AsyncMock()
-
-        fake_health_check = RedisHealthSchema(
-            service_name="Redis",
-            service_type="redis",
-            is_healthy=False,
-            response_time_ms=3,
-            redis_version="1",
-            memory_usage="100m",
-            connected_clients="1",
-        )
-
-        mock_cache_health_service.check_cache_health.return_value = fake_health_check
-
-        response = await get_cache_info(mock_request)
-
-        assert response.status_code == 400
-
-        response_data = json.loads(response.content)
-
-        self._assert_basic_response_data(response_data)
-
+    def _assert_error_response_data(self, response_data, trace_id, error_details):
+        """Assert response data for error scenarios."""
         assert response_data["data"] == {}
-        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["trace_id"] == trace_id
         assert response_data["error"] == {
             "message": "Failed to get cache info",
-            "details": "Cache service is not responding",
+            "details": error_details,
         }
 
-        assert mock_request.logger.mock_calls == [
-            call.info("Getting cache service information"),
-            call.exception("Failed to get cache info: Cache service is not responding"),
-        ]
+    def _assert_logging_calls(self, logger_mock, success=True, error_details=None):
+        """Assert appropriate logging calls were made."""
+        expected_calls = [call.info("Getting cache service information")]
 
-        mock_cache_health_service.check_cache_health.assert_called_once()
+        if success:
+            expected_calls.append(call.info("Cache info retrieved successfully"))
+        else:
+            expected_calls.append(call.exception(f"Failed to get cache info: {error_details}"))
 
-    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService")
-    async def test_get_cache_info_cache_exception_error_response(
-        self, mock_cache_health_service, mock_request
-    ):
-        mock_cache_health_service.check_cache_health.side_effect = AsyncMock(
-            side_effect=Exception("Cache unreachable exception")
-        )
+        assert logger_mock.mock_calls == expected_calls
 
+    async def _call_get_cache_info_and_parse_response(self, mock_request):
+        """Helper to call get_cache_info and parse JSON response."""
         response = await get_cache_info(mock_request)
+        return json.loads(response.content), response
 
-        assert response.status_code == 400
+    class TestSuccessfulScenarios:
+        """Test successful cache info retrieval scenarios."""
 
-        response_data = json.loads(response.content)
+        async def test_get_cache_info_success_response(
+            self, mock_request, mock_cache_service, healthy_redis_schema
+        ):
+            """Test successful cache info retrieval when cache is healthy."""
+            # Setup
+            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
 
-        self._assert_basic_response_data(response_data)
+            # Execute
+            response_data, response = (
+                await TestCacheViewsGetCacheInfo()._call_get_cache_info_and_parse_response(mock_request)
+            )
 
-        assert response_data["data"] == {}
-        assert response_data["trace_id"] == str(mock_request.trace_id)
-        assert response_data["error"] == {
-            "message": "Failed to get cache info",
-            "details": "Cache unreachable exception",
-        }
+            # Assert
+            assert response.status_code == 200
+            TestCacheViewsGetCacheInfo()._assert_basic_response_structure(response_data)
+            TestCacheViewsGetCacheInfo()._assert_successful_response_data(
+                response_data, str(mock_request.trace_id)
+            )
+            TestCacheViewsGetCacheInfo()._assert_logging_calls(mock_request.logger, success=True)
+            mock_cache_service.check_cache_health.assert_called_once()
 
-        assert mock_request.logger.mock_calls == [
-            call.info("Getting cache service information"),
-            call.exception("Failed to get cache info: Cache unreachable exception"),
-        ]
+    class TestErrorScenarios:
+        """Test cache info retrieval error scenarios."""
 
-        mock_cache_health_service.check_cache_health.assert_called_once()
+        async def test_get_cache_info_not_healthy_error_response(
+            self, mock_request, mock_cache_service, unhealthy_redis_schema
+        ):
+            """Test cache info retrieval when cache is not healthy."""
+            # Setup
+            mock_cache_service.check_cache_health.return_value = unhealthy_redis_schema
+
+            # Execute
+            response_data, response = (
+                await TestCacheViewsGetCacheInfo()._call_get_cache_info_and_parse_response(mock_request)
+            )
+
+            # Assert
+            assert response.status_code == 400
+            TestCacheViewsGetCacheInfo()._assert_basic_response_structure(response_data)
+            TestCacheViewsGetCacheInfo()._assert_error_response_data(
+                response_data, str(mock_request.trace_id), "Cache service is not responding"
+            )
+            TestCacheViewsGetCacheInfo()._assert_logging_calls(
+                mock_request.logger, success=False, error_details="Cache service is not responding"
+            )
+            mock_cache_service.check_cache_health.assert_called_once()
+
+        async def test_get_cache_info_cache_exception_error_response(self, mock_request, mock_cache_service):
+            """Test cache info retrieval when cache service raises an exception."""
+            # Setup
+            error_message = "Cache unreachable exception"
+            mock_cache_service.check_cache_health.side_effect = Exception(error_message)
+
+            # Execute
+            response_data, response = (
+                await TestCacheViewsGetCacheInfo()._call_get_cache_info_and_parse_response(mock_request)
+            )
+
+            # Assert
+            assert response.status_code == 400
+            TestCacheViewsGetCacheInfo()._assert_basic_response_structure(response_data)
+            TestCacheViewsGetCacheInfo()._assert_error_response_data(
+                response_data, str(mock_request.trace_id), error_message
+            )
+            TestCacheViewsGetCacheInfo()._assert_logging_calls(
+                mock_request.logger, success=False, error_details=error_message
+            )
+            mock_cache_service.check_cache_health.assert_called_once()
