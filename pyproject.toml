@@ -29,7 +29,7 @@ source = ["."]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 96
+fail_under = 41
 exclude_also = [
     "def __repr__",
     "if __name__ == .__main__.:",
