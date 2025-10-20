@@ -207,15 +207,27 @@ async def get_cache_keys(request, pattern: str = "*", limit: int = 100):
             }
 
         request.logger.info("Cache keys request completed")
-        return {
-            "data": response_data,
-            "trace_id": str(request.trace_id),
-            "error": {},
-        }
+        return Response(
+            {
+                "data": response_data,
+                "trace_id": str(request.trace_id),
+                "error": {},
+            }
+        )
 
     except Exception as e:
         request.logger.exception(f"Failed to get cache keys: {e}")
-        raise
+        return Response(
+            {
+                "data": {},
+                "trace_id": str(request.trace_id),
+                "error": {
+                    "message": "Failed to get cache keys",
+                    "details": str(e),
+                },
+            },
+            status=400,
+        )
 
 
 @router.post("/test-write/", response=create_api_response_schema(Dict[str, Any]))

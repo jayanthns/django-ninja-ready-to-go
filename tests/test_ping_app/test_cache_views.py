@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, call, MagicMock, patch
 import pytest
 
 from apps.ping_app.v1.schemas import RedisHealthSchema
-from apps.ping_app.v1.views.cache_views import get_cache_info, ping_cache
+from apps.ping_app.v1.views.cache_views import get_cache_info, get_cache_keys, ping_cache
 
 
 @pytest.mark.asyncio
@@ -1061,3 +1061,315 @@ class TestCacheViewsGetCacheInfo:
 #         ]
 
 #         mock_cache_health_service.check_cache_health.assert_called_once()
+
+
+@pytest.mark.asyncio
+class TestCacheViewsGetCacheKeys:
+    @pytest.fixture
+    def mock_request(self):
+        """Mock a minimal Django-Ninja style request."""
+        mock = MagicMock()
+        mock.logger = MagicMock()
+        mock.trace_id = uuid.uuid4()
+        mock.timestamp = "123456"
+        return mock
+
+    def _assert_basic_response_data(self, response_data):
+        assert "data" in response_data
+        assert "trace_id" in response_data
+        assert "error" in response_data
+
+    @patch("django.conf.settings")
+    @patch("django.core.cache.cache")
+    async def test_get_cache_keys_with_default_pattern_with_request_timestamp_redis_success_response(
+        self, mock_cache, mock_settings, mock_request
+    ):
+
+        mock_client = MagicMock()
+        mock_connection = MagicMock()
+
+        mock_cache.aset = AsyncMock()
+        mock_cache.aget = AsyncMock()
+        mock_cache.adelete = AsyncMock()
+        mock_cache.client = MagicMock()
+
+        mock_settings.USE_REDIS = True
+
+        mock_cache.aget.return_value = "test_123456"
+        # Set up the chain: cache -> client -> get_client() -> connection
+        mock_cache.client.get_client.return_value = mock_client
+        mock_client.client.get_connection.return_value = mock_connection
+
+        response = await get_cache_keys(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 200
+
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {
+            "cache_type": "Redis",
+            "pattern": "*",
+            "limit": 100,
+            "keys": [],
+            "status": "healthy",
+        }
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {}
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Getting cache keys with pattern: *, limit: 100"),
+            call.info("Cache keys request completed"),
+        ]
+
+        mock_cache.aset.assert_called_once_with("cache_keys_test", "test_123456", timeout=10)
+        mock_cache.aget.assert_called_once_with("cache_keys_test")
+        mock_cache.adelete.assert_called_once_with("cache_keys_test")
+        mock_cache.client.get_client.assert_called_once_with(write=True)
+        mock_client.client.get_connection.assert_called_once_with("write")
+        mock_connection.keys.assert_called_once_with("*")
+
+    @patch("django.conf.settings")
+    @patch("django.core.cache.cache")
+    async def test_get_cache_keys_with_default_pattern_with_request_timestamp_redis_aget_returns_none_error_response(
+        self, mock_cache, mock_settings, mock_request
+    ):
+
+        mock_client = MagicMock()
+        mock_connection = MagicMock()
+
+        mock_cache.aset = AsyncMock()
+        mock_cache.aget = AsyncMock()
+        mock_cache.adelete = AsyncMock()
+        mock_cache.client = MagicMock()
+
+        mock_settings.USE_REDIS = True
+
+        mock_cache.aget.return_value = None
+        # Set up the chain: cache -> client -> get_client() -> connection
+        mock_cache.client.get_client.return_value = mock_client
+        mock_client.client.get_connection.return_value = mock_connection
+
+        response = await get_cache_keys(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 400
+
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {}
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {
+            "message": "Failed to get cache keys",
+            "details": "Cache read/write test failed",
+        }
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Getting cache keys with pattern: *, limit: 100"),
+            call.exception("Failed to get cache keys: Cache read/write test failed"),
+        ]
+
+        mock_cache.aset.assert_called_once_with("cache_keys_test", "test_123456", timeout=10)
+        mock_cache.aget.assert_called_once_with("cache_keys_test")
+        mock_cache.adelete.assert_not_called()
+        mock_cache.client.get_client.assert_not_called()
+        mock_client.client.get_connection.assert_not_called()
+        mock_connection.keys.assert_not_called()
+
+    @patch("django.conf.settings")
+    @patch("django.core.cache.cache")
+    async def test_get_cache_keys_with_default_pattern_with_request_timestamp_redis_aset_raise_exception_error_response(
+        self, mock_cache, mock_settings, mock_request
+    ):
+
+        mock_client = MagicMock()
+        mock_connection = MagicMock()
+
+        # mock_cache.aset = AsyncMock()
+        mock_cache.aget = AsyncMock()
+        mock_cache.adelete = AsyncMock()
+        mock_cache.client = MagicMock()
+
+        mock_settings.USE_REDIS = True
+
+        mock_cache.aset.side_effect = AsyncMock(side_effect=Exception("Redis Write failed"))
+        mock_cache.aget.return_value = "test_123456"
+        # Set up the chain: cache -> client -> get_client() -> connection
+        mock_cache.client.get_client.return_value = mock_client
+        mock_client.client.get_connection.return_value = mock_connection
+
+        response = await get_cache_keys(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 400
+
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {}
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {
+            "message": "Failed to get cache keys",
+            "details": "Redis Write failed",
+        }
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Getting cache keys with pattern: *, limit: 100"),
+            call.exception("Failed to get cache keys: Redis Write failed"),
+        ]
+
+        mock_cache.aset.assert_called_once_with("cache_keys_test", "test_123456", timeout=10)
+        mock_cache.aget.assert_not_called()
+        mock_cache.adelete.assert_not_called()
+        mock_cache.client.get_client.assert_not_called()
+        mock_client.client.get_connection.assert_not_called()
+        mock_connection.keys.assert_not_called()
+
+    @patch("django.conf.settings")
+    @patch("django.core.cache.cache")
+    async def test_get_cache_keys_with_default_pattern_with_request_timestamp_redis_aget_raise_exception_error_response(
+        self, mock_cache, mock_settings, mock_request
+    ):
+
+        mock_client = MagicMock()
+        mock_connection = MagicMock()
+
+        mock_cache.aset = AsyncMock()
+        mock_cache.aget = AsyncMock()
+        mock_cache.adelete = AsyncMock()
+        mock_cache.client = MagicMock()
+
+        mock_settings.USE_REDIS = True
+
+        mock_cache.aget.side_effect = AsyncMock(side_effect=Exception("Redis Read failed"))
+        # Set up the chain: cache -> client -> get_client() -> connection
+        mock_cache.client.get_client.return_value = mock_client
+        mock_client.client.get_connection.return_value = mock_connection
+
+        response = await get_cache_keys(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 400
+
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {}
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {
+            "message": "Failed to get cache keys",
+            "details": "Redis Read failed",
+        }
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Getting cache keys with pattern: *, limit: 100"),
+            call.exception("Failed to get cache keys: Redis Read failed"),
+        ]
+
+        mock_cache.aset.assert_called_once_with("cache_keys_test", "test_123456", timeout=10)
+        mock_cache.aget.assert_called_once_with("cache_keys_test")
+        mock_cache.adelete.assert_not_called()
+        mock_cache.client.get_client.assert_not_called()
+        mock_client.client.get_connection.assert_not_called()
+        mock_connection.keys.assert_not_called()
+
+    @patch("django.conf.settings")
+    @patch("django.core.cache.cache")
+    async def test_get_cache_keys_with_default_pattern_with_request_timestamp_redis_adelete_raise_exception_error_response(
+        self, mock_cache, mock_settings, mock_request
+    ):
+
+        mock_client = MagicMock()
+        mock_connection = MagicMock()
+
+        mock_cache.aset = AsyncMock()
+        mock_cache.aget = AsyncMock()
+        mock_cache.client = MagicMock()
+
+        mock_settings.USE_REDIS = True
+
+        mock_cache.aget.return_value = "test_123456"
+        mock_cache.adelete.side_effect = AsyncMock(side_effect=Exception("Redis Delete failed"))
+        # Set up the chain: cache -> client -> get_client() -> connection
+        mock_cache.client.get_client.return_value = mock_client
+        mock_client.client.get_connection.return_value = mock_connection
+
+        response = await get_cache_keys(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 400
+
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {}
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {
+            "message": "Failed to get cache keys",
+            "details": "Redis Delete failed",
+        }
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Getting cache keys with pattern: *, limit: 100"),
+            call.exception("Failed to get cache keys: Redis Delete failed"),
+        ]
+
+        mock_cache.aset.assert_called_once_with("cache_keys_test", "test_123456", timeout=10)
+        mock_cache.aget.assert_called_once_with("cache_keys_test")
+        mock_cache.adelete.assert_called_once_with("cache_keys_test")
+        mock_cache.client.get_client.assert_not_called()
+        mock_client.client.get_connection.assert_not_called()
+        mock_connection.keys.assert_not_called()
+
+    @patch("django.conf.settings")
+    @patch("django.core.cache.cache")
+    async def test_get_cache_keys_with_default_pattern_with_request_timestamp_with_local_memory_does_not_support_key_listing(
+        self, mock_cache, mock_settings, mock_request
+    ):
+
+        mock_client = MagicMock()
+        mock_connection = MagicMock()
+
+        mock_cache.aset = AsyncMock()
+        mock_cache.aget = AsyncMock()
+        mock_cache.adelete = AsyncMock()
+        mock_cache.client = MagicMock()
+
+        mock_settings.USE_REDIS = False
+
+        mock_cache.aget.return_value = "test_123456"
+        # Set up the chain: cache -> client -> get_client() -> connection
+        mock_cache.client.get_client.return_value = mock_client
+        mock_client.client.get_connection.return_value = mock_connection
+
+        response = await get_cache_keys(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 200
+
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {
+            "cache_type": "LocalMemoryCache",
+            "pattern": "*",
+            "limit": 100,
+            "message": "Local memory cache doesn't support key listing. Use Redis for key enumeration.",
+            "status": "healthy",
+        }
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {}
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Getting cache keys with pattern: *, limit: 100"),
+            call.info("Cache keys request completed"),
+        ]
+
+        mock_cache.aset.assert_called_once_with("cache_keys_test", "test_123456", timeout=10)
+        mock_cache.aget.assert_called_once_with("cache_keys_test")
+        mock_cache.adelete.assert_called_once_with("cache_keys_test")
+        mock_cache.client.get_client.assert_not_called()
+        mock_client.client.get_connection.assert_not_called()
+        mock_connection.keys.assert_not_called()
