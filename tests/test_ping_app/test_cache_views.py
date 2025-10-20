@@ -6,7 +6,13 @@ from unittest.mock import AsyncMock, call, MagicMock, patch
 import pytest
 
 from apps.ping_app.v1.schemas import RedisHealthSchema
-from apps.ping_app.v1.views.cache_views import get_cache_info, get_cache_keys, ping_cache, test_cache_write
+from apps.ping_app.v1.views.cache_views import (
+    get_cache_info,
+    get_cache_keys,
+    ping_cache,
+    test_cache_read,
+    test_cache_write,
+)
 
 
 @pytest.mark.asyncio
@@ -1468,4 +1474,100 @@ class TestCacheViewsCacheWrite:
         assert mock_request.logger.mock_calls == [
             call.info("Testing cache write permissions"),
             call.exception("Error testing cache write permissions: Cache write exception"),
+        ]
+
+
+@pytest.mark.asyncio
+class TestCacheViewsCacheRead:
+    @pytest.fixture
+    def mock_request(self):
+        """Mock a minimal Django-Ninja style request."""
+        mock = MagicMock()
+        mock.logger = MagicMock()
+        mock.trace_id = uuid.uuid4()
+        return mock
+
+    def _assert_basic_response_data(self, response_data):
+        assert "data" in response_data
+        assert "trace_id" in response_data
+        assert "error" in response_data
+
+    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_read", new_callable=AsyncMock)
+    async def test_cache_read_success_response(self, mock_test_cache_read, mock_request):
+
+        mock_test_cache_read.return_value = (True, None)
+
+        response = await test_cache_read(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 200
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {
+            "success": True,
+            "error_message": None,
+            "timestamp": str(mock_request.trace_id),
+        }
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {}
+
+        mock_test_cache_read.assert_called_once()
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Testing cache read permissions"),
+            call.info("Cache read test passed"),
+        ]
+
+    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_read", new_callable=AsyncMock)
+    async def test_cache_read_failed_error_response(self, mock_test_cache_read, mock_request):
+
+        mock_test_cache_read.return_value = (False, "Cache read error")
+
+        response = await test_cache_read(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 400
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {
+            "success": False,
+            "error_message": "Cache read error",
+            "timestamp": str(mock_request.trace_id),
+        }
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {}
+
+        mock_test_cache_read.assert_called_once()
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Testing cache read permissions"),
+            call.warning("Cache read test failed - Cache read error"),
+        ]
+
+    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_read", new_callable=AsyncMock)
+    async def test_cache_read_exception_error_response(self, mock_test_cache_read, mock_request):
+
+        mock_test_cache_read.side_effect = AsyncMock(side_effect=Exception("Cache read exception"))
+
+        response = await test_cache_read(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 400
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {}
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {
+            "message": "Error testing cache read permissions",
+            "details": "Cache read exception",
+        }
+
+        mock_test_cache_read.assert_called_once()
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Testing cache read permissions"),
+            call.exception("Error testing cache read permissions: Cache read exception"),
         ]

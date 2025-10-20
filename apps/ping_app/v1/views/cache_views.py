@@ -297,7 +297,8 @@ async def test_cache_read(request):
                 "data": result,
                 "trace_id": str(request.trace_id),
                 "error": {},
-            }
+            },
+            status=200 if success else 400,
         )
 
     except Exception as e:
