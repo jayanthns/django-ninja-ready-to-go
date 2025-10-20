@@ -445,7 +445,7 @@ from unittest.mock import AsyncMock, call, MagicMock, patch
 import pytest
 
 from apps.ping_app.v1.schemas import RedisHealthSchema
-from apps.ping_app.v1.views.cache_views import ping_cache
+from apps.ping_app.v1.views.cache_views import get_cache_info, ping_cache
 
 
 @pytest.mark.asyncio
@@ -760,3 +760,129 @@ class TestCacheViewsPingCache:
 
             TestCacheViewsPingCache()._assert_service_calls(mock_cache_service)
             mock_log_health_check.assert_not_called()
+
+
+@pytest.mark.asyncio
+class TestCacheViewsGetCacheInfo:
+    @pytest.fixture
+    def mock_request(self):
+        """Mock a minimal Django-Ninja style request."""
+        mock = MagicMock()
+        mock.logger = MagicMock()
+        mock.trace_id = uuid.uuid4()
+        return mock
+
+    def _assert_basic_response_data(self, response_data):
+        assert "data" in response_data
+        assert "trace_id" in response_data
+        assert "error" in response_data
+
+    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService")
+    async def test_get_cache_info_success_response(self, mock_cache_health_service, mock_request):
+        mock_cache_health_service.check_cache_health = AsyncMock()
+
+        fake_health_check = RedisHealthSchema(
+            service_name="Redis",
+            service_type="redis",
+            is_healthy=True,
+            response_time_ms=3,
+            redis_version="1",
+            memory_usage="100m",
+            connected_clients="1",
+        )
+
+        mock_cache_health_service.check_cache_health.return_value = fake_health_check
+
+        response = await get_cache_info(mock_request)
+
+        assert response.status_code == 200
+
+        response_data = json.loads(response.content)
+
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {
+            "cache_type": "Redis",
+            "is_healthy": True,
+            "response_time_ms": 3.0,
+            "server": {"version": "1", "memory_usage": "100m", "connected_clients": 1},
+            "status": "healthy",
+        }
+
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {}
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Getting cache service information"),
+            call.info("Cache info retrieved successfully"),
+        ]
+
+        mock_cache_health_service.check_cache_health.assert_called_once()
+
+    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService")
+    async def test_get_cache_info_not_healthy_error_response(self, mock_cache_health_service, mock_request):
+        mock_cache_health_service.check_cache_health = AsyncMock()
+
+        fake_health_check = RedisHealthSchema(
+            service_name="Redis",
+            service_type="redis",
+            is_healthy=False,
+            response_time_ms=3,
+            redis_version="1",
+            memory_usage="100m",
+            connected_clients="1",
+        )
+
+        mock_cache_health_service.check_cache_health.return_value = fake_health_check
+
+        response = await get_cache_info(mock_request)
+
+        assert response.status_code == 400
+
+        response_data = json.loads(response.content)
+
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {}
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {
+            "message": "Failed to get cache info",
+            "details": "Cache service is not responding",
+        }
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Getting cache service information"),
+            call.exception("Failed to get cache info: Cache service is not responding"),
+        ]
+
+        mock_cache_health_service.check_cache_health.assert_called_once()
+
+    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService")
+    async def test_get_cache_info_cache_exception_error_response(
+        self, mock_cache_health_service, mock_request
+    ):
+        mock_cache_health_service.check_cache_health.side_effect = AsyncMock(
+            side_effect=Exception("Cache unreachable exception")
+        )
+
+        response = await get_cache_info(mock_request)
+
+        assert response.status_code == 400
+
+        response_data = json.loads(response.content)
+
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {}
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {
+            "message": "Failed to get cache info",
+            "details": "Cache unreachable exception",
+        }
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Getting cache service information"),
+            call.exception("Failed to get cache info: Cache unreachable exception"),
+        ]
+
+        mock_cache_health_service.check_cache_health.assert_called_once()

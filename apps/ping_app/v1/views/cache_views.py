@@ -124,15 +124,28 @@ async def get_cache_info(request):
 
         request.logger.info("Cache info retrieved successfully")
 
-        return {
-            "data": cache_info,
-            "trace_id": str(request.trace_id),
-            "error": {},
-        }
+        return Response(
+            {
+                "data": cache_info,
+                "trace_id": str(request.trace_id),
+                "error": {},
+            },
+            status=200,
+        )
 
     except Exception as e:
         request.logger.exception(f"Failed to get cache info: {e}")
-        raise
+        return Response(
+            {
+                "data": {},
+                "trace_id": str(request.trace_id),
+                "error": {
+                    "message": "Failed to get cache info",
+                    "details": str(e),
+                },
+            },
+            status=400,
+        )
 
 
 @router.get("/keys", response=create_api_response_schema(Dict[str, Any]))
