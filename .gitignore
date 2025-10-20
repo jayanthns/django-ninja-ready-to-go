@@ -134,8 +134,8 @@ cython_debug/
 # PyCharm
 .idea/
 
-# VS Code
-.vscode/
+# # VS Code
+# .vscode/
 
 # Cursor
 .cursor/

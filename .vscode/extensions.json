@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+      "ms-python.python",       // Python extension
+      "ms-python.black-formatter", // Black formatter
+      "ms-python.isort",        // isort for imports
+      "ms-python.flake8"        // flake8 for linting
+    ]
+  }
