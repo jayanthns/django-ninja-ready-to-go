@@ -1,3 +1,504 @@
+# --------- Refactored with SRP Principle ---------------
+import json
+import uuid
+from unittest.mock import AsyncMock, call, MagicMock, patch
+
+import pytest
+
+from apps.ping_app.v1.schemas import RedisHealthSchema
+from apps.ping_app.v1.views.cache_views import get_cache_info, ping_cache
+
+
+@pytest.mark.asyncio
+class TestCacheViewsPingCache:
+    """Test suite for cache ping functionality."""
+
+    # Constants for reusable test data
+    SERVICE_NAME = "Redis"
+    SERVICE_TYPE = "redis"
+    REDIS_VERSION = "1"
+    MEMORY_USAGE = "100m"
+    CONNECTED_CLIENTS = "1"
+    RESPONSE_TIME_MS = 3.0
+
+    @pytest.fixture
+    def mock_request(self):
+        """Mock a minimal Django-Ninja style request."""
+        mock = MagicMock()
+        mock.logger = MagicMock()
+        mock.trace_id = uuid.uuid4()
+        return mock
+
+    @pytest.fixture
+    def healthy_redis_schema(self):
+        """Fixture for a healthy Redis health schema."""
+        return RedisHealthSchema(
+            service_name=self.SERVICE_NAME,
+            service_type=self.SERVICE_TYPE,
+            is_healthy=True,
+            response_time_ms=self.RESPONSE_TIME_MS,
+            redis_version=self.REDIS_VERSION,
+            memory_usage=self.MEMORY_USAGE,
+            connected_clients=self.CONNECTED_CLIENTS,
+        )
+
+    @pytest.fixture
+    def mock_cache_service(self):
+        """Fixture for mocked cache health service."""
+        with patch("apps.ping_app.v1.views.cache_views.CacheHealthService") as mock:
+            mock.check_cache_health = AsyncMock()
+            mock.test_cache_read = AsyncMock()
+            mock.test_cache_write = AsyncMock()
+            yield mock
+
+    @pytest.fixture
+    def mock_log_health_check(self):
+        """Fixture for mocked health check logging."""
+        with patch(
+            "apps.ping_app.v1.views.cache_views.SystemHealthService.log_health_check", new_callable=AsyncMock
+        ) as mock:
+            yield mock
+
+    def _assert_common_response_structure(self, response_data):
+        """Assert common response structure exists."""
+        assert "data" in response_data
+        assert "trace_id" in response_data
+        assert "error" in response_data
+
+    def _assert_redis_data_fields(self, response_data, is_healthy=True, error_message=None):
+        """Assert common Redis data fields in response."""
+        expected_data = {
+            "is_healthy": is_healthy,
+            "response_time_ms": self.RESPONSE_TIME_MS,
+            "error_message": error_message,
+            "redis_version": self.REDIS_VERSION,
+            "memory_usage": self.MEMORY_USAGE,
+            "connected_clients": int(self.CONNECTED_CLIENTS),
+            "uptime_in_seconds": None,
+            "total_commands_processed": None,
+            "evicted_keys": None,
+            "keyspace_hits": None,
+            "keyspace_misses": None,
+            "role": None,
+        }
+        assert response_data["data"] == expected_data
+
+    def _assert_logging_calls(self, logger_mock, success=True, error_message=None):
+        """Assert appropriate logging calls were made."""
+        expected_calls = [call.info("Pinging cache service")]
+
+        if success:
+            expected_calls.append(
+                call.info(f"Cache ping successful - Response time: {self.RESPONSE_TIME_MS:.2f}ms")
+            )
+        else:
+            expected_calls.append(call.warning(f"Cache ping failed - {error_message}"))
+
+        assert logger_mock.mock_calls == expected_calls
+
+    def _assert_service_calls(self, cache_service, check_called=True, read_called=True, write_called=True):
+        """Assert cache service methods were called as expected."""
+        if check_called:
+            cache_service.check_cache_health.assert_called_once()
+        else:
+            cache_service.check_cache_health.assert_not_called()
+
+        if read_called:
+            cache_service.test_cache_read.assert_called_once()
+        else:
+            cache_service.test_cache_read.assert_not_called()
+
+        if write_called:
+            cache_service.test_cache_write.assert_called_once()
+        else:
+            cache_service.test_cache_write.assert_not_called()
+
+    async def _call_ping_cache_and_parse_response(self, mock_request):
+        """Helper to call ping_cache and parse JSON response."""
+        response = await ping_cache(mock_request)
+        return json.loads(response.content), response
+
+    class TestSuccessfulScenarios:
+        """Test successful cache ping scenarios."""
+
+        async def test_ping_cache_successful(
+            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
+        ):
+            """Test successful cache ping with all operations working."""
+            # Setup
+            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
+            mock_cache_service.test_cache_read.return_value = (True, None)
+            mock_cache_service.test_cache_write.return_value = (True, None)
+
+            # Execute
+            response_data, _ = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
+                mock_request
+            )
+
+            # Assert
+            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
+            TestCacheViewsPingCache()._assert_redis_data_fields(
+                response_data, is_healthy=True, error_message=None
+            )
+
+            # Verify logging
+            TestCacheViewsPingCache()._assert_logging_calls(mock_request.logger, success=True)
+
+            # Verify service calls
+            TestCacheViewsPingCache()._assert_service_calls(mock_cache_service)
+
+    class TestPartialFailures:
+        """Test scenarios where some cache operations fail."""
+
+        async def test_ping_cache_read_failure(
+            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
+        ):
+            """Test cache ping when read operation fails."""
+            # Setup
+            read_error = "Unable to read to cache"
+            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
+            mock_cache_service.test_cache_read.return_value = (False, read_error)
+            mock_cache_service.test_cache_write.return_value = (True, None)
+
+            # Execute
+            response_data, _ = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
+                mock_request
+            )
+
+            # Assert
+            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
+            TestCacheViewsPingCache()._assert_redis_data_fields(
+                response_data, is_healthy=False, error_message=f"Read test failed: {read_error}"
+            )
+            TestCacheViewsPingCache()._assert_logging_calls(
+                mock_request.logger, success=False, error_message=f"Read test failed: {read_error}"
+            )
+
+        async def test_ping_cache_write_failure(
+            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
+        ):
+            """Test cache ping when write operation fails."""
+            # Setup
+            write_error = "Unable to write to cache"
+            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
+            mock_cache_service.test_cache_read.return_value = (True, None)
+            mock_cache_service.test_cache_write.return_value = (False, write_error)
+
+            # Execute
+            response_data, _ = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
+                mock_request
+            )
+
+            # Assert
+            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
+            TestCacheViewsPingCache()._assert_redis_data_fields(
+                response_data, is_healthy=False, error_message=f"Write test failed: {write_error}"
+            )
+            TestCacheViewsPingCache()._assert_logging_calls(
+                mock_request.logger, success=False, error_message=f"Write test failed: {write_error}"
+            )
+
+        async def test_ping_cache_read_and_write_failure(
+            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
+        ):
+            """Test cache ping when both read and write operations fail."""
+            # Setup
+            read_error = "Unable to read to cache"
+            write_error = "Unable to write to cache"
+            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
+            mock_cache_service.test_cache_read.return_value = (False, read_error)
+            mock_cache_service.test_cache_write.return_value = (False, write_error)
+
+            # Execute
+            response_data, _ = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
+                mock_request
+            )
+
+            # Assert
+            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
+            expected_error = f"Read test failed: {read_error} Write test failed: {write_error}"
+            TestCacheViewsPingCache()._assert_redis_data_fields(
+                response_data, is_healthy=False, error_message=expected_error
+            )
+            TestCacheViewsPingCache()._assert_logging_calls(
+                mock_request.logger, success=False, error_message=expected_error
+            )
+
+    class TestExceptionScenarios:
+        """Test scenarios where exceptions are raised."""
+
+        async def test_ping_cache_health_check_exception(
+            self, mock_request, mock_cache_service, mock_log_health_check
+        ):
+            """Test cache ping when health check throws an exception."""
+            # Setup
+            error_message = "Health check failed"
+            mock_cache_service.check_cache_health.side_effect = Exception(error_message)
+
+            # Execute
+            response_data, response = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
+                mock_request
+            )
+
+            # Assert
+            assert response.status_code == 400
+            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
+            assert response_data["data"] == {}
+            assert response_data["error"] == {"message": "Cache ping failed", "details": error_message}
+
+            # Verify logging
+            expected_calls = [
+                call.info("Pinging cache service"),
+                call.exception(f"Error pinging cache service: {error_message}"),
+            ]
+            assert mock_request.logger.mock_calls == expected_calls
+
+            # Verify service calls
+            TestCacheViewsPingCache()._assert_service_calls(
+                mock_cache_service, check_called=True, read_called=False, write_called=False
+            )
+            mock_log_health_check.assert_not_called()
+
+        async def test_ping_cache_read_exception(
+            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
+        ):
+            """Test cache ping when read test throws an exception."""
+            # Setup
+            error_message = "Read error"
+            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
+            mock_cache_service.test_cache_read.side_effect = Exception(error_message)
+
+            # Execute
+            response_data, response = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
+                mock_request
+            )
+
+            # Assert
+            assert response.status_code == 400
+            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
+            assert response_data["data"] == {}
+            assert response_data["error"] == {"message": "Cache ping failed", "details": error_message}
+
+            # Verify logging and service calls
+            expected_log_calls = [
+                call.info("Pinging cache service"),
+                call.exception(f"Error pinging cache service: {error_message}"),
+            ]
+            assert mock_request.logger.mock_calls == expected_log_calls
+
+            TestCacheViewsPingCache()._assert_service_calls(
+                mock_cache_service, check_called=True, read_called=True, write_called=False
+            )
+            mock_log_health_check.assert_not_called()
+
+        async def test_ping_cache_write_exception(
+            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
+        ):
+            """Test cache ping when write test throws an exception."""
+            # Setup
+            error_message = "Write error"
+            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
+            mock_cache_service.test_cache_read.return_value = (True, None)
+            mock_cache_service.test_cache_write.side_effect = Exception(error_message)
+
+            # Execute
+            response_data, response = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
+                mock_request
+            )
+
+            # Assert
+            assert response.status_code == 400
+            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
+            assert response_data["data"] == {}
+            assert response_data["error"] == {"message": "Cache ping failed", "details": error_message}
+
+            # Verify logging and service calls
+            expected_log_calls = [
+                call.info("Pinging cache service"),
+                call.exception(f"Error pinging cache service: {error_message}"),
+            ]
+            assert mock_request.logger.mock_calls == expected_log_calls
+
+            TestCacheViewsPingCache()._assert_service_calls(mock_cache_service)
+            mock_log_health_check.assert_not_called()
+
+
+@pytest.mark.asyncio
+class TestCacheViewsGetCacheInfo:
+    """Test suite for get_cache_info functionality."""
+
+    # Constants for reusable test data
+    SERVICE_NAME = "Redis"
+    SERVICE_TYPE = "redis"
+    REDIS_VERSION = "1"
+    MEMORY_USAGE = "100m"
+    CONNECTED_CLIENTS = "1"
+    RESPONSE_TIME_MS = 3.0
+
+    @pytest.fixture
+    def mock_request(self):
+        """Mock a minimal Django-Ninja style request."""
+        mock = MagicMock()
+        mock.logger = MagicMock()
+        mock.trace_id = uuid.uuid4()
+        return mock
+
+    @pytest.fixture
+    def healthy_redis_schema(self):
+        """Fixture for a healthy Redis health schema."""
+        return RedisHealthSchema(
+            service_name=self.SERVICE_NAME,
+            service_type=self.SERVICE_TYPE,
+            is_healthy=True,
+            response_time_ms=self.RESPONSE_TIME_MS,
+            redis_version=self.REDIS_VERSION,
+            memory_usage=self.MEMORY_USAGE,
+            connected_clients=self.CONNECTED_CLIENTS,
+        )
+
+    @pytest.fixture
+    def unhealthy_redis_schema(self):
+        """Fixture for an unhealthy Redis health schema."""
+        return RedisHealthSchema(
+            service_name=self.SERVICE_NAME,
+            service_type=self.SERVICE_TYPE,
+            is_healthy=False,
+            response_time_ms=self.RESPONSE_TIME_MS,
+            redis_version=self.REDIS_VERSION,
+            memory_usage=self.MEMORY_USAGE,
+            connected_clients=self.CONNECTED_CLIENTS,
+        )
+
+    @pytest.fixture
+    def mock_cache_service(self):
+        """Fixture for mocked cache health service."""
+        with patch("apps.ping_app.v1.views.cache_views.CacheHealthService") as mock:
+            mock.check_cache_health = AsyncMock()
+            yield mock
+
+    def _assert_basic_response_structure(self, response_data):
+        """Assert common response structure exists."""
+        assert "data" in response_data
+        assert "trace_id" in response_data
+        assert "error" in response_data
+
+    def _assert_successful_response_data(self, response_data, trace_id):
+        """Assert response data for successful cache info retrieval."""
+        expected_data = {
+            "cache_type": "Redis",
+            "is_healthy": True,
+            "response_time_ms": self.RESPONSE_TIME_MS,
+            "server": {
+                "version": self.REDIS_VERSION,
+                "memory_usage": self.MEMORY_USAGE,
+                "connected_clients": int(self.CONNECTED_CLIENTS),
+            },
+            "status": "healthy",
+        }
+        assert response_data["data"] == expected_data
+        assert response_data["trace_id"] == trace_id
+        assert response_data["error"] == {}
+
+    def _assert_error_response_data(self, response_data, trace_id, error_details):
+        """Assert response data for error scenarios."""
+        assert response_data["data"] == {}
+        assert response_data["trace_id"] == trace_id
+        assert response_data["error"] == {
+            "message": "Failed to get cache info",
+            "details": error_details,
+        }
+
+    def _assert_logging_calls(self, logger_mock, success=True, error_details=None):
+        """Assert appropriate logging calls were made."""
+        expected_calls = [call.info("Getting cache service information")]
+
+        if success:
+            expected_calls.append(call.info("Cache info retrieved successfully"))
+        else:
+            expected_calls.append(call.exception(f"Failed to get cache info: {error_details}"))
+
+        assert logger_mock.mock_calls == expected_calls
+
+    async def _call_get_cache_info_and_parse_response(self, mock_request):
+        """Helper to call get_cache_info and parse JSON response."""
+        response = await get_cache_info(mock_request)
+        return json.loads(response.content), response
+
+    class TestSuccessfulScenarios:
+        """Test successful cache info retrieval scenarios."""
+
+        async def test_get_cache_info_success_response(
+            self, mock_request, mock_cache_service, healthy_redis_schema
+        ):
+            """Test successful cache info retrieval when cache is healthy."""
+            # Setup
+            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
+
+            # Execute
+            response_data, response = (
+                await TestCacheViewsGetCacheInfo()._call_get_cache_info_and_parse_response(mock_request)
+            )
+
+            # Assert
+            assert response.status_code == 200
+            TestCacheViewsGetCacheInfo()._assert_basic_response_structure(response_data)
+            TestCacheViewsGetCacheInfo()._assert_successful_response_data(
+                response_data, str(mock_request.trace_id)
+            )
+            TestCacheViewsGetCacheInfo()._assert_logging_calls(mock_request.logger, success=True)
+            mock_cache_service.check_cache_health.assert_called_once()
+
+    class TestErrorScenarios:
+        """Test cache info retrieval error scenarios."""
+
+        async def test_get_cache_info_not_healthy_error_response(
+            self, mock_request, mock_cache_service, unhealthy_redis_schema
+        ):
+            """Test cache info retrieval when cache is not healthy."""
+            # Setup
+            mock_cache_service.check_cache_health.return_value = unhealthy_redis_schema
+
+            # Execute
+            response_data, response = (
+                await TestCacheViewsGetCacheInfo()._call_get_cache_info_and_parse_response(mock_request)
+            )
+
+            # Assert
+            assert response.status_code == 400
+            TestCacheViewsGetCacheInfo()._assert_basic_response_structure(response_data)
+            TestCacheViewsGetCacheInfo()._assert_error_response_data(
+                response_data, str(mock_request.trace_id), "Cache service is not responding"
+            )
+            TestCacheViewsGetCacheInfo()._assert_logging_calls(
+                mock_request.logger, success=False, error_details="Cache service is not responding"
+            )
+            mock_cache_service.check_cache_health.assert_called_once()
+
+        async def test_get_cache_info_cache_exception_error_response(self, mock_request, mock_cache_service):
+            """Test cache info retrieval when cache service raises an exception."""
+            # Setup
+            error_message = "Cache unreachable exception"
+            mock_cache_service.check_cache_health.side_effect = Exception(error_message)
+
+            # Execute
+            response_data, response = (
+                await TestCacheViewsGetCacheInfo()._call_get_cache_info_and_parse_response(mock_request)
+            )
+
+            # Assert
+            assert response.status_code == 400
+            TestCacheViewsGetCacheInfo()._assert_basic_response_structure(response_data)
+            TestCacheViewsGetCacheInfo()._assert_error_response_data(
+                response_data, str(mock_request.trace_id), error_message
+            )
+            TestCacheViewsGetCacheInfo()._assert_logging_calls(
+                mock_request.logger, success=False, error_details=error_message
+            )
+            mock_cache_service.check_cache_health.assert_called_once()
+
+
+# ----------- Repeated Code more readable tests
+
 # import json
 # import uuid
 # from unittest.mock import AsyncMock, call, MagicMock, patch
@@ -560,502 +1061,3 @@
 #         ]
 
 #         mock_cache_health_service.check_cache_health.assert_called_once()
-
-
-# --------- Refactored with SRP Principle ---------------
-import json
-import uuid
-from unittest.mock import AsyncMock, call, MagicMock, patch
-
-import pytest
-
-from apps.ping_app.v1.schemas import RedisHealthSchema
-from apps.ping_app.v1.views.cache_views import get_cache_info, ping_cache
-
-
-@pytest.mark.asyncio
-class TestCacheViewsPingCache:
-    """Test suite for cache ping functionality."""
-
-    # Constants for reusable test data
-    SERVICE_NAME = "Redis"
-    SERVICE_TYPE = "redis"
-    REDIS_VERSION = "1"
-    MEMORY_USAGE = "100m"
-    CONNECTED_CLIENTS = "1"
-    RESPONSE_TIME_MS = 3.0
-
-    @pytest.fixture
-    def mock_request(self):
-        """Mock a minimal Django-Ninja style request."""
-        mock = MagicMock()
-        mock.logger = MagicMock()
-        mock.trace_id = uuid.uuid4()
-        return mock
-
-    @pytest.fixture
-    def healthy_redis_schema(self):
-        """Fixture for a healthy Redis health schema."""
-        return RedisHealthSchema(
-            service_name=self.SERVICE_NAME,
-            service_type=self.SERVICE_TYPE,
-            is_healthy=True,
-            response_time_ms=self.RESPONSE_TIME_MS,
-            redis_version=self.REDIS_VERSION,
-            memory_usage=self.MEMORY_USAGE,
-            connected_clients=self.CONNECTED_CLIENTS,
-        )
-
-    @pytest.fixture
-    def mock_cache_service(self):
-        """Fixture for mocked cache health service."""
-        with patch("apps.ping_app.v1.views.cache_views.CacheHealthService") as mock:
-            mock.check_cache_health = AsyncMock()
-            mock.test_cache_read = AsyncMock()
-            mock.test_cache_write = AsyncMock()
-            yield mock
-
-    @pytest.fixture
-    def mock_log_health_check(self):
-        """Fixture for mocked health check logging."""
-        with patch(
-            "apps.ping_app.v1.views.cache_views.SystemHealthService.log_health_check", new_callable=AsyncMock
-        ) as mock:
-            yield mock
-
-    def _assert_common_response_structure(self, response_data):
-        """Assert common response structure exists."""
-        assert "data" in response_data
-        assert "trace_id" in response_data
-        assert "error" in response_data
-
-    def _assert_redis_data_fields(self, response_data, is_healthy=True, error_message=None):
-        """Assert common Redis data fields in response."""
-        expected_data = {
-            "is_healthy": is_healthy,
-            "response_time_ms": self.RESPONSE_TIME_MS,
-            "error_message": error_message,
-            "redis_version": self.REDIS_VERSION,
-            "memory_usage": self.MEMORY_USAGE,
-            "connected_clients": int(self.CONNECTED_CLIENTS),
-            "uptime_in_seconds": None,
-            "total_commands_processed": None,
-            "evicted_keys": None,
-            "keyspace_hits": None,
-            "keyspace_misses": None,
-            "role": None,
-        }
-        assert response_data["data"] == expected_data
-
-    def _assert_logging_calls(self, logger_mock, success=True, error_message=None):
-        """Assert appropriate logging calls were made."""
-        expected_calls = [call.info("Pinging cache service")]
-
-        if success:
-            expected_calls.append(
-                call.info(f"Cache ping successful - Response time: {self.RESPONSE_TIME_MS:.2f}ms")
-            )
-        else:
-            expected_calls.append(call.warning(f"Cache ping failed - {error_message}"))
-
-        assert logger_mock.mock_calls == expected_calls
-
-    def _assert_service_calls(self, cache_service, check_called=True, read_called=True, write_called=True):
-        """Assert cache service methods were called as expected."""
-        if check_called:
-            cache_service.check_cache_health.assert_called_once()
-        else:
-            cache_service.check_cache_health.assert_not_called()
-
-        if read_called:
-            cache_service.test_cache_read.assert_called_once()
-        else:
-            cache_service.test_cache_read.assert_not_called()
-
-        if write_called:
-            cache_service.test_cache_write.assert_called_once()
-        else:
-            cache_service.test_cache_write.assert_not_called()
-
-    async def _call_ping_cache_and_parse_response(self, mock_request):
-        """Helper to call ping_cache and parse JSON response."""
-        response = await ping_cache(mock_request)
-        return json.loads(response.content), response
-
-    class TestSuccessfulScenarios:
-        """Test successful cache ping scenarios."""
-
-        async def test_ping_cache_successful(
-            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
-        ):
-            """Test successful cache ping with all operations working."""
-            # Setup
-            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
-            mock_cache_service.test_cache_read.return_value = (True, None)
-            mock_cache_service.test_cache_write.return_value = (True, None)
-
-            # Execute
-            response_data, _ = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
-                mock_request
-            )
-
-            # Assert
-            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
-            TestCacheViewsPingCache()._assert_redis_data_fields(
-                response_data, is_healthy=True, error_message=None
-            )
-
-            # Verify logging
-            TestCacheViewsPingCache()._assert_logging_calls(mock_request.logger, success=True)
-
-            # Verify service calls
-            TestCacheViewsPingCache()._assert_service_calls(mock_cache_service)
-
-    class TestPartialFailures:
-        """Test scenarios where some cache operations fail."""
-
-        async def test_ping_cache_read_failure(
-            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
-        ):
-            """Test cache ping when read operation fails."""
-            # Setup
-            read_error = "Unable to read to cache"
-            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
-            mock_cache_service.test_cache_read.return_value = (False, read_error)
-            mock_cache_service.test_cache_write.return_value = (True, None)
-
-            # Execute
-            response_data, _ = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
-                mock_request
-            )
-
-            # Assert
-            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
-            TestCacheViewsPingCache()._assert_redis_data_fields(
-                response_data, is_healthy=False, error_message=f"Read test failed: {read_error}"
-            )
-            TestCacheViewsPingCache()._assert_logging_calls(
-                mock_request.logger, success=False, error_message=f"Read test failed: {read_error}"
-            )
-
-        async def test_ping_cache_write_failure(
-            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
-        ):
-            """Test cache ping when write operation fails."""
-            # Setup
-            write_error = "Unable to write to cache"
-            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
-            mock_cache_service.test_cache_read.return_value = (True, None)
-            mock_cache_service.test_cache_write.return_value = (False, write_error)
-
-            # Execute
-            response_data, _ = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
-                mock_request
-            )
-
-            # Assert
-            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
-            TestCacheViewsPingCache()._assert_redis_data_fields(
-                response_data, is_healthy=False, error_message=f"Write test failed: {write_error}"
-            )
-            TestCacheViewsPingCache()._assert_logging_calls(
-                mock_request.logger, success=False, error_message=f"Write test failed: {write_error}"
-            )
-
-        async def test_ping_cache_read_and_write_failure(
-            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
-        ):
-            """Test cache ping when both read and write operations fail."""
-            # Setup
-            read_error = "Unable to read to cache"
-            write_error = "Unable to write to cache"
-            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
-            mock_cache_service.test_cache_read.return_value = (False, read_error)
-            mock_cache_service.test_cache_write.return_value = (False, write_error)
-
-            # Execute
-            response_data, _ = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
-                mock_request
-            )
-
-            # Assert
-            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
-            expected_error = f"Read test failed: {read_error} Write test failed: {write_error}"
-            TestCacheViewsPingCache()._assert_redis_data_fields(
-                response_data, is_healthy=False, error_message=expected_error
-            )
-            TestCacheViewsPingCache()._assert_logging_calls(
-                mock_request.logger, success=False, error_message=expected_error
-            )
-
-    class TestExceptionScenarios:
-        """Test scenarios where exceptions are raised."""
-
-        async def test_ping_cache_health_check_exception(
-            self, mock_request, mock_cache_service, mock_log_health_check
-        ):
-            """Test cache ping when health check throws an exception."""
-            # Setup
-            error_message = "Health check failed"
-            mock_cache_service.check_cache_health.side_effect = Exception(error_message)
-
-            # Execute
-            response_data, response = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
-                mock_request
-            )
-
-            # Assert
-            assert response.status_code == 400
-            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
-            assert response_data["data"] == {}
-            assert response_data["error"] == {"message": "Cache ping failed", "details": error_message}
-
-            # Verify logging
-            expected_calls = [
-                call.info("Pinging cache service"),
-                call.exception(f"Error pinging cache service: {error_message}"),
-            ]
-            assert mock_request.logger.mock_calls == expected_calls
-
-            # Verify service calls
-            TestCacheViewsPingCache()._assert_service_calls(
-                mock_cache_service, check_called=True, read_called=False, write_called=False
-            )
-            mock_log_health_check.assert_not_called()
-
-        async def test_ping_cache_read_exception(
-            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
-        ):
-            """Test cache ping when read test throws an exception."""
-            # Setup
-            error_message = "Read error"
-            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
-            mock_cache_service.test_cache_read.side_effect = Exception(error_message)
-
-            # Execute
-            response_data, response = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
-                mock_request
-            )
-
-            # Assert
-            assert response.status_code == 400
-            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
-            assert response_data["data"] == {}
-            assert response_data["error"] == {"message": "Cache ping failed", "details": error_message}
-
-            # Verify logging and service calls
-            expected_log_calls = [
-                call.info("Pinging cache service"),
-                call.exception(f"Error pinging cache service: {error_message}"),
-            ]
-            assert mock_request.logger.mock_calls == expected_log_calls
-
-            TestCacheViewsPingCache()._assert_service_calls(
-                mock_cache_service, check_called=True, read_called=True, write_called=False
-            )
-            mock_log_health_check.assert_not_called()
-
-        async def test_ping_cache_write_exception(
-            self, mock_request, mock_cache_service, mock_log_health_check, healthy_redis_schema
-        ):
-            """Test cache ping when write test throws an exception."""
-            # Setup
-            error_message = "Write error"
-            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
-            mock_cache_service.test_cache_read.return_value = (True, None)
-            mock_cache_service.test_cache_write.side_effect = Exception(error_message)
-
-            # Execute
-            response_data, response = await TestCacheViewsPingCache()._call_ping_cache_and_parse_response(
-                mock_request
-            )
-
-            # Assert
-            assert response.status_code == 400
-            TestCacheViewsPingCache()._assert_common_response_structure(response_data)
-            assert response_data["data"] == {}
-            assert response_data["error"] == {"message": "Cache ping failed", "details": error_message}
-
-            # Verify logging and service calls
-            expected_log_calls = [
-                call.info("Pinging cache service"),
-                call.exception(f"Error pinging cache service: {error_message}"),
-            ]
-            assert mock_request.logger.mock_calls == expected_log_calls
-
-            TestCacheViewsPingCache()._assert_service_calls(mock_cache_service)
-            mock_log_health_check.assert_not_called()
-
-
-@pytest.mark.asyncio
-class TestCacheViewsGetCacheInfo:
-    """Test suite for get_cache_info functionality."""
-
-    # Constants for reusable test data
-    SERVICE_NAME = "Redis"
-    SERVICE_TYPE = "redis"
-    REDIS_VERSION = "1"
-    MEMORY_USAGE = "100m"
-    CONNECTED_CLIENTS = "1"
-    RESPONSE_TIME_MS = 3.0
-
-    @pytest.fixture
-    def mock_request(self):
-        """Mock a minimal Django-Ninja style request."""
-        mock = MagicMock()
-        mock.logger = MagicMock()
-        mock.trace_id = uuid.uuid4()
-        return mock
-
-    @pytest.fixture
-    def healthy_redis_schema(self):
-        """Fixture for a healthy Redis health schema."""
-        return RedisHealthSchema(
-            service_name=self.SERVICE_NAME,
-            service_type=self.SERVICE_TYPE,
-            is_healthy=True,
-            response_time_ms=self.RESPONSE_TIME_MS,
-            redis_version=self.REDIS_VERSION,
-            memory_usage=self.MEMORY_USAGE,
-            connected_clients=self.CONNECTED_CLIENTS,
-        )
-
-    @pytest.fixture
-    def unhealthy_redis_schema(self):
-        """Fixture for an unhealthy Redis health schema."""
-        return RedisHealthSchema(
-            service_name=self.SERVICE_NAME,
-            service_type=self.SERVICE_TYPE,
-            is_healthy=False,
-            response_time_ms=self.RESPONSE_TIME_MS,
-            redis_version=self.REDIS_VERSION,
-            memory_usage=self.MEMORY_USAGE,
-            connected_clients=self.CONNECTED_CLIENTS,
-        )
-
-    @pytest.fixture
-    def mock_cache_service(self):
-        """Fixture for mocked cache health service."""
-        with patch("apps.ping_app.v1.views.cache_views.CacheHealthService") as mock:
-            mock.check_cache_health = AsyncMock()
-            yield mock
-
-    def _assert_basic_response_structure(self, response_data):
-        """Assert common response structure exists."""
-        assert "data" in response_data
-        assert "trace_id" in response_data
-        assert "error" in response_data
-
-    def _assert_successful_response_data(self, response_data, trace_id):
-        """Assert response data for successful cache info retrieval."""
-        expected_data = {
-            "cache_type": "Redis",
-            "is_healthy": True,
-            "response_time_ms": self.RESPONSE_TIME_MS,
-            "server": {
-                "version": self.REDIS_VERSION,
-                "memory_usage": self.MEMORY_USAGE,
-                "connected_clients": int(self.CONNECTED_CLIENTS),
-            },
-            "status": "healthy",
-        }
-        assert response_data["data"] == expected_data
-        assert response_data["trace_id"] == trace_id
-        assert response_data["error"] == {}
-
-    def _assert_error_response_data(self, response_data, trace_id, error_details):
-        """Assert response data for error scenarios."""
-        assert response_data["data"] == {}
-        assert response_data["trace_id"] == trace_id
-        assert response_data["error"] == {
-            "message": "Failed to get cache info",
-            "details": error_details,
-        }
-
-    def _assert_logging_calls(self, logger_mock, success=True, error_details=None):
-        """Assert appropriate logging calls were made."""
-        expected_calls = [call.info("Getting cache service information")]
-
-        if success:
-            expected_calls.append(call.info("Cache info retrieved successfully"))
-        else:
-            expected_calls.append(call.exception(f"Failed to get cache info: {error_details}"))
-
-        assert logger_mock.mock_calls == expected_calls
-
-    async def _call_get_cache_info_and_parse_response(self, mock_request):
-        """Helper to call get_cache_info and parse JSON response."""
-        response = await get_cache_info(mock_request)
-        return json.loads(response.content), response
-
-    class TestSuccessfulScenarios:
-        """Test successful cache info retrieval scenarios."""
-
-        async def test_get_cache_info_success_response(
-            self, mock_request, mock_cache_service, healthy_redis_schema
-        ):
-            """Test successful cache info retrieval when cache is healthy."""
-            # Setup
-            mock_cache_service.check_cache_health.return_value = healthy_redis_schema
-
-            # Execute
-            response_data, response = (
-                await TestCacheViewsGetCacheInfo()._call_get_cache_info_and_parse_response(mock_request)
-            )
-
-            # Assert
-            assert response.status_code == 200
-            TestCacheViewsGetCacheInfo()._assert_basic_response_structure(response_data)
-            TestCacheViewsGetCacheInfo()._assert_successful_response_data(
-                response_data, str(mock_request.trace_id)
-            )
-            TestCacheViewsGetCacheInfo()._assert_logging_calls(mock_request.logger, success=True)
-            mock_cache_service.check_cache_health.assert_called_once()
-
-    class TestErrorScenarios:
-        """Test cache info retrieval error scenarios."""
-
-        async def test_get_cache_info_not_healthy_error_response(
-            self, mock_request, mock_cache_service, unhealthy_redis_schema
-        ):
-            """Test cache info retrieval when cache is not healthy."""
-            # Setup
-            mock_cache_service.check_cache_health.return_value = unhealthy_redis_schema
-
-            # Execute
-            response_data, response = (
-                await TestCacheViewsGetCacheInfo()._call_get_cache_info_and_parse_response(mock_request)
-            )
-
-            # Assert
-            assert response.status_code == 400
-            TestCacheViewsGetCacheInfo()._assert_basic_response_structure(response_data)
-            TestCacheViewsGetCacheInfo()._assert_error_response_data(
-                response_data, str(mock_request.trace_id), "Cache service is not responding"
-            )
-            TestCacheViewsGetCacheInfo()._assert_logging_calls(
-                mock_request.logger, success=False, error_details="Cache service is not responding"
-            )
-            mock_cache_service.check_cache_health.assert_called_once()
-
-        async def test_get_cache_info_cache_exception_error_response(self, mock_request, mock_cache_service):
-            """Test cache info retrieval when cache service raises an exception."""
-            # Setup
-            error_message = "Cache unreachable exception"
-            mock_cache_service.check_cache_health.side_effect = Exception(error_message)
-
-            # Execute
-            response_data, response = (
-                await TestCacheViewsGetCacheInfo()._call_get_cache_info_and_parse_response(mock_request)
-            )
-
-            # Assert
-            assert response.status_code == 400
-            TestCacheViewsGetCacheInfo()._assert_basic_response_structure(response_data)
-            TestCacheViewsGetCacheInfo()._assert_error_response_data(
-                response_data, str(mock_request.trace_id), error_message
-            )
-            TestCacheViewsGetCacheInfo()._assert_logging_calls(
-                mock_request.logger, success=False, error_details=error_message
-            )
-            mock_cache_service.check_cache_health.assert_called_once()
