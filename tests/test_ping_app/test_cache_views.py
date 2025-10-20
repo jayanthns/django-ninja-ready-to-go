@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, call, MagicMock, patch
 import pytest
 
 from apps.ping_app.v1.schemas import RedisHealthSchema
-from apps.ping_app.v1.views.cache_views import get_cache_info, get_cache_keys, ping_cache
+from apps.ping_app.v1.views.cache_views import get_cache_info, get_cache_keys, ping_cache, test_cache_write
 
 
 @pytest.mark.asyncio
@@ -1373,3 +1373,99 @@ class TestCacheViewsGetCacheKeys:
         mock_cache.client.get_client.assert_not_called()
         mock_client.client.get_connection.assert_not_called()
         mock_connection.keys.assert_not_called()
+
+
+@pytest.mark.asyncio
+class TestCacheViewsCacheWrite:
+    @pytest.fixture
+    def mock_request(self):
+        """Mock a minimal Django-Ninja style request."""
+        mock = MagicMock()
+        mock.logger = MagicMock()
+        mock.trace_id = uuid.uuid4()
+        return mock
+
+    def _assert_basic_response_data(self, response_data):
+        assert "data" in response_data
+        assert "trace_id" in response_data
+        assert "error" in response_data
+
+    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_write", new_callable=AsyncMock)
+    async def test_cache_write_success_response(self, mock_test_cache_write, mock_request):
+
+        mock_test_cache_write.return_value = (True, None)
+
+        response = await test_cache_write(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 200
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {
+            "success": True,
+            "error_message": None,
+            "timestamp": str(mock_request.trace_id),
+        }
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {}
+
+        mock_test_cache_write.assert_called_once()
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Testing cache write permissions"),
+            call.info("Cache write test passed"),
+        ]
+
+    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_write", new_callable=AsyncMock)
+    async def test_cache_write_failed_error_response(self, mock_test_cache_write, mock_request):
+
+        mock_test_cache_write.return_value = (False, "Cache write error")
+
+        response = await test_cache_write(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 400
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {
+            "success": False,
+            "error_message": "Cache write error",
+            "timestamp": str(mock_request.trace_id),
+        }
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {}
+
+        mock_test_cache_write.assert_called_once()
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Testing cache write permissions"),
+            call.warning("Cache write test failed - Cache write error"),
+        ]
+
+    @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_write", new_callable=AsyncMock)
+    async def test_cache_write_exception_error_response(self, mock_test_cache_write, mock_request):
+
+        mock_test_cache_write.side_effect = AsyncMock(side_effect=Exception("Cache write exception"))
+
+        response = await test_cache_write(mock_request)
+
+        response_data = json.loads(response.content)
+
+        assert response.status_code == 400
+        self._assert_basic_response_data(response_data)
+
+        assert response_data["data"] == {}
+        assert response_data["trace_id"] == str(mock_request.trace_id)
+        assert response_data["error"] == {
+            "message": "Error testing cache write permissions",
+            "details": "Cache write exception",
+        }
+
+        mock_test_cache_write.assert_called_once()
+
+        assert mock_request.logger.mock_calls == [
+            call.info("Testing cache write permissions"),
+            call.exception("Error testing cache write permissions: Cache write exception"),
+        ]

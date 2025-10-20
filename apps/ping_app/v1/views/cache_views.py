@@ -249,15 +249,28 @@ async def test_cache_write(request):
         else:
             request.logger.warning(f"Cache write test failed - {error_message}")
 
-        return {
-            "data": result,
-            "trace_id": str(request.trace_id),
-            "error": {},
-        }
+        return Response(
+            {
+                "data": result,
+                "trace_id": str(request.trace_id),
+                "error": {},
+            },
+            status=200 if success else 400,
+        )
 
     except Exception as e:
         request.logger.exception(f"Error testing cache write permissions: {e}")
-        raise
+        return Response(
+            {
+                "data": {},
+                "trace_id": str(request.trace_id),
+                "error": {
+                    "message": "Error testing cache write permissions",
+                    "details": str(e),
+                },
+            },
+            status=400,
+        )
 
 
 @router.post("/test-read/", response=create_api_response_schema(Dict[str, Any]))
@@ -279,12 +292,24 @@ async def test_cache_read(request):
         else:
             request.logger.warning(f"Cache read test failed - {error_message}")
 
-        return {
-            "data": result,
-            "trace_id": str(request.trace_id),
-            "error": {},
-        }
+        return Response(
+            {
+                "data": result,
+                "trace_id": str(request.trace_id),
+                "error": {},
+            }
+        )
 
     except Exception as e:
         request.logger.exception(f"Error testing cache read permissions: {e}")
-        raise
+        return Response(
+            {
+                "data": {},
+                "trace_id": str(request.trace_id),
+                "error": {
+                    "message": "Error testing cache read permissions",
+                    "details": str(e),
+                },
+            },
+            status=400,
+        )
