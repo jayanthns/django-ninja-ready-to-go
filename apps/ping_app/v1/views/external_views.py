@@ -5,6 +5,7 @@ External endpoint pinging and monitoring endpoints.
 from typing import Any, Dict, List
 
 from ninja import Router
+from ninja.responses import Response
 
 from common.base_schemas import create_api_response_schema
 
@@ -19,11 +20,13 @@ async def ping_external(request):
     """Basic ping endpoint to test external ping service connectivity."""
     request.logger.info("Basic external ping endpoint accessed")
 
-    return {
-        "data": {"message": "external ping service ready", "status": "healthy"},
-        "trace_id": str(request.trace_id),
-        "error": {},
-    }
+    return Response(
+        {
+            "data": {"message": "external ping service ready", "status": "healthy"},
+            "trace_id": str(request.trace_id),
+            "error": {},
+        }
+    )
 
 
 @router.post("/endpoint/", response=create_api_response_schema(PingResponseSchema))
