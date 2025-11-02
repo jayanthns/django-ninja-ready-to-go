@@ -35,6 +35,8 @@ exclude_also = [
     "if __name__ == .__main__.:",
     "raise NotImplementedError",
     "if False:",
+    "def __str__",
+    "pragma: no cover",
 ]
 
 [tool.coverage.html]
