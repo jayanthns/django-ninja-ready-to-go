@@ -1,6 +1,6 @@
 import pytest
 
-from common.logger_helper import LoggerAdapter
+from common.logger_helper import LoggerAdapter, LoggerHelper
 from main.settings import logging
 
 
@@ -120,3 +120,114 @@ class TestLoggerAdapter:
         assert current_context["trace_id"] == "trace123"
         assert current_context["correlation_id"] == "corr456"
         assert current_context["user_id"] == "user789"
+
+
+@pytest.mark.asyncio
+class TestLoggerHelper:
+
+    # --------------- Tests for LoggerHelper singleton behavior ---------------
+
+    async def test_logger_helper_always_singleton_instance(self):
+        helper1 = LoggerHelper()
+        helper2 = LoggerHelper()
+        assert helper1 is helper2
+
+    # --------------- Tests for create_logger_adapter method ---------------
+
+    async def test_create_logger_adapter_creates_instance_with_provided_params(self):
+        helper = LoggerHelper()
+        trace_id = "trace123"
+        correlation_id = "corr456"
+        logger_name = "test_logger"
+        context = {"user_id": "user789"}
+
+        logger_adapter = helper.create_logger_adapter(
+            trace_id=trace_id,
+            correlation_id=correlation_id,
+            logger_name=logger_name,
+            **context,
+        )
+
+        assert isinstance(logger_adapter, LoggerAdapter)
+        assert logger_adapter.trace_id == trace_id
+        assert logger_adapter.correlation_id == correlation_id
+        assert logger_adapter.context["user_id"] == "user789"
+
+    # --------------- Tests for get_current_logger method ---------------
+
+    async def test_get_current_logger_returns_none_when_no_logger_set(self):
+        helper = LoggerHelper()
+        helper.clear_logger()  # Ensure no logger is set
+        current_logger = helper.get_current_logger()
+        assert current_logger is None
+
+    async def test_get_current_logger_returns_set_logger_adapter(self):
+        helper = LoggerHelper()
+        trace_id = "trace123"
+
+        logger_adapter = helper.create_logger_adapter(trace_id=trace_id)
+
+        current_logger = helper.get_current_logger()
+        assert current_logger is logger_adapter
+
+    # --------------- Tests for clear_logger method ---------------
+    async def test_clear_logger_removes_current_logger(self):
+        helper = LoggerHelper()
+        trace_id = "trace123"
+
+        logger_adapter = helper.create_logger_adapter(trace_id=trace_id)
+
+        # Ensure logger is set
+        current_logger = helper.get_current_logger()
+        assert current_logger is logger_adapter
+
+        # Clear the logger
+        helper.clear_logger()
+
+        # Ensure logger is cleared
+        current_logger = helper.get_current_logger()
+        assert current_logger is None
+
+    # --------------- Tests for get_logger_with_trace method ---------------
+    async def test_get_logger_with_trace_returns_existing_logger_if_trace_id_matches(self):
+        helper = LoggerHelper()
+        trace_id = "trace123"
+        context = {"user_id": "user789"}
+
+        logger_adapter = helper.create_logger_adapter(trace_id=trace_id, **context)
+
+        # Retrieve logger with same trace_id
+        retrieved_logger = helper.get_logger_with_trace(trace_id=trace_id)
+
+        assert retrieved_logger is logger_adapter
+
+    async def test_get_logger_with_trace_creates_new_logger_if_trace_id_differs(self):
+        helper = LoggerHelper()
+        trace_id1 = "trace123"
+        trace_id2 = "trace456"
+        context1 = {"user_id": "user789"}
+        context2 = {"user_id": "user000"}
+
+        logger_adapter1 = helper.create_logger_adapter(trace_id=trace_id1, **context1)
+
+        # Retrieve logger with different trace_id
+        retrieved_logger = helper.get_logger_with_trace(trace_id=trace_id2, **context2)
+
+        assert retrieved_logger is not logger_adapter1
+        assert retrieved_logger.trace_id == trace_id2
+        assert retrieved_logger.context["user_id"] == "user000"
+
+    async def test_get_logger_with_trace_updates_context_of_existing_logger(self):
+        helper = LoggerHelper()
+        trace_id = "trace123"
+        initial_context = {"user_id": "user789"}
+
+        logger_adapter = helper.create_logger_adapter(trace_id=trace_id, **initial_context)
+
+        # New context to update
+        new_context = {"extra_id": "corr456"}
+
+        # Retrieve logger with same trace_id but new context
+        retrieved_logger = helper.get_logger_with_trace(trace_id=trace_id, **new_context)
+        assert retrieved_logger is logger_adapter
+        assert retrieved_logger.context["extra_id"] == "corr456"
