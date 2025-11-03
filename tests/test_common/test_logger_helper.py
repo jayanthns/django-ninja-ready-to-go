@@ -231,3 +231,23 @@ class TestLoggerHelper:
         retrieved_logger = helper.get_logger_with_trace(trace_id=trace_id, **new_context)
         assert retrieved_logger is logger_adapter
         assert retrieved_logger.context["extra_id"] == "corr456"
+
+
+@pytest.mark.asyncio
+class TestGetRequestLogger:
+
+    async def test_get_request_logger_returns_none_when_no_logger_set(self):
+        from common.logger_helper import get_request_logger, logger_helper
+
+        logger_helper.clear_logger()  # Ensure no logger is set
+        current_logger = get_request_logger()
+        assert current_logger is None
+
+    async def test_get_request_logger_returns_current_logger_adapter(self):
+        from common.logger_helper import get_request_logger, logger_helper
+
+        trace_id = "trace123"
+        logger_adapter = logger_helper.create_logger_adapter(trace_id=trace_id)
+
+        current_logger = get_request_logger()
+        assert current_logger is logger_adapter
