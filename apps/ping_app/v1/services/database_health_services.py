@@ -104,7 +104,7 @@ class DatabaseHealthService:
         """
         try:
             # Try to read from SystemHealth table
-            count = await SystemHealth.objects.acount()
+            _ = await SystemHealth.objects.acount()
             return True, None
 
         except Exception as e:
