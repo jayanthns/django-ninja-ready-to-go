@@ -72,6 +72,37 @@ class TestDatabaseHealthService:
         assert result.response_time_ms == pytest.approx((1000.2 - 1000.0) * 1000, rel=1e-3)
         mock_connection.cursor.assert_called_once()
 
+    @patch("apps.ping_app.v1.services.database_health_services.connection")
+    @patch("apps.ping_app.v1.services.database_health_services.time")
+    async def test_check_database_health_count_query_raises_is_handled(
+        self, mock_time, mock_connection
+    ) -> None:
+        mock_time.time.side_effect = [1000.0, 1000.12]
+
+        # Simulate successful SELECT 1 and current_database(), but fail the
+        # pg_stat_activity count query (should be swallowed by inner except)
+        cursor = MagicMock()
+        # execute called three times: SELECT 1, SELECT current_database(), SELECT count(*) ...
+        cursor.execute.side_effect = [None, None, Exception("not postgres")]
+        cursor.fetchone.side_effect = [(1,), ("mydb",), None]
+
+        cm = MagicMock()
+        cm.__enter__.return_value = cursor
+        cm.__exit__.return_value = None
+
+        mock_connection.cursor.return_value = cm
+
+        result = await DatabaseHealthService.check_database_health()
+
+        # The count query failed but was swallowed; database_name should be set,
+        # connection_count remains None, and overall health is True
+        assert result.is_healthy is True
+        assert result.error_message is None
+        assert result.database_name == "mydb"
+        assert result.connection_count is None
+        assert result.response_time_ms == pytest.approx((1000.12 - 1000.0) * 1000, rel=1e-3)
+        mock_connection.cursor.assert_called_once()
+
     @patch("apps.ping_app.v1.services.database_health_services.SystemHealth")
     async def test_test_database_write_success(self, mock_system_health) -> None:
         # Mock the model manager create and returned instance
