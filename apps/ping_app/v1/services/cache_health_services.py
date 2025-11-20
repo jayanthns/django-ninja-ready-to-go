@@ -38,14 +38,14 @@ class CacheHealthService:
             test_value = f"test_{int(time.time())}"
 
             # Test write
-            await sync_to_async(cache.set)(test_key, test_value, timeout=10)
+            await cache.aset(test_key, test_value, timeout=10)
             # Test read
-            retrieved_value = await sync_to_async(cache.get)(test_key)
+            retrieved_value = await cache.aget(test_key)
 
             if retrieved_value != test_value:
                 error_message = "Cache read/write test failed - value mismatch"
             else:
-                await sync_to_async(cache.delete)(test_key)
+                await cache.adelete(test_key)
 
                 # Only try Redis info if backend is Redis
                 if backend_type:
@@ -67,7 +67,7 @@ class CacheHealthService:
                     except Exception as e:
                         print(f"Error getting Redis info: {e}")
                         # skip info retrieval if not redis or unsupported
-                        pass
+                        error_message = f"Failed to retrieve Redis info: {str(e)}"
 
         except Exception as e:
             error_message = f"Cache connection failed: {str(e)}"
@@ -105,13 +105,13 @@ class CacheHealthService:
             test_key = f"write_test_{int(time.time())}"
             test_value = "test_value"
 
-            await sync_to_async(cache.set)(test_key, test_value, timeout=60)
-            retrieved_value = await sync_to_async(cache.get)(test_key)
+            await cache.aset(test_key, test_value, timeout=60)
+            retrieved_value = await cache.aget(test_key)
 
             if retrieved_value != test_value:
                 return False, "Cache write test failed - value mismatch"
 
-            await sync_to_async(cache.delete)(test_key)
+            await cache.adelete(test_key)
             return True, None
         except Exception as e:
             return False, f"Cache write test failed: {str(e)}"

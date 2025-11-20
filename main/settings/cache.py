@@ -16,7 +16,7 @@ if USE_REDIS:
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST_AND_PORT}/0",
+            "LOCATION": f"redis://redis:{REDIS_PASSWORD}@{REDIS_HOST_AND_PORT}/0",
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
                 "SOCKET_CONNECT_TIMEOUT": 2,  # seconds
