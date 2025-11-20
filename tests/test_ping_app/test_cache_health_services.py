@@ -478,3 +478,45 @@ class TestCacheHealthService:
         mock_cache.aset.assert_called_once_with("write_test_1000", "test_value", timeout=60)
         mock_cache.aget.assert_called_once_with("write_test_1000")
         mock_cache.adelete.assert_called_once_with("write_test_1000")
+
+    @patch("apps.ping_app.v1.services.cache_health_services.cache")
+    @patch("apps.ping_app.v1.services.cache_health_services.time")
+    async def test_test_cache_write_error(self, mock_time, mock_cache) -> None:
+        mock_time.time.return_value = 1000.0
+        mock_cache.aset = AsyncMock()
+        mock_cache.aget = AsyncMock()
+        mock_cache.adelete = AsyncMock()
+
+        # Simulate read value mismatch
+        mock_cache.aget.return_value = "other_value"
+
+        status, error = await CacheHealthService.test_cache_write()
+
+        assert status is False
+        assert error == "Cache write test failed - value mismatch"
+
+        mock_cache.aset.assert_called_once_with("write_test_1000", "test_value", timeout=60)
+        mock_cache.aget.assert_called_once_with("write_test_1000")
+        mock_cache.adelete.assert_not_called()
+
+    @patch("apps.ping_app.v1.services.cache_health_services.cache")
+    @patch("apps.ping_app.v1.services.cache_health_services.time")
+    async def test_test_cache_write_exception(self, mock_time, mock_cache) -> None:
+        mock_time.time.return_value = 1000.0
+        mock_cache.aset = AsyncMock()
+        mock_cache.aget = AsyncMock()
+        mock_cache.adelete = AsyncMock()
+
+        # Simulate exception on write
+        mock_cache.aset.side_effect = Exception("Write failed")
+
+        status, error = await CacheHealthService.test_cache_write()
+
+        assert status is False
+        assert "Write failed" in error
+
+        mock_cache.aset.assert_called_once_with("write_test_1000", "test_value", timeout=60)
+        mock_cache.aget.assert_not_called()
+        mock_cache.adelete.assert_not_called()
+
+    # ---------------- Test cases for the method `test_cache_write` ends here ----------------
