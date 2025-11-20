@@ -120,7 +120,7 @@ class CacheHealthService:
     async def test_cache_read() -> Tuple[bool, Optional[str]]:
         """Verify cache read operation."""
         try:
-            result = await sync_to_async(cache.get)("non_existent_key")
+            result = await cache.aget("non_existent_key")
             _ = result
             return True, None
         except Exception as e:

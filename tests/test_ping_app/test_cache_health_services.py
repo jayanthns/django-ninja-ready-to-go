@@ -520,3 +520,27 @@ class TestCacheHealthService:
         mock_cache.adelete.assert_not_called()
 
     # ---------------- Test cases for the method `test_cache_write` ends here ----------------
+
+    # ---------------- Test cases for the method `test_cache_read` starts here ----------------
+
+    @patch("apps.ping_app.v1.services.cache_health_services.cache")
+    async def test_test_cache_read_successful(self, mock_cache) -> None:
+        mock_cache.aget = AsyncMock()
+        mock_cache.aget.return_value = "some_value"
+
+        status, error = await CacheHealthService.test_cache_read()
+        assert status is True
+        assert error is None
+
+        mock_cache.aget.assert_called_once_with("non_existent_key")
+
+    @patch("apps.ping_app.v1.services.cache_health_services.cache")
+    async def test_test_cache_read_error(self, mock_cache) -> None:
+        mock_cache.aget = AsyncMock()
+        mock_cache.aget.side_effect = Exception("Read failed")
+
+        status, error = await CacheHealthService.test_cache_read()
+        assert status is False
+        assert "Read failed" in error
+
+        mock_cache.aget.assert_called_once_with("non_existent_key")
