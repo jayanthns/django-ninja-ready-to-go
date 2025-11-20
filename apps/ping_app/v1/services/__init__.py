@@ -1,5 +1,5 @@
 from .cache_health_services import CacheHealthService
-from .database_healt_services import DatabaseHealthService
+from .database_health_services import DatabaseHealthService
 from .ping_services import PingService
 from .system_health_services import SystemHealthService
 
