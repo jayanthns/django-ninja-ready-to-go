@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 from ..models import SystemHealth
 from ..schemas import HealthCheckResponseSchema, SystemStatusSchema
 from .cache_health_services import CacheHealthService
-from .database_healt_services import DatabaseHealthService
+from .database_health_services import DatabaseHealthService
 
 
 class SystemHealthService:
