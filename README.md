@@ -156,40 +156,41 @@ make init
 
 ```bash
 django-ninja-ready-to-go/
-├── 📁 src/                          # Django project source code
-│   ├── 📄 manage.py                 # Django management script
-│   ├── 📁 main/                     # Core Django configuration
-│   │   ├── 📁 settings/             # Environment-specific settings
-│   │   │   ├── base.py              # Base settings
-│   │   │   ├── db.py                # Database configuration
-│   │   │   └── logging.py           # Logging configuration
-│   │   ├── asgi.py                  # ASGI application (Uvicorn)
-│   │   ├── wsgi.py                  # WSGI application (Gunicorn)
-│   │   └── urls.py                  # Main URL routing
-│   ├── 📁 apps/                     # Django applications
-│   │   ├── 📁 animals_app/          # CRUD example with async operations
-│   │   ├── 📁 users_app/            # User management system
-│   │   └── 📁 ping_app/             # Health monitoring & external pinging
-│   └── 📁 common/                   # Shared utilities and middleware
-│       ├── middleware.py            # Trace ID middleware
-│       ├── logger_helper.py         # Contextual logging system
-│       ├── base_schemas.py          # Common Pydantic schemas
-│       └── background_tasks.py      # Async task examples
-├── 📁 deploy/                       # Deployment scripts and configurations
-│   ├── 📁 db_scripts/               # Database initialization
-│   ├── 📁 entrypoint_scripts/       # Container entrypoints
-│   ├── 📁 shell_scripts/            # Service startup scripts
-│   └── 📁 supervisor_scripts/       # Process management
-├── 📁 docker/                       # Docker configurations
-├── 📁 requirements/                 # Python dependencies
-├── 📁 requirements_raw/             # Raw dependency specifications
-├── 📁 tests/                        # Test suite
-├── 📄 docker-compose.yaml           # Multi-service Docker setup
-├── 📄 Dockerfile                    # Production Docker image
-├── 📄 Dockerfile-local              # Development Docker image
-├── 📄 Makefile                      # Development automation
-├── 📄 pyproject.toml                # Project metadata
-└── 📄 README.md                     # This documentation
+├── 📄 manage.py                 # Django management script
+├── 📁 main/                     # Core Django configuration
+│   ├── 📁 settings/             # Environment-specific settings
+│   │   ├── base.py              # Base settings
+│   │   ├── db.py                # Database configuration
+│   │   └── logging.py           # Logging configuration
+│   ├── asgi.py                  # ASGI application (Uvicorn)
+│   ├── wsgi.py                  # WSGI application (Gunicorn)
+│   └── urls.py                  # Main URL routing
+├── 📁 apps/                     # Django applications
+│   ├── 📁 animals_app/          # CRUD example with async operations
+│   ├── 📁 users_app/            # User management system
+│   └── 📁 ping_app/             # Health monitoring & external pinging
+├── 📁 common/                   # Shared utilities and middleware
+│   ├── middleware.py            # Trace ID middleware
+│   ├── logger_helper.py         # Contextual logging system
+│   ├── base_schemas.py          # Common Pydantic schemas
+│   └── background_tasks.py      # Async task examples
+├── 📁 utils/                    # Helper utilities
+├── 📁 deploy/                   # Deployment scripts and configurations
+│   ├── 📁 db_scripts/           # Database initialization
+│   ├── 📁 entrypoint_scripts/   # Container entrypoints
+│   ├── 📁 shell_scripts/        # Service startup scripts
+│   └── 📁 supervisor_scripts/   # Process management
+├── 📁 requirements/             # Python dependencies
+├── 📁 requirements_raw/         # Raw dependency specifications
+├── 📁 tests/                    # Test suite
+├── 📄 docker-compose.yaml       # Multi-service Docker setup
+├── 📄 Dockerfile                # Production Docker image
+├── 📄 Dockerfile-local          # Development Docker image
+├── 📄 Makefile                  # Development automation
+├── 📄 PACKAGE_MANAGER.md        # Package management guide
+├── 📄 pyproject.toml            # Project metadata
+├── 📄 uv.lock                   # Dependency lock file
+└── 📄 README.md                 # This documentation
 ```
 
 ---
