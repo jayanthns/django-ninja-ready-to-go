@@ -197,8 +197,8 @@ django-ninja-ready-to-go/
 
 ## 🛠️ **Prerequisites**
 
-- **Python 3.11+** (recommended 3.12)
-- **PostgreSQL 13+** (for production)
+- **Python 3.10+** (recommended 3.12)
+- **PostgreSQL 16** (for production)
 - **Redis 7.x** (for caching and health checks)
 - **Docker & Docker Compose** (for containerized development)
 - **Git** (for version control)
@@ -297,9 +297,11 @@ make createsuperuser  # Create admin user
 
 ### **Docker Operations**
 ```bash
-make docker-build     # Build Docker image
-make docker-run       # Run container
-make docker-compose   # Start with docker-compose
+make d-build          # Build Docker services
+make d-up             # Start all services (detached)
+make d-down           # Stop all services
+make d-logs           # Show logs
+make d-shell          # Shell into API container
 ```
 
 ### **Development Tools**
