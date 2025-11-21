@@ -213,7 +213,9 @@ Once the server is running, you can access:
 The project includes three comprehensive Django applications demonstrating different aspects of Django Ninja development:
 
 ### **🐾 Animals App** (`apps/animals_app/`)
-A complete CRUD application showcasing modern Django Ninja patterns:
+A complete CRUD application showcasing modern Django Ninja patterns.
+
+👉 **[Read the Animals App Documentation](apps/animals_app/README.md)**
 
 **Features:**
 - **Async CRUD Operations**: Create, read, update, delete with async/await
@@ -233,26 +235,30 @@ GET    /api/v1/animals/logger-demo/ # Logger demonstration
 ```
 
 ### **👥 Users App** (`apps/users_app/`)
-User management system with authentication and profile features:
+User management system with authentication and profile features.
+
+👉 **[Read the Users App Documentation](apps/users_app/README.md)**
 
 **Features:**
-- **User Registration**: Complete user signup flow
-- **Profile Management**: User profile CRUD operations
-- **Authentication Ready**: JWT authentication integration (planned)
-- **Admin Interface**: User management in Django admin
-- **Permission System**: Role-based access control
+- **User Registration**: Complete user signup flow with password hashing
+- **Profile Management**: User retrieval by ID
+- **Secure Passwords**: Django's built-in password hashing (PBKDF2)
+- **Email Validation**: Pydantic EmailStr validation
+- **Async Operations**: Full async/await support
 
 **API Endpoints:**
 ```bash
-GET    /api/v1/users/             # List users
-POST   /api/v1/users/             # Create user
-GET    /api/v1/users/{id}/        # Get user profile
-PUT    /api/v1/users/{id}/        # Update user
+POST   /api/v1/users/register      # Register new user
+GET    /api/v1/users/{id}/          # Get user profile
 DELETE /api/v1/users/{id}/        # Delete user
 ```
 
 ### **🏓 Ping App** (`apps/ping_app/`)
-Comprehensive health check and monitoring system with organized API structure:
+Comprehensive health check and monitoring system with organized API structure.
+
+👉 **[Read the Ping App Documentation](apps/ping_app/README.md)**
+
+**Features:**
 - **Database Health Checks**: PostgreSQL connectivity, read/write permissions, DDL operations, table listing
 - **Redis Health Checks**: Cache connectivity, read/write operations, key management, server info
 - **External Endpoint Pinging**: HTTP endpoint testing with aiohttp, logs, and statistics
@@ -269,8 +275,6 @@ Comprehensive health check and monitoring system with organized API structure:
 ├── /db/                # Database health checks
 └── /external/          # External endpoint pinging
 ```
-
-📖 **[Read the complete Ping App documentation](src/apps/ping_app/README.md)** for detailed API endpoints, usage examples, and configuration.
 
 **Quick Examples:**
 ```bash
