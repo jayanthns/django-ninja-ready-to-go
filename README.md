@@ -98,6 +98,44 @@ make migrate
 
 # Start the development server
 make run
+
+# Access the application
+open http://localhost:8000
+```
+
+---
+
+## 📦 **Package Management**
+
+This project uses **`uv`** - a fast, modern Python package manager (10-100x faster than pip!).
+
+### Quick Commands
+
+```bash
+# Install all dependencies
+make install
+
+# Add a new package
+make add-package PACKAGE=requests VERSION=2.31.0
+
+# Update all packages
+make update-deps
+```
+
+### 📚 Complete Guide
+
+**New to package management or want to know how we use `uv` in this project?**
+
+👉 **[Read the Complete Package Manager Guide](PACKAGE_MANAGER.md)** - Beginner-friendly guide covering:
+- What is `uv` and why we use it
+- How to add/remove packages
+- Manual package addition exercises
+- Troubleshooting and FAQ
+- Best practices for this Django Ninja project
+
+---
+
+## 🏗️ **Project Applications**
 ```
 
 ## 🔧 **Development Commands**

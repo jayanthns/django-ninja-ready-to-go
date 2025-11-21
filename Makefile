@@ -48,23 +48,30 @@ init:
 
 
 install:
+	@echo "Installing dependencies with uv..."
+	@uv sync --all-extras
+
+
+# Legacy install command (for backward compatibility with old requirements.txt workflow)
+install-legacy:
 	@$(VENV_ACTIVATE) && uv pip install --upgrade pip-tools pip wheel
 	@$(VENV_ACTIVATE) && uv pip install --upgrade -r requirements/requirements.txt -r requirements/local_requirements.txt
 
 
 update-deps:
-	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/requirements.txt requirements_raw/requirements.in
-	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/local_requirements.txt requirements_raw/local_requirements.in
+	@echo "Upgrading all dependencies..."
+	@uv lock --upgrade
+	@uv sync --all-extras
 
 
-# Compile dependencies without upgrading (lock current versions)
+# Compile dependencies without upgrading (lock current versions in pyproject.toml)
 compile-deps:
-	@echo "Compiling dependencies without upgrading..."
-	@$(VENV_ACTIVATE) && uv pip compile --resolver backtracking -o requirements/requirements.txt requirements_raw/requirements.in
-	@$(VENV_ACTIVATE) && uv pip compile --resolver backtracking -o requirements/local_requirements.txt requirements_raw/local_requirements.in
+	@echo "Locking dependencies from pyproject.toml..."
+	@uv lock
+	@uv sync --all-extras
 
 
-# Add a package to production requirements
+# Add a package to production dependencies
 add-package:
 	@echo "Usage: make add-package PACKAGE=<package-name> [VERSION=<version>]"
 	@if [ -z "$(PACKAGE)" ]; then \
@@ -72,16 +79,15 @@ add-package:
 		exit 1; \
 	fi
 	@if [ -z "$(VERSION)" ]; then \
-		echo "$(PACKAGE)" >> requirements_raw/requirements.in; \
-		echo "Added '$(PACKAGE)' to requirements.in (no version specified)"; \
+		uv add $(PACKAGE); \
+		echo "Added '$(PACKAGE)' to dependencies"; \
 	else \
-		echo "$(PACKAGE)==$(VERSION)" >> requirements_raw/requirements.in; \
-		echo "Added '$(PACKAGE)==$(VERSION)' to requirements.in"; \
+		uv add "$(PACKAGE)==$(VERSION)"; \
+		echo "Added '$(PACKAGE)==$(VERSION)' to dependencies"; \
 	fi
-	@echo "Run 'make compile-deps && make install' to lock and install the new package."
 
 
-# Add a package to local/dev requirements
+# Add a package to dev dependencies
 add-dev-package:
 	@echo "Usage: make add-dev-package PACKAGE=<package-name> [VERSION=<version>]"
 	@if [ -z "$(PACKAGE)" ]; then \
@@ -89,42 +95,45 @@ add-dev-package:
 		exit 1; \
 	fi
 	@if [ -z "$(VERSION)" ]; then \
-		echo "$(PACKAGE)" >> requirements_raw/local_requirements.in; \
-		echo "Added '$(PACKAGE)' to local_requirements.in (no version specified)"; \
+		uv add --optional dev $(PACKAGE); \
+		echo "Added '$(PACKAGE)' to dev dependencies"; \
 	else \
-		echo "$(PACKAGE)==$(VERSION)" >> requirements_raw/local_requirements.in; \
-		echo "Added '$(PACKAGE)==$(VERSION)' to local_requirements.in"; \
+		uv add --optional dev "$(PACKAGE)==$(VERSION)"; \
+		echo "Added '$(PACKAGE)==$(VERSION)' to dev dependencies"; \
 	fi
-	@echo "Run 'make compile-deps && make install' to lock and install the new package."
 
 
-# Remove a package from production requirements
+# Remove a package from production dependencies
 remove-package:
 	@echo "Usage: make remove-package PACKAGE=<package-name>"
 	@if [ -z "$(PACKAGE)" ]; then \
 		echo "Error: PACKAGE is required. Example: make remove-package PACKAGE=requests"; \
 		exit 1; \
 	fi
-	@grep -v "^$(PACKAGE)" requirements_raw/requirements.in > requirements_raw/requirements.in.tmp || true
-	@mv requirements_raw/requirements.in.tmp requirements_raw/requirements.in
-	@echo "Removed '$(PACKAGE)' from requirements.in"
-	@echo "Run 'make compile-deps && make install' to update the lock file."
+	@uv remove $(PACKAGE)
+	@echo "Removed '$(PACKAGE)' from dependencies"
 
 
-# Remove a package from local/dev requirements
+# Remove a package from dev dependencies
 remove-dev-package:
 	@echo "Usage: make remove-dev-package PACKAGE=<package-name>"
 	@if [ -z "$(PACKAGE)" ]; then \
 		echo "Error: PACKAGE is required. Example: make remove-dev-package PACKAGE=pytest"; \
 		exit 1; \
 	fi
-	@grep -v "^$(PACKAGE)" requirements_raw/local_requirements.in > requirements_raw/local_requirements.in.tmp || true
-	@mv requirements_raw/local_requirements.in.tmp requirements_raw/local_requirements.in
-	@echo "Removed '$(PACKAGE)' from local_requirements.in"
-	@echo "Run 'make compile-deps && make install' to update the lock file."
+	@uv remove --optional dev $(PACKAGE)
+	@echo "Removed '$(PACKAGE)' from dev dependencies"
 
 
-package-sync: update-deps install
+# Export to legacy requirements.txt format (for deployment/CI compatibility)
+export-requirements:
+	@echo "Exporting uv.lock to requirements.txt format..."
+	@uv export --format requirements-txt --no-hashes > requirements.txt
+	@uv export --format requirements-txt --no-hashes --extra dev > requirements-dev.txt
+	@echo "Exported to requirements.txt and requirements-dev.txt"
+
+
+package-sync: update-deps
 sync-packages: package-sync
 sync-package: package-sync
 
@@ -239,18 +248,20 @@ help:
 	@echo "  init: Initialize the venv and install the requirements"
 	@echo "  install: Install all dependencies from compiled requirements"
 	@echo ""
-	@echo "== Dependency Management =="
-	@echo "  add-package: Add a package to production requirements"
-	@echo "      Usage: make add-package PACKAGE=requests VERSION=2.31.0"
-	@echo "  add-dev-package: Add a package to dev/testing requirements"
-	@echo "      Usage: make add-dev-package PACKAGE=pytest VERSION=8.3.3"
-	@echo "  remove-package: Remove a package from production requirements"
+	@echo "== Dependency Management (uv.lock workflow) =="
+	@echo "  add-package: Add a package to production dependencies and update uv.lock"
+	@echo "      Usage: make add-package PACKAGE=requests [VERSION=2.31.0]"
+	@echo "  add-dev-package: Add a package to dev dependencies and update uv.lock"
+	@echo "      Usage: make add-dev-package PACKAGE=pytest [VERSION=8.3.3]"
+	@echo "  remove-package: Remove a package from production dependencies"
 	@echo "      Usage: make remove-package PACKAGE=requests"
-	@echo "  remove-dev-package: Remove a package from dev/testing requirements"
+	@echo "  remove-dev-package: Remove a package from dev dependencies"
 	@echo "      Usage: make remove-dev-package PACKAGE=pytest"
-	@echo "  compile-deps: Compile .in files to .txt (lock versions without upgrade)"
-	@echo "  update-deps: Upgrade and compile dependencies to latest versions"
-	@echo "  package-sync: Update dependencies and install them (alias: sync-packages)"
+	@echo "  compile-deps: Lock dependencies from pyproject.toml without upgrading"
+	@echo "  update-deps: Upgrade all dependencies to latest and update uv.lock"
+	@echo "  package-sync: Alias for update-deps (upgrade + lock + sync)"
+	@echo "  export-requirements: Export uv.lock to requirements.txt format (for CI/CD)"
+	@echo "  install-legacy: Install using old requirements.txt files (deprecated)"
 	@echo ""
 	@echo "== Testing & Quality =="
 	@echo "  isort_check: Run isort check"
