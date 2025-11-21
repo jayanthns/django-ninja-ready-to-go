@@ -57,12 +57,79 @@ update-deps:
 	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/local_requirements.txt requirements_raw/local_requirements.in
 
 
+# Compile dependencies without upgrading (lock current versions)
+compile-deps:
+	@echo "Compiling dependencies without upgrading..."
+	@$(VENV_ACTIVATE) && uv pip compile --resolver backtracking -o requirements/requirements.txt requirements_raw/requirements.in
+	@$(VENV_ACTIVATE) && uv pip compile --resolver backtracking -o requirements/local_requirements.txt requirements_raw/local_requirements.in
+
+
+# Add a package to production requirements
+add-package:
+	@echo "Usage: make add-package PACKAGE=<package-name> [VERSION=<version>]"
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: PACKAGE is required. Example: make add-package PACKAGE=requests VERSION=2.31.0"; \
+		exit 1; \
+	fi
+	@if [ -z "$(VERSION)" ]; then \
+		echo "$(PACKAGE)" >> requirements_raw/requirements.in; \
+		echo "Added '$(PACKAGE)' to requirements.in (no version specified)"; \
+	else \
+		echo "$(PACKAGE)==$(VERSION)" >> requirements_raw/requirements.in; \
+		echo "Added '$(PACKAGE)==$(VERSION)' to requirements.in"; \
+	fi
+	@echo "Run 'make compile-deps && make install' to lock and install the new package."
+
+
+# Add a package to local/dev requirements
+add-dev-package:
+	@echo "Usage: make add-dev-package PACKAGE=<package-name> [VERSION=<version>]"
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: PACKAGE is required. Example: make add-dev-package PACKAGE=pytest VERSION=8.3.3"; \
+		exit 1; \
+	fi
+	@if [ -z "$(VERSION)" ]; then \
+		echo "$(PACKAGE)" >> requirements_raw/local_requirements.in; \
+		echo "Added '$(PACKAGE)' to local_requirements.in (no version specified)"; \
+	else \
+		echo "$(PACKAGE)==$(VERSION)" >> requirements_raw/local_requirements.in; \
+		echo "Added '$(PACKAGE)==$(VERSION)' to local_requirements.in"; \
+	fi
+	@echo "Run 'make compile-deps && make install' to lock and install the new package."
+
+
+# Remove a package from production requirements
+remove-package:
+	@echo "Usage: make remove-package PACKAGE=<package-name>"
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: PACKAGE is required. Example: make remove-package PACKAGE=requests"; \
+		exit 1; \
+	fi
+	@grep -v "^$(PACKAGE)" requirements_raw/requirements.in > requirements_raw/requirements.in.tmp || true
+	@mv requirements_raw/requirements.in.tmp requirements_raw/requirements.in
+	@echo "Removed '$(PACKAGE)' from requirements.in"
+	@echo "Run 'make compile-deps && make install' to update the lock file."
+
+
+# Remove a package from local/dev requirements
+remove-dev-package:
+	@echo "Usage: make remove-dev-package PACKAGE=<package-name>"
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: PACKAGE is required. Example: make remove-dev-package PACKAGE=pytest"; \
+		exit 1; \
+	fi
+	@grep -v "^$(PACKAGE)" requirements_raw/local_requirements.in > requirements_raw/local_requirements.in.tmp || true
+	@mv requirements_raw/local_requirements.in.tmp requirements_raw/local_requirements.in
+	@echo "Removed '$(PACKAGE)' from local_requirements.in"
+	@echo "Run 'make compile-deps && make install' to update the lock file."
+
+
 package-sync: update-deps install
 sync-packages: package-sync
 sync-package: package-sync
 
 
-.PHONY: run kill-port makemigrations migrate shell createsuperuser update-deps install update init
+.PHONY: run kill-port makemigrations migrate shell createsuperuser update-deps compile-deps add-package add-dev-package remove-package remove-dev-package install update init package-sync
 
 isort_check:
 	@echo "Running isort check..."
@@ -157,6 +224,8 @@ d-exec:
 
 help:
 	@echo "Available Makefile commands:"
+	@echo ""
+	@echo "== Development Commands =="
 	@echo "  run: Run the Django development server (automatically kills port 8000 first)"
 	@echo "  kill-port: Kill processes using port 8000"
 	@echo "  makemigrations: Create Django database migrations"
@@ -165,10 +234,25 @@ help:
 	@echo "  shell_plus: Log into the Django Shell Plus"
 	@echo "  createsuperuser: Create a superuser"
 	@echo "  run_uvicorn: Run the uvicorn server"
+	@echo ""
+	@echo "== Setup & Installation =="
 	@echo "  init: Initialize the venv and install the requirements"
-	@echo "  install: Install the requirements"
-	@echo "  update-deps: Update the dependencies"
-	@echo "  package-sync: Update the dependencies and install the requirements"
+	@echo "  install: Install all dependencies from compiled requirements"
+	@echo ""
+	@echo "== Dependency Management =="
+	@echo "  add-package: Add a package to production requirements"
+	@echo "      Usage: make add-package PACKAGE=requests VERSION=2.31.0"
+	@echo "  add-dev-package: Add a package to dev/testing requirements"
+	@echo "      Usage: make add-dev-package PACKAGE=pytest VERSION=8.3.3"
+	@echo "  remove-package: Remove a package from production requirements"
+	@echo "      Usage: make remove-package PACKAGE=requests"
+	@echo "  remove-dev-package: Remove a package from dev/testing requirements"
+	@echo "      Usage: make remove-dev-package PACKAGE=pytest"
+	@echo "  compile-deps: Compile .in files to .txt (lock versions without upgrade)"
+	@echo "  update-deps: Upgrade and compile dependencies to latest versions"
+	@echo "  package-sync: Update dependencies and install them (alias: sync-packages)"
+	@echo ""
+	@echo "== Testing & Quality =="
 	@echo "  isort_check: Run isort check"
 	@echo "  black_check: Run black check"
 	@echo "  flake8: Run flake8 check"
@@ -179,7 +263,9 @@ help:
 	@echo "  pytest: Run pytest"
 	@echo "  pytest-open-report: Open the pytest report"
 	@echo "  test-report: Open the pytest report"
-	@echo "  d-shell: Log into the Django shell"
+	@echo ""
+	@echo "== Docker Commands =="
+	@echo "  d-shell: Log into the Django container shell"
 	@echo "  d-db: Start the Django database"
 	@echo "  d-redis: Start the Redis service"
 	@echo "  d-db-logs: Show the Django database logs"
@@ -187,11 +273,11 @@ help:
 	@echo "  d-db-and-redis: Start the Django database and Redis service"
 	@echo "  d-db-and-redis-down: Stop the Django database and Redis service"
 	@echo "  d-db-and-redis-restart: Restart the Django database and Redis service"
-	@echo "  d-up: Start the services"
-	@echo "  d-down: Stop the services"
-	@echo "  d-restart: Restart the services"
+	@echo "  d-up: Start all services"
+	@echo "  d-down: Stop all services"
+	@echo "  d-restart: Restart all services"
 	@echo "  d-logs: Show the logs"
-	@echo "  d-ps: Show the services"
+	@echo "  d-ps: Show the running services"
 	@echo "  d-build: Build the services"
 	@echo "  d-pull: Pull the services"
 	@echo "  d-push: Push the services"
