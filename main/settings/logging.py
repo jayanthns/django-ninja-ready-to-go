@@ -31,7 +31,48 @@ class CustomFormatter(logging.Formatter):
             record.trace_id = getattr(record, "trace_id", "no-trace-id")
         if not hasattr(record, "correlation_id"):
             record.correlation_id = getattr(record, "correlation_id", None)
-        return super(CustomFormatter, self).format(record)
+
+        # Format the message first
+        formatted_message = super(CustomFormatter, self).format(record)
+
+        # Append extra context if available
+        extras = []
+        # Standard LogRecord attributes to ignore
+        standard_attrs = {
+            "name",
+            "msg",
+            "args",
+            "levelname",
+            "levelno",
+            "pathname",
+            "filename",
+            "module",
+            "exc_info",
+            "exc_text",
+            "stack_info",
+            "lineno",
+            "funcName",
+            "created",
+            "msecs",
+            "relativeCreated",
+            "thread",
+            "threadName",
+            "processName",
+            "process",
+            "message",
+            "asctime",
+            "trace_id",
+            "correlation_id",
+        }
+
+        for key, value in record.__dict__.items():
+            if key not in standard_attrs and value is not None:
+                extras.append(f"{key}={value}")
+
+        if extras:
+            formatted_message = f"{formatted_message} | {' '.join(extras)}"
+
+        return formatted_message
 
 
 # Common handlers
@@ -118,7 +159,7 @@ def get_base_logging_config() -> dict:
                 "interval": 1,
                 "filename": f"{LOGS_FOLDER}/service.log",
                 "backupCount": 10,
-                "formatter": "verbose",
+                "formatter": "json",
                 "filters": ["trace_id_filter"],
                 # "formatter": "json",
             },
