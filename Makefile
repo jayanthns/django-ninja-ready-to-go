@@ -48,21 +48,97 @@ init:
 
 
 install:
+	@echo "Installing dependencies with uv..."
+	@uv sync --all-extras
+
+
+# Legacy install command (for backward compatibility with old requirements.txt workflow)
+install-legacy:
 	@$(VENV_ACTIVATE) && uv pip install --upgrade pip-tools pip wheel
 	@$(VENV_ACTIVATE) && uv pip install --upgrade -r requirements/requirements.txt -r requirements/local_requirements.txt
 
 
 update-deps:
-	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/requirements.txt requirements_raw/requirements.in
-	@$(VENV_ACTIVATE) && uv pip compile --upgrade --resolver backtracking -o requirements/local_requirements.txt requirements_raw/local_requirements.in
+	@echo "Upgrading all dependencies..."
+	@uv lock --upgrade
+	@uv sync --all-extras
 
 
-package-sync: update-deps install
+# Compile dependencies without upgrading (lock current versions in pyproject.toml)
+compile-deps:
+	@echo "Locking dependencies from pyproject.toml..."
+	@uv lock
+	@uv sync --all-extras
+
+
+# Add a package to production dependencies
+add-package:
+	@echo "Usage: make add-package PACKAGE=<package-name> [VERSION=<version>]"
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: PACKAGE is required. Example: make add-package PACKAGE=requests VERSION=2.31.0"; \
+		exit 1; \
+	fi
+	@if [ -z "$(VERSION)" ]; then \
+		uv add $(PACKAGE); \
+		echo "Added '$(PACKAGE)' to dependencies"; \
+	else \
+		uv add "$(PACKAGE)==$(VERSION)"; \
+		echo "Added '$(PACKAGE)==$(VERSION)' to dependencies"; \
+	fi
+
+
+# Add a package to dev dependencies
+add-dev-package:
+	@echo "Usage: make add-dev-package PACKAGE=<package-name> [VERSION=<version>]"
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: PACKAGE is required. Example: make add-dev-package PACKAGE=pytest VERSION=8.3.3"; \
+		exit 1; \
+	fi
+	@if [ -z "$(VERSION)" ]; then \
+		uv add --optional dev $(PACKAGE); \
+		echo "Added '$(PACKAGE)' to dev dependencies"; \
+	else \
+		uv add --optional dev "$(PACKAGE)==$(VERSION)"; \
+		echo "Added '$(PACKAGE)==$(VERSION)' to dev dependencies"; \
+	fi
+
+
+# Remove a package from production dependencies
+remove-package:
+	@echo "Usage: make remove-package PACKAGE=<package-name>"
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: PACKAGE is required. Example: make remove-package PACKAGE=requests"; \
+		exit 1; \
+	fi
+	@uv remove $(PACKAGE)
+	@echo "Removed '$(PACKAGE)' from dependencies"
+
+
+# Remove a package from dev dependencies
+remove-dev-package:
+	@echo "Usage: make remove-dev-package PACKAGE=<package-name>"
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: PACKAGE is required. Example: make remove-dev-package PACKAGE=pytest"; \
+		exit 1; \
+	fi
+	@uv remove --optional dev $(PACKAGE)
+	@echo "Removed '$(PACKAGE)' from dev dependencies"
+
+
+# Export to legacy requirements.txt format (for deployment/CI compatibility)
+export-requirements:
+	@echo "Exporting uv.lock to requirements.txt format..."
+	@uv export --format requirements-txt --no-hashes > requirements.txt
+	@uv export --format requirements-txt --no-hashes --extra dev > requirements-dev.txt
+	@echo "Exported to requirements.txt and requirements-dev.txt"
+
+
+package-sync: update-deps
 sync-packages: package-sync
 sync-package: package-sync
 
 
-.PHONY: run kill-port makemigrations migrate shell createsuperuser update-deps install update init
+.PHONY: run kill-port makemigrations migrate shell createsuperuser update-deps compile-deps add-package add-dev-package remove-package remove-dev-package install update init package-sync
 
 isort_check:
 	@echo "Running isort check..."
@@ -157,6 +233,8 @@ d-exec:
 
 help:
 	@echo "Available Makefile commands:"
+	@echo ""
+	@echo "== Development Commands =="
 	@echo "  run: Run the Django development server (automatically kills port 8000 first)"
 	@echo "  kill-port: Kill processes using port 8000"
 	@echo "  makemigrations: Create Django database migrations"
@@ -165,10 +243,27 @@ help:
 	@echo "  shell_plus: Log into the Django Shell Plus"
 	@echo "  createsuperuser: Create a superuser"
 	@echo "  run_uvicorn: Run the uvicorn server"
+	@echo ""
+	@echo "== Setup & Installation =="
 	@echo "  init: Initialize the venv and install the requirements"
-	@echo "  install: Install the requirements"
-	@echo "  update-deps: Update the dependencies"
-	@echo "  package-sync: Update the dependencies and install the requirements"
+	@echo "  install: Install all dependencies from compiled requirements"
+	@echo ""
+	@echo "== Dependency Management (uv.lock workflow) =="
+	@echo "  add-package: Add a package to production dependencies and update uv.lock"
+	@echo "      Usage: make add-package PACKAGE=requests [VERSION=2.31.0]"
+	@echo "  add-dev-package: Add a package to dev dependencies and update uv.lock"
+	@echo "      Usage: make add-dev-package PACKAGE=pytest [VERSION=8.3.3]"
+	@echo "  remove-package: Remove a package from production dependencies"
+	@echo "      Usage: make remove-package PACKAGE=requests"
+	@echo "  remove-dev-package: Remove a package from dev dependencies"
+	@echo "      Usage: make remove-dev-package PACKAGE=pytest"
+	@echo "  compile-deps: Lock dependencies from pyproject.toml without upgrading"
+	@echo "  update-deps: Upgrade all dependencies to latest and update uv.lock"
+	@echo "  package-sync: Alias for update-deps (upgrade + lock + sync)"
+	@echo "  export-requirements: Export uv.lock to requirements.txt format (for CI/CD)"
+	@echo "  install-legacy: Install using old requirements.txt files (deprecated)"
+	@echo ""
+	@echo "== Testing & Quality =="
 	@echo "  isort_check: Run isort check"
 	@echo "  black_check: Run black check"
 	@echo "  flake8: Run flake8 check"
@@ -179,7 +274,9 @@ help:
 	@echo "  pytest: Run pytest"
 	@echo "  pytest-open-report: Open the pytest report"
 	@echo "  test-report: Open the pytest report"
-	@echo "  d-shell: Log into the Django shell"
+	@echo ""
+	@echo "== Docker Commands =="
+	@echo "  d-shell: Log into the Django container shell"
 	@echo "  d-db: Start the Django database"
 	@echo "  d-redis: Start the Redis service"
 	@echo "  d-db-logs: Show the Django database logs"
@@ -187,11 +284,11 @@ help:
 	@echo "  d-db-and-redis: Start the Django database and Redis service"
 	@echo "  d-db-and-redis-down: Stop the Django database and Redis service"
 	@echo "  d-db-and-redis-restart: Restart the Django database and Redis service"
-	@echo "  d-up: Start the services"
-	@echo "  d-down: Stop the services"
-	@echo "  d-restart: Restart the services"
+	@echo "  d-up: Start all services"
+	@echo "  d-down: Stop all services"
+	@echo "  d-restart: Restart all services"
 	@echo "  d-logs: Show the logs"
-	@echo "  d-ps: Show the services"
+	@echo "  d-ps: Show the running services"
 	@echo "  d-build: Build the services"
 	@echo "  d-pull: Pull the services"
 	@echo "  d-push: Push the services"
