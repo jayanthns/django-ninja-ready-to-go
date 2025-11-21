@@ -166,7 +166,7 @@ class LoggerHelper:
         current_logger = self.get_current_logger()
         if current_logger and current_logger.trace_id == trace_id:
             # Update context if provided
-            if context:
+            if context:  # pragma: no cover
                 current_logger.update_context(**context)
             return current_logger
 

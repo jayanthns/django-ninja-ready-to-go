@@ -24,6 +24,10 @@ async def get_user(request: HttpRequest, user_id: int) -> create_api_response_sc
     user = await UserService.get_user_by_id(user_id)
     if not user:
         return create_api_response_schema(UserSchema)(
-            error={"message": "User not found"}
+            error={"message": "User not found"},
+            trace_id=str(request.trace_id),
         )  # ✅ Properly structured error
-    return create_api_response_schema(UserSchema)(data=user)
+    return create_api_response_schema(UserSchema)(
+        data=user,
+        trace_id=str(request.trace_id),
+    )
