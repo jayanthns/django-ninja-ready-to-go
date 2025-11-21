@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SRC_DIR = BASE_DIR.resolve().parent
 
-ROOT_DIR = SRC_DIR.parent
+ROOT_DIR = SRC_DIR
 
 APP_ENV = os.getenv("APP_ENV", "local")
 
