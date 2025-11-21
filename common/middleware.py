@@ -4,7 +4,7 @@ from typing import Callable, Optional
 
 from django.http import HttpRequest, HttpResponse
 
-from .logger_helper import logger_helper
+from .logger_helper import get_request_logger, logger_helper
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -154,8 +154,6 @@ class TraceIDContextFilter(logging.Filter):
         """Add trace ID to log record if available."""
         # Try to get trace ID from the current logger context
         try:
-            from .logger_helper import get_request_logger
-
             request_logger = get_request_logger()
             if request_logger:
                 record.trace_id = request_logger.trace_id

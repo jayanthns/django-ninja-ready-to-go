@@ -23,7 +23,8 @@ omit = [
     "*/endpoints.py",
     "**/admin.py",
     "**/apps.py",
-    "**/signals.py"
+    "**/signals.py",
+    "common/background_tasks.py",
 ]
 source = ["."]
 
