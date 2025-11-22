@@ -8,6 +8,7 @@ USE_REDIS = os.getenv("USE_REDIS", "0") == "1"
 
 REDIS_HOST_AND_PORT = os.getenv("REDIS_HOST_AND_PORT", "localhost:6379")
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+REDIS_USERNAME = os.getenv("REDIS_USERNAME", "")
 
 if USE_REDIS:
     # ------------------------------------------------------------------------------
@@ -16,7 +17,7 @@ if USE_REDIS:
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": f"redis://redis:{REDIS_PASSWORD}@{REDIS_HOST_AND_PORT}/0",
+            "LOCATION": f"redis://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST_AND_PORT}/0",
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
                 "SOCKET_CONNECT_TIMEOUT": 2,  # seconds
