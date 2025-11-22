@@ -23,6 +23,7 @@
 ### Our Setup
 
 This Django Ninja API project uses `uv.lock` workflow with:
+
 - **68 total packages** (including all dependencies)
 - **17 production packages** (Django, django-ninja, database drivers, etc.)
 - **12 development packages** (pytest, black, flake8, etc.)
@@ -30,7 +31,7 @@ This Django Ninja API project uses `uv.lock` workflow with:
 
 ### Project-Specific Files
 
-```
+```bash
 django-ninja-ready-to-go/
 ├── pyproject.toml          # Our dependencies list
 ├── uv.lock                 # Locked versions (68 packages)
@@ -69,7 +70,8 @@ django-ninja-ready-to-go/
 
 ### Django-Specific Workflow
 
-**1. Initial Setup (New Team Member)**
+#### 1. Initial Setup (New Team Member)
+
 ```bash
 # Clone the repo
 git clone <your-repo-url>
@@ -84,7 +86,8 @@ make init
 # - Ready to run Django!
 ```
 
-**2. Daily Development**
+#### 2. Daily Development
+
 ```bash
 # Activate virtual environment
 source venv/bin/activate  # Mac/Linux
@@ -101,7 +104,8 @@ make pytest
 make static-tests
 ```
 
-**3. Adding a Package You Need**
+#### 3. Adding a Package You Need
+
 ```bash
 # Example: Need to send emails
 make add-package PACKAGE=django-anymail VERSION=10.2
@@ -111,7 +115,8 @@ make add-package PACKAGE=django-anymail VERSION=10.2
 # ✅ Team gets it too: when they pull and run `make install`
 ```
 
-**4. Before Committing Code**
+#### 4. Before Committing Code
+
 ```bash
 # Always ensure dependencies are synced
 make install
@@ -177,7 +182,7 @@ package = false
 
 ### Quick Start for This Project
 
-**Scenario: You just joined the team**
+#### Scenario: You just joined the team
 
 ```bash
 # 1️⃣ Clone and setup
@@ -199,7 +204,8 @@ make pytest
 
 ### Common Scenarios in This Project
 
-**Scenario 1: Need to add a new Django package**
+#### Scenario 1: Need to add a new Django package
+
 ```bash
 # Example: Add Django REST framework extensions
 make add-package PACKAGE=drf-extensions VERSION=0.7.1
@@ -208,7 +214,8 @@ make add-package PACKAGE=drf-extensions VERSION=0.7.1
 from rest_framework_extensions.mixins import ...
 ```
 
-**Scenario 2: Need a testing utility**
+#### Scenario 2: Need a testing utility
+
 ```bash
 # Example: Add factory-boy for test fixtures
 make add-dev-package PACKAGE=factory-boy VERSION=3.3.0
@@ -217,7 +224,8 @@ make add-dev-package PACKAGE=factory-boy VERSION=3.3.0
 from factory import Factory
 ```
 
-**Scenario 3: Pull latest code with new dependencies**
+#### Scenario 3: Pull latest code with new dependencies
+
 ```bash
 git pull
 
@@ -227,7 +235,8 @@ make install
 # All new packages are now installed! ✅
 ```
 
-**Scenario 4: Monthly update cycle**
+#### Scenario 4: Monthly update cycle
+
 ```bash
 # Check what's outdated
 uv pip list --outdated
@@ -254,6 +263,18 @@ Instead of remembering complex `uv` commands, we have simple shortcuts:
 | Update all    | `uv lock --upgrade && uv sync --all-extras`                 | `make update-deps`                                           |
 | See help      | (search documentation)                                      | `make help`                                                  |
 
+### A Note on `venv` vs `.venv`
+
+By default, `uv` looks for a virtual environment named `.venv`. However, this project uses `venv`.
+
+**Our `Makefile` handles this automatically** by setting:
+
+```makefile
+export UV_PROJECT_ENVIRONMENT = $(shell pwd)/venv
+```
+
+If you run `uv` commands manually (without `make`), you might need to set this variable yourself or `uv` might create a new `.venv` directory that isn't used by the project. **We strongly recommend using the `make` commands.**
+
 ---
 
 ## What is a Package Manager?
@@ -265,6 +286,7 @@ Think of a package manager like an **app store for your code**. Just like you in
 ### Why Can't I Just Download Code Manually?
 
 You could, but:
+
 - **Dependencies**: Each package might need OTHER packages to work
 - **Versions**: You need specific versions that work together
 - **Updates**: You need to know when updates are available
@@ -278,11 +300,12 @@ A package manager solves all of this automatically! 🎉
 
 ### The Evolution of Python Package Managers
 
-```
+```text
 pip (slow & basic) → pip-tools (better) → uv (fastest! ⚡)
 ```
 
 **`uv` is like pip on steroids:**
+
 - ⚡ **10-100x faster** than pip
 - 🔒 **Better dependency resolution** (fewer conflicts)
 - 🎯 **Modern workflow** (like Rust's cargo or Node's npm)
@@ -306,6 +329,7 @@ uv sync           → ~1-2 seconds  🚀
 Code libraries your project needs to run.
 
 **Example:**
+
 ```python
 # You want to use Django
 from django import ...  # ❌ Won't work without installing Django first
@@ -317,14 +341,17 @@ from django import ...  # ✅ Works!
 ### 2. **Production vs Development Dependencies**
 
 **Production Dependencies**:
+
 - Code needed to RUN your app
 - Examples: Django, database drivers, API frameworks
 
 **Development Dependencies**:
+
 - Tools for BUILDING your app
 - Examples: pytest (testing), black (code formatting), mypy (type checking)
 
 **Why separate them?**
+
 - Your production server doesn't need testing tools
 - Keeps production installations faster and smaller
 
@@ -336,14 +363,16 @@ A snapshot of EXACT versions of every package (and their dependencies).
 **Why do we need it?**
 
 **Without lock file:**
-```
+
+```text
 You install Django "latest version" → Gets Django 4.2.16
 Your teammate installs Django "latest version" → Gets Django 4.3.0 (newer!)
 Result: Your code might break on their computer! 😱
 ```
 
 **With lock file:**
-```
+
+```text
 You install → Django 4.2.16 (from uv.lock)
 Your teammate installs → Django 4.2.16 (from uv.lock)
 Result: Everyone has identical packages! ✅
@@ -352,6 +381,7 @@ Result: Everyone has identical packages! ✅
 ### 4. **`pyproject.toml`**
 
 Think of this as your **shopping list**:
+
 - Lists what packages you want
 - Doesn't specify exact versions of dependencies
 
@@ -364,6 +394,7 @@ Think of this as your **shopping list**:
 ### Prerequisites
 
 **What you need:**
+
 - Python 3.10 or higher
 - Terminal/Command line access
 - This repository cloned to your computer
@@ -373,16 +404,19 @@ Think of this as your **shopping list**:
 #### Step 1: Install `uv`
 
 **On Mac/Linux:**
+
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 **On Windows:**
+
 ```powershell
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 **Verify installation:**
+
 ```bash
 uv --version
 # Should show: uv 0.x.x
@@ -401,10 +435,15 @@ make init
 uv venv venv                # Create virtual environment
 source venv/bin/activate    # Activate it (Mac/Linux)
 # OR on Windows: venv\Scripts\activate
+
+# IMPORTANT: Tell uv to use this venv (otherwise it looks for .venv)
+export UV_PROJECT_ENVIRONMENT=$(pwd)/venv
+
 uv sync --all-extras        # Install all packages
 ```
 
 **What just happened?**
+
 1. Created a virtual environment (isolated Python installation)
 2. Installed all 68 packages from `uv.lock`
 3. You're ready to code! 🎉
@@ -420,23 +459,27 @@ uv sync --all-extras        # Install all packages
 **Step-by-step:**
 
 1. **Add the package:**
+
    ```bash
    make add-package PACKAGE=requests VERSION=2.31.0
    ```
 
 2. **What happens behind the scenes:**
+
    - Updates `pyproject.toml` with `requests==2.31.0`
    - Updates `uv.lock` with requests AND all its dependencies
    - **Automatically installs** the package
    - Ready to use immediately!
 
 3. **Use it in your code:**
+
    ```python
    import requests
    response = requests.get('https://api.example.com')
    ```
 
 **Without version (gets latest):**
+
 ```bash
 make add-package PACKAGE=requests
 ```
@@ -450,6 +493,7 @@ make add-dev-package PACKAGE=ipython VERSION=8.29.0
 ```
 
 **Difference from production package:**
+
 - Goes into `[project.optional-dependencies].dev` section
 - Won't be installed on production servers
 - Only installed when you use `--all-extras` flag
@@ -463,6 +507,7 @@ make remove-package PACKAGE=requests
 ```
 
 **What happens:**
+
 - Removes from `pyproject.toml`
 - Updates `uv.lock`
 - **Uninstalls** the package automatically
@@ -477,6 +522,7 @@ make update-deps
 ```
 
 **What happens:**
+
 - Checks for newer versions of all packages
 - Updates `uv.lock` with new versions
 - Installs the updates
@@ -515,6 +561,7 @@ uv pip list --outdated
 > **🎓 Want to add packages by editing files directly instead of using `make` commands? Here's how!**
 
 Sometimes you might want to manually edit `pyproject.toml` instead of using `make add-package`. This is useful when:
+
 - Adding **multiple packages** at once
 - Setting version ranges (e.g., `>=5.0,<6.0`)
 - You prefer direct control
@@ -522,6 +569,7 @@ Sometimes you might want to manually edit `pyproject.toml` instead of using `mak
 ### The Manual Workflow
 
 **3-Step Process:**
+
 1. Edit `pyproject.toml`
 2. Run `make compile-deps`
 3. Commit both files
@@ -564,6 +612,7 @@ make compile-deps
 ```
 
 **What this command does:**
+
 ```bash
 # Behind the scenes:
 uv lock               # Reads pyproject.toml, creates uv.lock
@@ -618,6 +667,7 @@ dependencies = [
 ```
 
 **Tips:**
+
 - Keep **alphabetical order** (optional but organized)
 - Use exact version with `==` for stability
 - Add a comment explaining why if needed
@@ -630,7 +680,7 @@ make compile-deps
 
 **Expected output:**
 
-```
+```text
 Locking dependencies from pyproject.toml...
 Resolved 72 packages in 324ms
 Installed 4 packages in 125ms
@@ -835,6 +885,7 @@ Try this yourself:
 **Task:** Add `django-cors-headers` for handling CORS in your API.
 
 **Steps:**
+
 1. Open `pyproject.toml`
 2. Add `"django-cors-headers==4.3.1"` to dependencies
 3. Run `make compile-deps`
@@ -843,6 +894,7 @@ Try this yourself:
 6. Commit both files
 
 **Solution:**
+
 ```bash
 # 1. Edit pyproject.toml
 # Add: "django-cors-headers==4.3.1"
@@ -863,6 +915,7 @@ git commit -m "Add django-cors-headers for CORS support"
 ### When You're Done
 
 Remember:
+
 - ✅ **Always run `make compile-deps`** after editing
 - ✅ **Always commit both files** together
 - ✅ **Test your changes** before pushing
@@ -904,6 +957,7 @@ dev = [
 ```
 
 **When to edit manually:**
+
 - Adding multiple packages at once
 - Changing version constraints
 - Updating project metadata
@@ -916,6 +970,7 @@ dev = [
 **Never edit this file manually!** It's auto-generated.
 
 **What's inside:**
+
 ```toml
 [[package]]
 name = "django"
@@ -935,11 +990,13 @@ version = "0.5.3"
 **What it is**: Isolated Python installation for this project
 
 **Why we need it:**
+
 - Different projects can use different package versions
 - Doesn't mess with your system Python
 - Easy to delete and recreate
 
 **Important**:
+
 - ✅ DO commit: `pyproject.toml`, `uv.lock`
 - ❌ DON'T commit: `venv/` (already in `.gitignore`)
 
@@ -950,6 +1007,7 @@ version = "0.5.3"
 ### Problem: "command not found: uv"
 
 **Solution:**
+
 ```bash
 # Install uv first
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -960,6 +1018,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### Problem: "No module named 'django'"
 
 **Solution:**
+
 ```bash
 # Activate virtual environment
 source venv/bin/activate    # Mac/Linux
@@ -973,6 +1032,7 @@ make install
 ### Problem: Package conflicts
 
 **Solution:**
+
 ```bash
 # Clean slate approach
 rm -rf venv
@@ -983,6 +1043,7 @@ make init
 ### Problem: "I modified pyproject.toml, now what?"
 
 **Solution:**
+
 ```bash
 # Regenerate lock file
 make compile-deps
@@ -991,6 +1052,7 @@ make compile-deps
 ### Problem: Different packages on different computers
 
 **Solution:**
+
 ```bash
 # Always install from lock file
 uv sync --all-extras
@@ -1034,6 +1096,7 @@ make add-package PACKAGE=requests  # ✅ Do this instead
 ### Q: How do I see what changed when I update dependencies?
 
 **A:**
+
 ```bash
 # Before updating
 git diff uv.lock
@@ -1048,6 +1111,7 @@ git diff uv.lock
 ### Q: What if I just want to add a package temporarily for testing?
 
 **A:**
+
 ```bash
 # Install without updating pyproject.toml
 uv pip install requests
@@ -1063,6 +1127,7 @@ uv pip uninstall requests
 ### Q: How do I know what packages I have installed?
 
 **A:**
+
 ```bash
 # List all installed packages
 uv pip list
@@ -1114,12 +1179,14 @@ COPY . .
 ### Q: How do I export to old-style `requirements.txt`?
 
 **A:**
+
 ```bash
 make export-requirements
 # Creates: requirements.txt and requirements-dev.txt
 ```
 
 **When to use:**
+
 - Legacy CI/CD systems
 - Deployment platforms that only accept requirements.txt
 - Sharing with teams not using uv
@@ -1184,6 +1251,7 @@ uv sync --dry-run
 ### Tip 4: Pin Python version
 
 In `pyproject.toml`:
+
 ```toml
 requires-python = "==3.10.8"  # Exact version
 # OR
@@ -1194,9 +1262,9 @@ requires-python = ">=3.10,<3.12"  # Range
 
 ## Getting Help
 
-- **Official `uv` docs**: https://github.com/astral-sh/uv
+- **Official `uv` docs**: <https://github.com/astral-sh/uv>
 - **This project's help**: `make help`
-- **Check package on PyPI**: https://pypi.org/project/[package-name]/
+- **Check package on PyPI**: <https://pypi.org/project/[package-name]/>
 
 ---
 
@@ -1212,6 +1280,6 @@ requires-python = ">=3.10,<3.12"  # Range
 
 ---
 
-**Happy coding! 🎉**
+## Happy coding! 🎉
 
-*Last updated: After migration to uv.lock workflow*
+> Last updated: After migration to uv.lock workflow

@@ -5,6 +5,8 @@ ifeq ($(OS),Windows_NT)
 else
 	# Unix-based systems (Linux/Mac)
 	VENV_ACTIVATE = source ./venv/bin/activate
+	# Ensure uv uses the correct virtual environment
+	export UV_PROJECT_ENVIRONMENT = $(shell pwd)/venv
 endif
 
 kill-port:

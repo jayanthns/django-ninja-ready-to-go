@@ -26,11 +26,12 @@ This repository is designed to be a **production-ready template** for your Djang
 
 Click the **"Use this template"** button on GitHub to create a new repository with this structure:
 
-1. Go to https://github.com/jayanthns/django-ninja-ready-to-go
+1. Go to [https://github.com/jayanthns/django-ninja-ready-to-go](https://github.com/jayanthns/django-ninja-ready-to-go)
 2. Click the green **"Use this template"** button
 3. Choose **"Create a new repository"**
 4. Name your new project
 5. Clone your new repository:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/YOUR_PROJECT_NAME.git
    cd YOUR_PROJECT_NAME
@@ -61,6 +62,7 @@ git push -u origin main
 After creating your project from the template:
 
 1. **Initialize the environment:**
+
    ```bash
    make init
    ```
@@ -72,6 +74,7 @@ After creating your project from the template:
    - [ ] Modify `main/settings/base.py` for your needs
 
 3. **Set up your database:**
+
    ```bash
    # Create .env file
    cp .env.example .env
@@ -82,11 +85,13 @@ After creating your project from the template:
    ```
 
 4. **Create a superuser:**
+
    ```bash
    make createsuperuser
    ```
 
 5. **Start developing:**
+
    ```bash
    make run
    # Open http://localhost:8000/api/docs
@@ -97,6 +102,7 @@ After creating your project from the template:
 If you have an existing Django project and want to use parts of this template:
 
 #### **1. Copy the Logging System**
+
 ```bash
 # Copy these files to your project:
 cp common/middleware.py YOUR_PROJECT/common/
@@ -105,6 +111,7 @@ cp main/settings/logging.py YOUR_PROJECT/main/settings/
 ```
 
 Then add to `settings.py`:
+
 ```python
 MIDDLEWARE = [
     'common.middleware.TraceIDMiddleware',  # Add this
@@ -113,6 +120,7 @@ MIDDLEWARE = [
 ```
 
 #### **2. Copy the Health Monitoring App**
+
 ```bash
 # Copy the entire ping app
 cp -r apps/ping_app YOUR_PROJECT/apps/
@@ -129,6 +137,7 @@ python manage.py migrate
 ```
 
 #### **3. Use the Package Management Setup**
+
 ```bash
 # Copy these files:
 cp pyproject.toml YOUR_PROJECT/
@@ -142,11 +151,13 @@ make init
 #### **4. Copy Specific Features**
 
 **Async CRUD Pattern (from Animals App):**
+
 - Copy `apps/animals_app/v1/services.py` as reference
 - Copy `apps/animals_app/v1/schemas.py` for Pydantic patterns
 - Copy `apps/animals_app/v1/views.py` for async endpoint examples
 
 **User Management (from Users App):**
+
 - Copy `apps/users_app/` for complete user system
 - Includes password hashing, validation, and async operations
 
@@ -206,6 +217,7 @@ django-ninja-ready-to-go/
 ## 🚀 **Quick Start**
 
 ### **Option 1: Docker (Recommended)**
+
 ```bash
 # Clone the repository
 git clone <your-repo-url>
@@ -219,6 +231,7 @@ open http://localhost:8000
 ```
 
 ### **Option 2: Local Development**
+
 ```bash
 # Clone the repository
 git clone <your-repo-url>
@@ -264,6 +277,7 @@ make update-deps
 **New to package management or want to know how we use `uv` in this project?**
 
 👉 **[Read the Complete Package Manager Guide](PACKAGE_MANAGER.md)** - Beginner-friendly guide covering:
+
 - What is `uv` and why we use it
 - How to add/remove packages
 - Manual package addition exercises
@@ -273,7 +287,8 @@ make update-deps
 ---
 
 ## 🏗️ **Project Applications**
-```
+
+```bash
 
 ## 🔧 **Development Commands**
 
@@ -287,6 +302,7 @@ make kill-port        # Kill processes on port 8000
 ```
 
 ### **Database Operations**
+
 ```bash
 make makemigrations   # Create new migrations
 make migrate          # Apply migrations
@@ -296,6 +312,7 @@ make createsuperuser  # Create admin user
 ```
 
 ### **Docker Operations**
+
 ```bash
 make d-build          # Build Docker services
 make d-up             # Start all services (detached)
@@ -305,6 +322,7 @@ make d-shell          # Shell into API container
 ```
 
 ### **Development Tools**
+
 ```bash
 make init             # Initialize project (venv + dependencies)
 make install          # Install dependencies
@@ -317,15 +335,16 @@ make format           # Format code
 
 Once the server is running, you can access:
 
-- **📚 Interactive API Docs**: http://localhost:8000/api/docs
-- **📋 OpenAPI Schema**: http://localhost:8000/api/openapi.json
-- **🔧 Django Admin**: http://localhost:8000/admin/
+- **📚 Interactive API Docs**: <http://localhost:8000/api/docs>
+- **📋 OpenAPI Schema**: <http://localhost:8000/api/openapi.json>
+- **🔧 Django Admin**: <http://localhost:8000/admin/>
 
 ## 🏗️ **Architecture Overview**
 
 ### **Core Components**
 
 #### **🔍 Advanced Logging & Tracing**
+
 - **Trace ID Middleware**: Automatically generates unique `trace_id` for each request
 - **Correlation ID Support**: For distributed tracing across services
 - **Contextual Logging**: Request-specific logger with automatic context injection
@@ -333,6 +352,7 @@ Once the server is running, you can access:
 - **Background Task Integration**: Seamless logging in async tasks
 
 #### **🏥 Health Monitoring System**
+
 - **Database Health**: PostgreSQL connectivity, read/write permissions, DDL operations
 - **Redis Health**: Cache connectivity, operations testing, server information
 - **External Service Monitoring**: HTTP endpoint pinging with aiohttp
@@ -340,6 +360,7 @@ Once the server is running, you can access:
 - **Performance Analytics**: Response time tracking and success rate monitoring
 
 #### **⚡ Async-First Design**
+
 - **Async Views**: Full async/await support for high performance
 - **Background Tasks**: Celery integration for long-running operations
 - **Database Operations**: Optimized async database queries
@@ -352,11 +373,13 @@ Once the server is running, you can access:
 The project includes three comprehensive Django applications demonstrating different aspects of Django Ninja development:
 
 ### **🐾 Animals App** (`apps/animals_app/`)
+
 A complete CRUD application showcasing modern Django Ninja patterns.
 
 👉 **[Read the Animals App Documentation](apps/animals_app/README.md)**
 
 **Features:**
+
 - **Async CRUD Operations**: Create, read, update, delete with async/await
 - **Pydantic Schemas**: Request/response validation with detailed schemas
 - **Service Layer**: Clean separation of business logic
@@ -364,6 +387,7 @@ A complete CRUD application showcasing modern Django Ninja patterns.
 - **Logger Integration**: Demonstrates contextual logging usage
 
 **API Endpoints:**
+
 ```bash
 GET    /api/v1/animals/           # List all animals
 POST   /api/v1/animals/           # Create new animal
@@ -374,11 +398,13 @@ GET    /api/v1/animals/logger-demo/ # Logger demonstration
 ```
 
 ### **👥 Users App** (`apps/users_app/`)
+
 User management system with authentication and profile features.
 
 👉 **[Read the Users App Documentation](apps/users_app/README.md)**
 
 **Features:**
+
 - **User Registration**: Complete user signup flow with password hashing
 - **Profile Management**: User retrieval by ID
 - **Secure Passwords**: Django's built-in password hashing (PBKDF2)
@@ -386,6 +412,7 @@ User management system with authentication and profile features.
 - **Async Operations**: Full async/await support
 
 **API Endpoints:**
+
 ```bash
 POST   /api/v1/users/register      # Register new user
 GET    /api/v1/users/{id}/          # Get user profile
@@ -393,11 +420,13 @@ DELETE /api/v1/users/{id}/        # Delete user
 ```
 
 ### **🏓 Ping App** (`apps/ping_app/`)
+
 Comprehensive health check and monitoring system with organized API structure.
 
 👉 **[Read the Ping App Documentation](apps/ping_app/README.md)**
 
 **Features:**
+
 - **Database Health Checks**: PostgreSQL connectivity, read/write permissions, DDL operations, table listing
 - **Redis Health Checks**: Cache connectivity, read/write operations, key management, server info
 - **External Endpoint Pinging**: HTTP endpoint testing with aiohttp, logs, and statistics
@@ -406,7 +435,8 @@ Comprehensive health check and monitoring system with organized API structure.
 - **Admin Interface**: Django admin integration for monitoring and management
 
 **API Structure:**
-```
+
+```bash
 /api/v1/pings/
 ├── /                    # Basic ping endpoint
 ├── /health/            # Overall system health
@@ -416,6 +446,7 @@ Comprehensive health check and monitoring system with organized API structure.
 ```
 
 **Quick Examples:**
+
 ```bash
 # Basic ping
 curl http://localhost:8000/api/v1/pings/
@@ -440,9 +471,11 @@ curl http://localhost:8000/api/v1/pings/external/stats/
 ```
 
 ### **🔧 Common Utilities** (`common/`)
+
 Shared utilities and middleware providing enterprise-grade functionality:
 
 #### **Trace ID Middleware** (`middleware.py`)
+
 - **Automatic Trace ID Generation**: Unique identifier for each request
 - **Correlation ID Support**: For distributed tracing across services
 - **Request Context Injection**: Attaches trace context to request object
@@ -450,6 +483,7 @@ Shared utilities and middleware providing enterprise-grade functionality:
 - **Logger Integration**: Seamless integration with contextual logging
 
 #### **Logger Helper** (`logger_helper.py`)
+
 - **Contextual Logging**: Request-specific logger with automatic context
 - **Background Task Support**: Logger context for async tasks
 - **Structured Logging**: JSON-formatted logs with trace information
@@ -457,12 +491,14 @@ Shared utilities and middleware providing enterprise-grade functionality:
 - **Context Variables**: Python ContextVar for async compatibility
 
 #### **Base Schemas** (`base_schemas.py`)
+
 - **Standardized API Responses**: Consistent response format across all endpoints
 - **Error Handling**: Structured error response schemas
 - **Trace ID Integration**: Automatic trace_id inclusion in responses
 - **Type Safety**: Full Pydantic validation and type hints
 
 #### **Background Tasks** (`background_tasks.py`)
+
 - **Async Task Examples**: Demonstrates background task patterns
 - **Logger Context Passing**: Shows how to maintain trace context in tasks
 - **Task Management**: Examples of task creation and execution
@@ -471,6 +507,7 @@ Shared utilities and middleware providing enterprise-grade functionality:
 ## 🐳 **Docker & Deployment**
 
 ### **Docker Configuration**
+
 - **Multi-stage Builds**: Optimized production images
 - **Development & Production**: Separate Dockerfiles for different environments
 - **Docker Compose**: Complete multi-service setup with PostgreSQL and Redis
@@ -478,12 +515,14 @@ Shared utilities and middleware providing enterprise-grade functionality:
 - **Volume Management**: Persistent data and development volumes
 
 ### **Deployment Scripts** (`deploy/`)
+
 - **Database Scripts**: Schema initialization and migrations
 - **Entrypoint Scripts**: Container startup and configuration
 - **Shell Scripts**: Service management and startup
 - **Supervisor Scripts**: Process management and monitoring
 
 ### **Production Features**
+
 - **Environment Configuration**: Separate settings for different environments
 - **Security Headers**: Production-ready security configurations
 - **Logging Configuration**: Structured logging for production
@@ -493,12 +532,14 @@ Shared utilities and middleware providing enterprise-grade functionality:
 ## 🧪 **Testing & Quality**
 
 ### **Test Coverage**
+
 - **Unit Tests**: Comprehensive test coverage for all apps
 - **Async Testing**: Support for testing async views and services
 - **Integration Tests**: End-to-end API testing
 - **Mock Services**: External service mocking for reliable tests
 
 ### **Code Quality**
+
 - **Type Hints**: Full type annotation throughout the codebase
 - **Linting**: Code quality enforcement with flake8, black, isort
 - **Documentation**: Comprehensive docstrings and API documentation
@@ -507,12 +548,14 @@ Shared utilities and middleware providing enterprise-grade functionality:
 ## 🚀 **Performance & Monitoring**
 
 ### **Performance Features**
+
 - **Async Operations**: Full async/await support for high concurrency
 - **Database Optimization**: Efficient queries and connection management
 - **Caching**: Redis integration for improved performance
 - **Background Tasks**: Non-blocking operations for better responsiveness
 
 ### **Monitoring & Observability**
+
 - **Request Tracing**: Complete request lifecycle tracking
 - **Health Monitoring**: Comprehensive system health checks
 - **Performance Metrics**: Response time tracking and analytics
@@ -522,12 +565,14 @@ Shared utilities and middleware providing enterprise-grade functionality:
 ## 📚 **Documentation & Resources**
 
 ### **API Documentation**
+
 - **Interactive Docs**: Swagger UI at `/api/docs`
 - **OpenAPI Schema**: Machine-readable API specification
 - **Code Examples**: Comprehensive usage examples
 - **Error Codes**: Detailed error response documentation
 
 ### **Development Resources**
+
 - **Makefile Commands**: Complete development automation
 - **Docker Setup**: Containerized development environment
 - **Environment Configuration**: Flexible configuration management
@@ -536,6 +581,7 @@ Shared utilities and middleware providing enterprise-grade functionality:
 ## 🤝 **Contributing**
 
 ### **Development Setup**
+
 1. Fork the repository
 2. Create a feature branch
 3. Set up the development environment
@@ -544,6 +590,7 @@ Shared utilities and middleware providing enterprise-grade functionality:
 6. Submit a pull request
 
 ### **Code Standards**
+
 - Follow Django and Python best practices
 - Use type hints throughout
 - Maintain test coverage
@@ -556,4 +603,4 @@ Shared utilities and middleware providing enterprise-grade functionality:
 
 This Django Ninja Ready-to-Go template provides everything you need to build production-ready APIs with modern Python practices. From advanced logging and health monitoring to Docker deployment and comprehensive testing, it's designed to scale with your application needs.
 
-**Happy Coding! 🚀**
+## Happy Coding! 🚀
