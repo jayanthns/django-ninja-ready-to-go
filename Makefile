@@ -36,10 +36,13 @@ shell_plus:
 createsuperuser:
 	@echo "Create superuser..."
 
+run_uvicorn:
+	@echo "Running uvicorn..."
+	@$(VENV_ACTIVATE) && uvicorn main.asgi:application --host 0.0.0.0 --port 8000 --workers 4 --reload
+
 run_gunicorn:
 	@echo "Running gunicorn..."
-	@$(VENV_ACTIVATE) && gunicorn main.asgi:application bind 0.0.0.0:8000 workers 4 worker-class uvicorn.workers.UvicornWorker
-
+	@$(VENV_ACTIVATE) && gunicorn main.asgi:application --bind 0.0.0.0:8000 --workers 4 --worker-class uvicorn.workers.UvicornWorker
 
 generate-docs:
 	@echo "Generating API documentation..."
