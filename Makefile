@@ -40,6 +40,10 @@ run_uvicorn:
 	@echo "Running uvicorn..."
 	@$(VENV_ACTIVATE) && uvicorn main.asgi:application --host 0.0.0.0 --port 8000 --workers 4 --reload
 
+generate-docs:
+	@echo "Generating API documentation..."
+	@$(VENV_ACTIVATE) && python manage.py generate_api_docs
+
 
 # Initialize the venv and install the requirements
 
@@ -245,6 +249,7 @@ help:
 	@echo "  shell_plus: Log into the Django Shell Plus"
 	@echo "  createsuperuser: Create a superuser"
 	@echo "  run_uvicorn: Run the uvicorn server"
+	@echo "  generate-docs: Generate Swagger and ReDoc documentation files"
 	@echo ""
 	@echo "== Setup & Installation =="
 	@echo "  init: Initialize the venv and install the requirements"
@@ -297,4 +302,4 @@ help:
 	@echo "  d-exec: Execute a command in the services"
 	@echo "  help: Show this help message"
 
-.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_uvicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help
+.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_uvicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help generate-docs
