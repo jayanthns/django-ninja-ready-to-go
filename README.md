@@ -293,9 +293,11 @@ make update-deps
 The project includes a comprehensive Makefile for common development tasks:
 
 ### **Server Management**
+
 ```bash
 make run              # Start Django development server
-make run_uvicorn      # Start with Uvicorn (ASGI)
+make run_uvicorn      # Start with Uvicorn (Development-ready ASGI)
+make run_gunicorn     # Start with Gunicorn (Production-ready ASGI)
 make kill-port        # Kill processes on port 8000
 ```
 
@@ -582,8 +584,8 @@ This will create a `docs/` directory with `swagger.html` and `redoc.html`.
 **Viewing on GitHub:**
 GitHub's README does not support embedding interactive JavaScript applications like Swagger UI or ReDoc directly. To view these files:
 
-1.  **Locally**: Open `docs/swagger.html` or `docs/redoc.html` in your browser.
-2.  **GitHub Pages**: Enable GitHub Pages for your repository (Settings -> Pages -> Source: `main` branch, `/docs` folder). Your docs will be available at:
+1. **Locally**: Open `docs/swagger.html` or `docs/redoc.html` in your browser.
+2. **GitHub Pages**: Enable GitHub Pages for your repository (Settings -> Pages -> Source: `main` branch, `/docs` folder). Your docs will be available at:
     - `https://<username>.github.io/<repo>/swagger.html`
     - `https://<username>.github.io/<repo>/redoc.html`
 
