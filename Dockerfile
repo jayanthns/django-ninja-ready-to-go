@@ -27,7 +27,7 @@ RUN chown -R appuser:appuser $APP_HOME
 # Copy supervisord configuration
 COPY deploy/supervisor_scripts/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY deploy/supervisor_scripts/celery_supervisord.conf /etc/supervisor/conf.d/celery_supervisord.conf
-COPY deploy/supervisor_scripts/uvicorn_supervisord.conf /etc/supervisor/conf.d/uvicorn_supervisord.conf
+COPY deploy/supervisor_scripts/gunicorn_supervisord.conf /etc/supervisor/conf.d/gunicorn_supervisord.conf
 
 # Change permissions for deploy folder scripts
 RUN sed -i 's/\r$//g' /app/deploy/shell_scripts/*.sh /app/deploy/entrypoint_scripts/*.sh
