@@ -1,0 +1,1366 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "My Project API",
+        "version": "1.0.0",
+        "description": ""
+    },
+    "paths": {
+        "/api/v1/animals/": {
+            "post": {
+                "operationId": "apps_animals_app_v1_views_create_animal",
+                "summary": "Create Animal",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Create a new animal (Async).",
+                "tags": [
+                    "Animals"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AnimalCreateSchema"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            },
+            "get": {
+                "operationId": "apps_animals_app_v1_views_list_animals",
+                "summary": "List Animals",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Retrieve all animals (Async).",
+                "tags": [
+                    "Animals"
+                ]
+            }
+        },
+        "/api/v1/animals/{animal_id}/": {
+            "get": {
+                "operationId": "apps_animals_app_v1_views_get_animal",
+                "summary": "Get Animal",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "animal_id",
+                        "schema": {
+                            "title": "Animal Id",
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AnimalSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "title": "Response",
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Retrieve a single animal by ID (Async).",
+                "tags": [
+                    "Animals"
+                ]
+            },
+            "put": {
+                "operationId": "apps_animals_app_v1_views_update_animal",
+                "summary": "Update Animal",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "animal_id",
+                        "schema": {
+                            "title": "Animal Id",
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AnimalSchema"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "title": "Response",
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Update an animal (Async).",
+                "tags": [
+                    "Animals"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AnimalCreateSchema"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            },
+            "delete": {
+                "operationId": "apps_animals_app_v1_views_delete_animal",
+                "summary": "Delete Animal",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "animal_id",
+                        "schema": {
+                            "title": "Animal Id",
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "title": "Response",
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "title": "Response",
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Delete an animal (Async).",
+                "tags": [
+                    "Animals"
+                ]
+            }
+        },
+        "/api/v1/animals/logger-demo/": {
+            "get": {
+                "operationId": "apps_animals_app_v1_views_logger_demo",
+                "summary": "Logger Demo",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "title": "Response",
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Demo endpoint to showcase the logger helper functionality.",
+                "tags": [
+                    "Animals"
+                ]
+            }
+        },
+        "/api/v1/users/register": {
+            "post": {
+                "operationId": "apps_users_app_v1_views_register_user",
+                "summary": "Register User",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Register a new user (Async).",
+                "tags": [
+                    "Users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserCreateSchema"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/users/{user_id}/": {
+            "get": {
+                "operationId": "apps_users_app_v1_views_get_user",
+                "summary": "Get User",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "title": "User Id",
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Retrieve a user by ID (Async).",
+                "tags": [
+                    "Users"
+                ]
+            }
+        },
+        "/api/v1/pings/": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_system_views_ping",
+                "summary": "Ping",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Basic ping endpoint to test API connectivity.",
+                "tags": [
+                    "ping-health"
+                ]
+            }
+        },
+        "/api/v1/pings/health/": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_system_views_get_system_health",
+                "summary": "Get System Health",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Get overall system health status.",
+                "tags": [
+                    "ping-health"
+                ]
+            }
+        },
+        "/api/v1/pings/cache/": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_cache_views_ping_cache",
+                "summary": "Ping Cache",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Ping cache service to check connectivity.\n\nReturns:\n    Cache connection status and response time",
+                "tags": [
+                    "cache-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/cache/info": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_cache_views_get_cache_info",
+                "summary": "Get Cache Info",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Get cache service information and statistics.\n\nReturns:\n    Cache service info, memory usage, and connection details",
+                "tags": [
+                    "cache-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/cache/keys": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_cache_views_get_cache_keys",
+                "summary": "Get Cache Keys",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "pattern",
+                        "schema": {
+                            "default": "*",
+                            "title": "Pattern",
+                            "type": "string"
+                        },
+                        "required": false
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "default": 100,
+                            "title": "Limit",
+                            "type": "integer"
+                        },
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Get cache keys matching a pattern.\n\nArgs:\n    pattern: Key pattern to match (default: \"*\")\n    limit: Maximum number of keys to return (default: 100)\n\nReturns:\n    List of cache keys matching the pattern",
+                "tags": [
+                    "cache-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/cache/test-write/": {
+            "post": {
+                "operationId": "apps_ping_app_v1_views_cache_views_test_cache_write",
+                "summary": "Test Cache Write",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Test cache write permissions specifically.",
+                "tags": [
+                    "cache-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/cache/test-read/": {
+            "post": {
+                "operationId": "apps_ping_app_v1_views_cache_views_test_cache_read",
+                "summary": "Test Cache Read",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Test cache read permissions specifically.",
+                "tags": [
+                    "cache-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/db/ping": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_database_views_ping_database",
+                "summary": "Ping Database",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Ping database connectivity and basic health check.\n\nTests:\n- Database connection\n- Basic query execution\n- Connection pool status\n- Response time measurement",
+                "tags": [
+                    "database-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/db/read": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_database_views_test_database_read",
+                "summary": "Test Database Read",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Test database read access (SELECT operations).\n\nTests:\n- SELECT query execution\n- Data retrieval\n- Query performance\n- Result set handling",
+                "tags": [
+                    "database-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/db/write": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_database_views_test_database_write",
+                "summary": "Test Database Write",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Test database write access (INSERT/UPDATE/DELETE operations).\n\nTests:\n- INSERT operation\n- UPDATE operation\n- DELETE operation\n- Transaction handling",
+                "tags": [
+                    "database-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/db/ddl": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_database_views_test_database_ddl",
+                "summary": "Test Database Ddl",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Test database DDL operations (CREATE/DROP/ALTER).\n\nTests:\n- CREATE TABLE operation\n- ALTER TABLE operation\n- DROP TABLE operation\n- Schema manipulation",
+                "tags": [
+                    "database-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/db/info": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_database_views_get_database_info",
+                "summary": "Get Database Info",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Get comprehensive database information and status.\n\nReturns:\n- Database version and type\n- Connection pool status\n- Database size and statistics\n- Active connections\n- Configuration details",
+                "tags": [
+                    "database-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/db/tables": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_database_views_list_database_tables",
+                "summary": "List Database Tables",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "List all tables in the current database.\n\nReturns:\n- Table names and types\n- Table row counts\n- Table sizes\n- Creation/modification dates",
+                "tags": [
+                    "database-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/db/test-write/": {
+            "post": {
+                "operationId": "apps_ping_app_v1_views_database_views_test_database_write_post",
+                "summary": "Test Database Write Post",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Test database write permissions specifically (POST endpoint).",
+                "tags": [
+                    "database-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/db/test-read/": {
+            "post": {
+                "operationId": "apps_ping_app_v1_views_database_views_test_database_read_post",
+                "summary": "Test Database Read Post",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Test database read permissions specifically (POST endpoint).",
+                "tags": [
+                    "database-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/external/": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_external_views_ping_external",
+                "summary": "Ping External",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Basic ping endpoint to test external ping service connectivity.",
+                "tags": [
+                    "external-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/external/endpoint/": {
+            "post": {
+                "operationId": "apps_ping_app_v1_views_external_views_ping_endpoint",
+                "summary": "Ping Endpoint",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Ping an external endpoint and log the result.",
+                "tags": [
+                    "external-pings"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PingRequestSchema"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/pings/external/logs/": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_external_views_get_ping_logs",
+                "summary": "Get Ping Logs",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "default": 100,
+                            "title": "Limit",
+                            "type": "integer"
+                        },
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Get recent ping logs.",
+                "tags": [
+                    "external-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/external/stats/": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_external_views_get_ping_stats",
+                "summary": "Get Ping Stats",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Get ping statistics.",
+                "tags": [
+                    "external-pings"
+                ]
+            }
+        },
+        "/api/v1/pings/external/health/": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_external_views_get_external_ping_health",
+                "summary": "Get External Ping Health",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Get external ping service health status.",
+                "tags": [
+                    "external-pings"
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "APIResponse": {
+                "properties": {
+                    "trace_id": {
+                        "title": "Trace Id",
+                        "type": "string"
+                    },
+                    "error": {
+                        "anyOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error"
+                    },
+                    "data": {
+                        "anyOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "items": {
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Data"
+                    }
+                },
+                "required": [
+                    "trace_id"
+                ],
+                "title": "APIResponse",
+                "type": "object"
+            },
+            "AnimalSchema": {
+                "properties": {
+                    "id": {
+                        "title": "Id",
+                        "type": "integer"
+                    },
+                    "name": {
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "species": {
+                        "title": "Species",
+                        "type": "string"
+                    },
+                    "age": {
+                        "title": "Age",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "species",
+                    "age"
+                ],
+                "title": "AnimalSchema",
+                "type": "object"
+            },
+            "AnimalCreateSchema": {
+                "properties": {
+                    "name": {
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "species": {
+                        "title": "Species",
+                        "type": "string"
+                    },
+                    "age": {
+                        "title": "Age",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "name",
+                    "species",
+                    "age"
+                ],
+                "title": "AnimalCreateSchema",
+                "type": "object"
+            },
+            "UserSchema": {
+                "properties": {
+                    "id": {
+                        "title": "Id",
+                        "type": "integer"
+                    },
+                    "username": {
+                        "title": "Username",
+                        "type": "string"
+                    },
+                    "email": {
+                        "format": "email",
+                        "title": "Email",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "username",
+                    "email"
+                ],
+                "title": "UserSchema",
+                "type": "object"
+            },
+            "UserCreateSchema": {
+                "properties": {
+                    "username": {
+                        "title": "Username",
+                        "type": "string"
+                    },
+                    "email": {
+                        "format": "email",
+                        "title": "Email",
+                        "type": "string"
+                    },
+                    "password": {
+                        "title": "Password",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "username",
+                    "email",
+                    "password"
+                ],
+                "title": "UserCreateSchema",
+                "type": "object"
+            },
+            "HealthCheckResponseSchema": {
+                "description": "Schema for health check response.",
+                "properties": {
+                    "service_name": {
+                        "title": "Service Name",
+                        "type": "string"
+                    },
+                    "service_type": {
+                        "title": "Service Type",
+                        "type": "string"
+                    },
+                    "is_healthy": {
+                        "title": "Is Healthy",
+                        "type": "boolean"
+                    },
+                    "response_time_ms": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Response Time Ms"
+                    },
+                    "error_message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error Message"
+                    },
+                    "metadata": {
+                        "default": {},
+                        "title": "Metadata",
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "service_name",
+                    "service_type",
+                    "is_healthy"
+                ],
+                "title": "HealthCheckResponseSchema",
+                "type": "object"
+            },
+            "SystemStatusSchema": {
+                "description": "Schema for overall system status.",
+                "properties": {
+                    "overall_status": {
+                        "title": "Overall Status",
+                        "type": "string"
+                    },
+                    "services": {
+                        "items": {
+                            "$ref": "#/components/schemas/HealthCheckResponseSchema"
+                        },
+                        "title": "Services",
+                        "type": "array"
+                    },
+                    "checked_at": {
+                        "format": "date-time",
+                        "title": "Checked At",
+                        "type": "string"
+                    },
+                    "uptime_seconds": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Uptime Seconds"
+                    }
+                },
+                "required": [
+                    "overall_status",
+                    "services",
+                    "checked_at"
+                ],
+                "title": "SystemStatusSchema",
+                "type": "object"
+            },
+            "RedisHealthSchema": {
+                "description": "Schema for Redis health check.",
+                "properties": {
+                    "is_healthy": {
+                        "title": "Is Healthy",
+                        "type": "boolean"
+                    },
+                    "response_time_ms": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Response Time Ms"
+                    },
+                    "error_message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error Message"
+                    },
+                    "redis_version": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Redis Version"
+                    },
+                    "memory_usage": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Memory Usage"
+                    },
+                    "connected_clients": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Connected Clients"
+                    },
+                    "uptime_in_seconds": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Uptime In Seconds"
+                    },
+                    "total_commands_processed": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Total Commands Processed"
+                    },
+                    "evicted_keys": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Evicted Keys"
+                    },
+                    "keyspace_hits": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Keyspace Hits"
+                    },
+                    "keyspace_misses": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Keyspace Misses"
+                    },
+                    "role": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Role"
+                    }
+                },
+                "required": [
+                    "is_healthy"
+                ],
+                "title": "RedisHealthSchema",
+                "type": "object"
+            },
+            "DatabaseHealthSchema": {
+                "description": "Schema for database health check.",
+                "properties": {
+                    "is_healthy": {
+                        "title": "Is Healthy",
+                        "type": "boolean"
+                    },
+                    "response_time_ms": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Response Time Ms"
+                    },
+                    "error_message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error Message"
+                    },
+                    "connection_count": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Connection Count"
+                    },
+                    "database_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Database Name"
+                    }
+                },
+                "required": [
+                    "is_healthy"
+                ],
+                "title": "DatabaseHealthSchema",
+                "type": "object"
+            },
+            "PingResponseSchema": {
+                "description": "Schema for ping response.",
+                "properties": {
+                    "endpoint": {
+                        "title": "Endpoint",
+                        "type": "string"
+                    },
+                    "method": {
+                        "title": "Method",
+                        "type": "string"
+                    },
+                    "status_code": {
+                        "title": "Status Code",
+                        "type": "integer"
+                    },
+                    "response_time_ms": {
+                        "title": "Response Time Ms",
+                        "type": "number"
+                    },
+                    "success": {
+                        "title": "Success",
+                        "type": "boolean"
+                    },
+                    "error_message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error Message"
+                    },
+                    "response_headers": {
+                        "default": {},
+                        "title": "Response Headers",
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "endpoint",
+                    "method",
+                    "status_code",
+                    "response_time_ms",
+                    "success"
+                ],
+                "title": "PingResponseSchema",
+                "type": "object"
+            },
+            "PingRequestSchema": {
+                "description": "Schema for ping request.",
+                "properties": {
+                    "endpoint": {
+                        "title": "Endpoint",
+                        "type": "string"
+                    },
+                    "method": {
+                        "default": "GET",
+                        "title": "Method",
+                        "type": "string"
+                    },
+                    "timeout": {
+                        "default": 5,
+                        "title": "Timeout",
+                        "type": "integer"
+                    },
+                    "headers": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": {
+                                    "type": "string"
+                                },
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Headers"
+                    }
+                },
+                "required": [
+                    "endpoint"
+                ],
+                "title": "PingRequestSchema",
+                "type": "object"
+            },
+            "PingStatsSchema": {
+                "description": "Schema for ping statistics.",
+                "properties": {
+                    "total_pings": {
+                        "title": "Total Pings",
+                        "type": "integer"
+                    },
+                    "successful_pings": {
+                        "title": "Successful Pings",
+                        "type": "integer"
+                    },
+                    "failed_pings": {
+                        "title": "Failed Pings",
+                        "type": "integer"
+                    },
+                    "average_response_time_ms": {
+                        "title": "Average Response Time Ms",
+                        "type": "number"
+                    },
+                    "min_response_time_ms": {
+                        "title": "Min Response Time Ms",
+                        "type": "number"
+                    },
+                    "max_response_time_ms": {
+                        "title": "Max Response Time Ms",
+                        "type": "number"
+                    },
+                    "last_24h_pings": {
+                        "title": "Last 24H Pings",
+                        "type": "integer"
+                    },
+                    "last_24h_success_rate": {
+                        "title": "Last 24H Success Rate",
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "total_pings",
+                    "successful_pings",
+                    "failed_pings",
+                    "average_response_time_ms",
+                    "min_response_time_ms",
+                    "max_response_time_ms",
+                    "last_24h_pings",
+                    "last_24h_success_rate"
+                ],
+                "title": "PingStatsSchema",
+                "type": "object"
+            }
+        }
+    },
+    "servers": []
+}
