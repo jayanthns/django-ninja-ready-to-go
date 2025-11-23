@@ -21,9 +21,9 @@ fi
 USE_SUPERVISOR=$(echo "$USE_SUPERVISOR" | tr '[:upper:]' '[:lower:]')
 
 if [ "$USE_SUPERVISOR" = "false" ]; then
-    echo "Skipping Supervisor: Running Uvicorn directly via uvicorn_start.sh"
-    exec /app/deploy/shell_scripts/uvicorn_start.sh
+    echo "Skipping Supervisor: Running Uvicorn directly via gunicorn_start.sh"
+    exec /app/deploy/shell_scripts/gunicorn_start.sh
 else
-    echo "USE_SUPERVISOR is enabled, starting supervisord with uvicorn_supervisord.conf..."
-    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/uvicorn_supervisord.conf
+    echo "USE_SUPERVISOR is enabled, starting supervisord with gunicorn_supervisord.conf..."
+    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/gunicorn_supervisord.conf
 fi
