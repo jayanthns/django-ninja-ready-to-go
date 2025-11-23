@@ -48,6 +48,14 @@ generate-docs:
 	@echo "Generating API documentation..."
 	@$(VENV_ACTIVATE) && python manage.py generate_api_docs
 
+create-app:
+	@if [ -z "$(APP)" ]; then \
+		echo "Error: APP name is required"; \
+		echo "Usage: make create-app APP=your_app_name"; \
+		exit 1; \
+	fi
+	@bash scripts/create_ninja_app.sh $(APP)
+
 
 # Initialize the venv and install the requirements
 
@@ -148,7 +156,7 @@ sync-packages: package-sync
 sync-package: package-sync
 
 
-.PHONY: run kill-port makemigrations migrate shell createsuperuser update-deps compile-deps add-package add-dev-package remove-package remove-dev-package install update init package-sync
+.PHONY: run kill-port makemigrations migrate shell shell_plus createsuperuser run_uvicorn run_gunicorn generate-docs create-app init install compile-deps add-package add-dev-package remove-package remove-dev-package update-deps pytest black_check black_format isort_check isort_format flake8 mypy static-tests d-build d-up d-down d-logs d-restart d-exec help
 
 isort_check:
 	@echo "Running isort check..."
@@ -254,7 +262,8 @@ help:
 	@echo "  createsuperuser: Create a superuser"
 	@echo "  run_gunicorn: Run the gunicorn server"
 	@echo "  run_uvicorn: Run the uvicorn server"
-	@echo "  generate-docs: Generate Swagger and ReDoc documentation files"
+	@echo "  generate-docs          Generate static API documentation (Swagger, ReDoc)"
+	@echo "  create-app APP=name    Create a new Django Ninja app with v1 structure"
 	@echo ""
 	@echo "== Setup & Installation =="
 	@echo "  init: Initialize the venv and install the requirements"

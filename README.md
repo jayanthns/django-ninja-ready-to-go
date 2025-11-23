@@ -4,6 +4,28 @@
 
 A **production-ready Django Ninja API framework** with comprehensive health monitoring, advanced logging, request tracing, and modern development practices. This project serves as a complete template for building scalable Django Ninja applications with enterprise-grade features.
 
+## 📑 Table of Contents
+
+- [🎯 Key Features](#-key-features)
+- [🎯 Using This Template](#-using-this-template)
+- [📁 Project Structure](#-project-structure)
+- [🛠️ Prerequisites](#️-prerequisites)
+- [🚀 Quick Start](#-quick-start)
+- [📚 Documentation](#-documentation)
+- [🛠️ Development Workflow](#️-development-workflow)
+  - [Creating a New App](#creating-a-new-app)
+  - [Package Management](#package-management)
+- [🧪 Testing](#-testing)
+- [📦 Package Management](#-package-management)
+- [🔧 Development Commands](#-development-commands)
+- [🌐 API Documentation](#-api-documentation)
+- [🏗️ Architecture Overview](#️-architecture-overview)
+- [📱 Applications Overview](#-applications-overview)
+- [🔧 Common Utilities](#-common-utilities)
+- [🐳 Docker & Deployment](#-docker--deployment)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+
 ## 🎯 **Key Features**
 
 - **🏗️ Modern Architecture**: Django Ninja with async support, structured apps, and clean separation of concerns
@@ -545,6 +567,12 @@ Comprehensive guides are available in the `docs/` directory to help you get the 
   - `uv` configuration and `UV_PROJECT_ENVIRONMENT` setup
   - Alternative to `make` commands for manual control
 
+- **[🧑‍💻 DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)** - Coding standards and best practices
+  - Naming conventions (plural nouns for apps, PEP 8 standards)
+  - Code style guidelines and type hints
+  - Service layer patterns and async best practices
+  - Comprehensive FAQ for common development questions
+
 - **[🧪 TESTING.md](docs/TESTING.md)** - Testing and troubleshooting
   - How to run tests with `pytest`
   - PostgreSQL collation error fixes
@@ -591,9 +619,49 @@ If you prefer not to use `make`, see the **[Manual Setup Guide](docs/setup.md)**
 
 ---
 
-## 📦 **Package Management**
+## 🛠️ **Development Workflow**
 
-This project uses **`uv`**. For common commands and workflows, see the **[Package Manager Guide](docs/package_manager.md)**.
+### **Creating a New App**
+
+Quickly scaffold a new Django Ninja app with the standard v1 structure:
+
+```bash
+make create-app APP=your_app_name
+```
+
+This command creates:
+- `apps/your_app_name/v1/` directory structure
+- All necessary files: `admin.py`, `apps.py`, `models.py`, `schemas.py`, `services.py`, `views.py`
+- Stub code with examples and best practices
+- A health check endpoint to verify the app works
+
+**Next steps after creating an app:**
+
+1. Add to `INSTALLED_APPS` in `main/settings/base.py`:
+   ```python
+   INSTALLED_APPS = [
+       # ... other apps
+       "apps.your_app_name.v1",
+   ]
+   ```
+
+2. Register the router in `main/urls.py`:
+   ```python
+   from apps.your_app_name.v1.views import router as your_app_router
+   api.add_router("/your_app/", your_app_router, tags=["YourApp"])
+   ```
+
+3. Create and run migrations:
+   ```bash
+   make makemigrations
+   make migrate
+   ```
+
+> **💡 Advanced**: For details on how the script works and how to customize it, see [scripts/README.md](scripts/README.md).
+
+### **Package Management**
+
+This project uses **`uv`**. For common commands and workflows, see the **[Package Manager Guide](docs/PACKAGE_MANAGER.md)**.
 
 ### Quick Commands
 
@@ -613,7 +681,7 @@ Run tests with:
 make pytest
 ```
 
-For troubleshooting (e.g., PostgreSQL collation errors), see the **[Testing Guide](docs/testing.md)**.
+For troubleshooting (e.g., PostgreSQL collation errors), see the **[Testing Guide](docs/TESTING.md)**.
 
 ### **Code Quality**
 
