@@ -253,6 +253,48 @@ make run
 open http://localhost:8000
 ```
 
+### **Option 3: Manual Setup (No Makefile)**
+
+If you prefer not to use `make` commands, you can set up the project manually.
+
+**1. Install `uv`:**
+
+```bash
+pip install uv
+```
+
+**2. Create a virtual environment:**
+
+```bash
+uv venv venv
+```
+
+**3. Activate the virtual environment:**
+
+```bash
+source venv/bin/activate
+```
+
+**4. Install dependencies:**
+**Important**: You must set `UV_PROJECT_ENVIRONMENT` to your venv path so `uv` knows where to install packages.
+
+```bash
+export UV_PROJECT_ENVIRONMENT=$(pwd)/venv
+uv sync --all-extras
+```
+
+**5. Run migrations:**
+
+```bash
+python manage.py migrate
+```
+
+**6. Start the server:**
+
+```bash
+python manage.py runserver
+```
+
 ---
 
 ## 📦 **Package Management**
