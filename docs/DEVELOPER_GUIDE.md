@@ -7,8 +7,10 @@ This guide provides naming conventions, coding standards, and best practices for
 1. [Naming Conventions](#naming-conventions)
 2. [Code Style & Standards](#code-style--standards)
 3. [Project Structure](#project-structure)
-4. [Best Practices](#best-practices)
-5. [FAQ](#faq)
+4. [Environment Configuration](#environment-configuration)
+5. [Best Practices](#best-practices)
+6. [Logging System](#logging-system)
+7. [FAQ](#faq)
 
 ---
 
@@ -21,6 +23,7 @@ This guide provides naming conventions, coding standards, and best practices for
 **Pattern**: `{plural_noun}_app`
 
 **Examples**:
+
 - ✅ `animals_app` - manages multiple animals
 - ✅ `users_app` - manages multiple users
 - ✅ `products_app` - manages multiple products
@@ -30,11 +33,13 @@ This guide provides naming conventions, coding standards, and best practices for
 - ❌ `animals-app` - kebab-case (incorrect)
 
 **Rationale**:
+
 - Plural nouns indicate the app manages a collection of entities
 - The `_app` suffix clearly distinguishes apps from other modules
 - Consistency across the codebase improves readability
 
 **Special Cases**:
+
 - For utility apps: `{function}_app` (e.g., `ping_app`, `auth_app`)
 - For feature apps: `{feature}_app` (e.g., `notifications_app`, `payments_app`)
 
@@ -45,6 +50,7 @@ This guide provides naming conventions, coding standards, and best practices for
 **Pattern**: `{SingularNoun}`
 
 **Examples**:
+
 - ✅ `Animal` - represents a single animal
 - ✅ `User` - represents a single user
 - ✅ `Product` - represents a single product
@@ -53,6 +59,7 @@ This guide provides naming conventions, coding standards, and best practices for
 - ❌ `animal` - lowercase (incorrect)
 
 **Rationale**:
+
 - Django convention: models represent single instances
 - PascalCase follows Python class naming conventions (PEP 8)
 
@@ -61,12 +68,14 @@ This guide provides naming conventions, coding standards, and best practices for
 **Rule**: Use descriptive names with appropriate suffixes.
 
 **Patterns**:
+
 - Response schemas: `{Model}Schema`
 - Create/input schemas: `{Model}CreateSchema` or `{Model}InputSchema`
 - Update schemas: `{Model}UpdateSchema`
 - Response wrappers: `{Model}ResponseSchema`
 
 **Examples**:
+
 ```python
 # Good
 class AnimalSchema(Schema):          # For responses
@@ -85,6 +94,7 @@ class AnimalResponseSchema(Schema):  # API response wrapper
 ```
 
 **Rationale**:
+
 - Clear intent: immediately understand the schema's purpose
 - Consistent suffixes make code predictable
 - Follows Pydantic and API design best practices
@@ -96,6 +106,7 @@ class AnimalResponseSchema(Schema):  # API response wrapper
 **Pattern**: `{Model}Service`
 
 **Examples**:
+
 - ✅ `AnimalService`
 - ✅ `UserService`
 - ✅ `ProductService`
@@ -103,6 +114,7 @@ class AnimalResponseSchema(Schema):  # API response wrapper
 - ❌ `animal_service` - snake_case (incorrect)
 
 **Rationale**:
+
 - Clear separation of concerns (service layer pattern)
 - Consistent with class naming conventions
 - Easy to locate business logic
@@ -112,6 +124,7 @@ class AnimalResponseSchema(Schema):  # API response wrapper
 **Rule**: Use descriptive function names in snake_case for endpoints.
 
 **Patterns**:
+
 - List: `list_{plural_noun}`
 - Retrieve: `get_{singular_noun}`
 - Create: `create_{singular_noun}`
@@ -119,6 +132,7 @@ class AnimalResponseSchema(Schema):  # API response wrapper
 - Delete: `delete_{singular_noun}`
 
 **Examples**:
+
 ```python
 # Good
 @router.get("/")
@@ -138,6 +152,7 @@ async def create_animal(request, payload: AnimalCreateSchema):
 ```
 
 **Rationale**:
+
 - Function names follow PEP 8 (snake_case)
 - Descriptive names improve code readability
 - Consistent CRUD patterns across the codebase
@@ -147,6 +162,7 @@ async def create_animal(request, payload: AnimalCreateSchema):
 **Rule**: Use snake_case for all Python files.
 
 **Standard Files**:
+
 - `models.py` - Database models
 - `schemas.py` - Pydantic schemas
 - `services.py` - Business logic
@@ -156,6 +172,7 @@ async def create_animal(request, payload: AnimalCreateSchema):
 - `tests.py` or `test_{feature}.py` - Tests
 
 **Custom Files**:
+
 - `utils.py` - Utility functions
 - `constants.py` - Constants and enums
 - `exceptions.py` - Custom exceptions
@@ -166,12 +183,14 @@ async def create_animal(request, payload: AnimalCreateSchema):
 **Rule**: Follow PEP 8 naming conventions.
 
 **Patterns**:
+
 - Variables: `snake_case`
 - Constants: `UPPER_SNAKE_CASE`
 - Private variables: `_leading_underscore`
 - Classes: `PascalCase`
 
 **Examples**:
+
 ```python
 # Good
 user_count = 10
@@ -195,15 +214,17 @@ maxRetryAttempts = 3  # Should be UPPER_SNAKE_CASE
 This project follows [PEP 8](https://peps.python.org/pep-0008/) - the official Python style guide.
 
 **Key Points**:
+
 - **Indentation**: 4 spaces (no tabs)
 - **Line Length**: Maximum 88 characters (Black formatter default)
-- **Imports**: 
+- **Imports**:
   - Standard library first
   - Third-party packages second
   - Local imports last
   - Alphabetically sorted within each group
 
 **Example**:
+
 ```python
 # Standard library
 import uuid
@@ -223,6 +244,7 @@ from .schemas import AnimalCreateSchema
 **Rule**: Use type hints for all function signatures and class attributes.
 
 **Examples**:
+
 ```python
 # Good
 async def get_animal(animal_id: int) -> Optional[Animal]:
@@ -237,6 +259,7 @@ async def get_animal(animal_id):  # Missing type hints
 ```
 
 **Rationale**:
+
 - Improves code readability
 - Enables better IDE support
 - Catches type errors early with mypy
@@ -246,6 +269,7 @@ async def get_animal(animal_id):  # Missing type hints
 **Rule**: Use async/await for all database operations and I/O-bound tasks.
 
 **Examples**:
+
 ```python
 # Good - Async ORM operations
 async def create_animal(name: str) -> Animal:
@@ -260,6 +284,7 @@ def create_animal(name: str) -> Animal:
 ```
 
 **Rationale**:
+
 - Non-blocking operations improve performance
 - Better scalability for concurrent requests
 - Follows Django Ninja async best practices
@@ -271,6 +296,7 @@ def create_animal(name: str) -> Animal:
 **Format**: Google-style docstrings
 
 **Examples**:
+
 ```python
 def create_animal(name: str, species: str, age: int) -> Animal:
     """Create a new animal instance.
@@ -294,6 +320,7 @@ def create_animal(name: str, species: str, age: int) -> Animal:
 **Rule**: Use specific exceptions and provide meaningful error messages.
 
 **Examples**:
+
 ```python
 # Good
 try:
@@ -320,7 +347,7 @@ except:  # Bare except
 
 ### App Organization
 
-```
+```bash
 apps/
 ├── {app_name}/              # App root (plural noun + _app)
 │   ├── __init__.py
@@ -340,11 +367,13 @@ apps/
 **Rule**: Use versioned directories (v1, v2, etc.) for API evolution.
 
 **Benefits**:
+
 - Backward compatibility
 - Gradual migration
 - Clear API versioning
 
 **Example**:
+
 ```python
 # main/urls.py
 from apps.animals_app.v1.views import router as animals_v1_router
@@ -353,6 +382,360 @@ from apps.animals_app.v2.views import router as animals_v2_router
 api.add_router("/v1/animals/", animals_v1_router, tags=["Animals V1"])
 api.add_router("/v2/animals/", animals_v2_router, tags=["Animals V2"])
 ```
+
+---
+
+## Environment Configuration
+
+This project uses environment variables for configuration management. Copy [.env.copy](../.env.copy) to `.env` and configure the variables for your environment.
+
+```bash
+cp .env.copy .env
+```
+
+### Django Configuration
+
+#### `APP_ENV`
+
+- **Type**: String
+- **Default**: `local`
+- **Options**: `local`, `dev`, `qa`, `staging`, `prod`
+- **Description**: Determines the application environment. Affects logging verbosity, debug mode, and which settings are loaded.
+- **Example**: `APP_ENV=local`
+
+#### `DJANGO_SETTINGS_MODULE`
+
+- **Type**: String
+- **Default**: `main.settings`
+- **Description**: Points to the Django settings module. Should not be changed unless you have a custom settings structure.
+- **Example**: `DJANGO_SETTINGS_MODULE=main.settings`
+
+### Database Configuration
+
+#### `DB_ENGINE`
+
+- **Type**: String
+- **Default**: `django.db.backends.postgresql`
+- **Options**: `django.db.backends.postgresql`, `django.db.backends.mysql`, `django.db.backends.sqlite3`
+- **Description**: Django database backend engine.
+- **Example**: `DB_ENGINE=django.db.backends.postgresql`
+
+#### `DB_NAME`
+
+- **Type**: String
+- **Required**: Yes
+- **Description**: Name of the database to connect to.
+- **Example**: `DB_NAME=postgres`
+
+#### `DB_USER`
+
+- **Type**: String
+- **Required**: Yes
+- **Description**: Database user with access to the database.
+- **Example**: `DB_USER=postgres`
+
+#### `DB_PASSWORD`
+
+- **Type**: String
+- **Required**: Yes
+- **Description**: Password for the database user.
+- **Example**: `DB_PASSWORD=postgres`
+- **Security**: Never commit this value to version control!
+
+#### `DB_HOST`
+
+- **Type**: String
+- **Default**: `localhost`
+- **Description**: Database server hostname or IP address. Use service name when using Docker Compose.
+- **Example**:
+  - Local: `DB_HOST=localhost`
+  - Docker: `DB_HOST=db` (service name from docker-compose.yml)
+
+#### `DB_PORT`
+
+- **Type**: Integer
+- **Default**: `5432` (PostgreSQL)
+- **Description**: Port number where the database server is listening.
+- **Example**:
+  - PostgreSQL: `DB_PORT=5432`
+  - MySQL: `DB_PORT=3306`
+
+#### `DB_SCHEMA`
+
+- **Type**: String
+- **Default**: `public`
+- **Description**: Database schema to use (PostgreSQL specific).
+- **Example**: `DB_SCHEMA=public`
+
+### Connection Pooling
+
+#### `DB_CONN_MAX_AGE`
+
+- **Type**: Integer
+- **Default**: `10`
+- **Description**: Maximum age of database connections in seconds. Set to `0` to disable persistent connections.
+- **Example**: `DB_CONN_MAX_AGE=10`
+- **Performance**: Higher values reduce connection overhead but consume more database resources.
+
+#### `DB_OPTIONS`
+
+- **Type**: JSON String
+- **Default**: `{}`
+- **Description**: Additional database connection options as a JSON object.
+- **Example**:
+  - SSL: `DB_OPTIONS={"sslmode": "require"}`
+  - Default: `DB_OPTIONS={}`
+
+### Celery Configuration
+
+Celery is used for asynchronous task processing. All Celery variables are optional.
+
+#### `RUN_CELERY_TOGETHER`
+
+- **Type**: Boolean String
+- **Default**: Empty (disabled)
+- **Options**: `true`, `false`, or empty
+- **Description**: Whether to run Celery workers alongside Django server.
+- **Example**:
+  - Enable: `RUN_CELERY_TOGETHER=true`
+  - Disable: `RUN_CELERY_TOGETHER=false`
+
+#### `CELERY_WORKERS`
+
+- **Type**: Integer
+- **Default**: Empty (uses Celery default)
+- **Description**: Number of Celery worker processes to spawn.
+- **Example**: `CELERY_WORKERS=4`
+- **Recommendation**: Set to number of CPU cores for CPU-bound tasks.
+
+#### `CELERY_WORKER_CONCURRENCY`
+
+- **Type**: Integer
+- **Default**: Empty (uses Celery default)
+- **Description**: Number of concurrent tasks each worker can process.
+- **Example**: `CELERY_WORKER_CONCURRENCY=5`
+- **Recommendation**: Higher for I/O-bound tasks, lower for CPU-bound tasks.
+
+#### `CELERY_PREFETCH_MULTIPLIER`
+
+- **Type**: Integer
+- **Default**: Empty (uses Celery default: 4)
+- **Description**: Number of tasks to prefetch per worker process.
+- **Example**: `CELERY_PREFETCH_MULTIPLIER=6`
+- **Performance**: Lower values (1-2) for long-running tasks, higher for short tasks.
+
+#### `CELERY_POOL`
+
+- **Type**: String
+- **Default**: Empty (uses `prefork`)
+- **Options**: `prefork`, `gevent`, `eventlet`, `solo`
+- **Description**: Execution pool implementation for Celery workers.
+- **Example**: `CELERY_POOL=gevent`
+- **Use Cases**:
+  - `prefork`: CPU-bound tasks (default)
+  - `gevent`: I/O-bound tasks (many concurrent connections)
+  - `solo`: Single-threaded (debugging)
+
+#### `CELERY_QUEUE_NAME`
+
+- **Type**: String
+- **Default**: Empty (uses `celery` default queue)
+- **Description**: Name of the Celery task queue.
+- **Example**: `CELERY_QUEUE_NAME=django_ninja_queue`
+
+### Uvicorn Configuration
+
+#### `UVICORN_WORKERS`
+
+- **Type**: Integer
+- **Default**: Empty (uses 1 worker)
+- **Description**: Number of Uvicorn worker processes for the ASGI server.
+- **Example**: `UVICORN_WORKERS=4`
+- **Recommendation**: Set to `(2 × CPU cores) + 1` for production.
+- **Note**: Multiple workers improve concurrency but increase memory usage.
+
+### Supervisor Configuration
+
+#### `USE_SUPERVISOR`
+
+- **Type**: Boolean String
+- **Default**: Empty (disabled)
+- **Options**: `true`, `false`, or empty
+- **Description**: Whether to use Supervisor to manage Django and Celery processes together.
+- **Example**:
+  - Enable: `USE_SUPERVISOR=true`
+  - Disable: `USE_SUPERVISOR=false`
+- **Use Case**: Production deployments where you want process monitoring and auto-restart.
+
+### Redis Configuration
+
+Redis is used for caching and as a Celery message broker.
+
+#### `REDIS_USERNAME`
+
+- **Type**: String
+- **Default**: `default`
+- **Description**: Redis username for authentication (Redis 6.0+).
+- **Example**: `REDIS_USERNAME=default`
+
+#### `REDIS_PASSWORD`
+
+- **Type**: String
+- **Required**: Yes (if Redis requires authentication)
+- **Description**: Password for Redis authentication.
+- **Example**: `REDIS_PASSWORD=redis`
+- **Security**: Never commit this value to version control!
+
+#### `REDIS_HOST_AND_PORT`
+
+- **Type**: String
+- **Format**: `host:port`
+- **Default**: `localhost:6379`
+- **Description**: Redis server hostname/IP and port.
+- **Example**:
+  - Local: `REDIS_HOST_AND_PORT=localhost:6379`
+  - Docker: `REDIS_HOST_AND_PORT=redis:6379`
+  - Remote: `REDIS_HOST_AND_PORT=redis.example.com:6379`
+
+#### `USE_REDIS`
+
+- **Type**: Integer (0 or 1)
+- **Default**: `1` (enabled)
+- **Options**: `1` (enabled), `0` (disabled)
+- **Description**: Enable or disable Redis caching. When disabled, uses in-memory cache.
+- **Example**:
+  - Enable: `USE_REDIS=1`
+  - Disable: `USE_REDIS=0`
+- **Use Case**: Disable for local development without Redis, enable for production.
+
+### Environment-Specific Examples
+
+#### Local Development
+
+```bash
+APP_ENV=local
+DJANGO_SETTINGS_MODULE=main.settings
+
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=myproject_dev
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=localhost
+DB_PORT=5432
+DB_SCHEMA=public
+
+DB_CONN_MAX_AGE=10
+DB_OPTIONS={}
+
+# Celery - Optional for local dev
+RUN_CELERY_TOGETHER=
+CELERY_WORKERS=
+CELERY_WORKER_CONCURRENCY=
+CELERY_PREFETCH_MULTIPLIER=
+CELERY_POOL=
+CELERY_QUEUE_NAME=
+
+UVICORN_WORKERS=
+
+USE_SUPERVISOR=
+
+# Redis - Disable if not running Redis locally
+REDIS_USERNAME=default
+REDIS_PASSWORD=redis
+REDIS_HOST_AND_PORT=localhost:6379
+USE_REDIS=0  # Use in-memory cache
+```
+
+#### Docker Development
+
+```bash
+APP_ENV=dev
+DJANGO_SETTINGS_MODULE=main.settings
+
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=db  # Docker Compose service name
+DB_PORT=5432
+DB_SCHEMA=public
+
+DB_CONN_MAX_AGE=10
+DB_OPTIONS={}
+
+RUN_CELERY_TOGETHER=true
+CELERY_WORKERS=2
+CELERY_WORKER_CONCURRENCY=4
+CELERY_PREFETCH_MULTIPLIER=4
+CELERY_POOL=prefork
+CELERY_QUEUE_NAME=django_ninja_queue
+
+UVICORN_WORKERS=2
+
+USE_SUPERVISOR=false
+
+REDIS_USERNAME=default
+REDIS_PASSWORD=redis
+REDIS_HOST_AND_PORT=redis:6379  # Docker Compose service name
+USE_REDIS=1
+```
+
+#### Production
+
+```bash
+APP_ENV=prod
+DJANGO_SETTINGS_MODULE=main.settings
+
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=myproject_prod
+DB_USER=prod_user
+DB_PASSWORD=<strong-password>
+DB_HOST=prod-db.example.com
+DB_PORT=5432
+DB_SCHEMA=public
+
+DB_CONN_MAX_AGE=60
+DB_OPTIONS={"sslmode": "require"}
+
+RUN_CELERY_TOGETHER=false
+CELERY_WORKERS=8
+CELERY_WORKER_CONCURRENCY=10
+CELERY_PREFETCH_MULTIPLIER=2
+CELERY_POOL=prefork
+CELERY_QUEUE_NAME=prod_queue
+
+UVICORN_WORKERS=9  # (2 × 4 cores) + 1
+
+USE_SUPERVISOR=true
+
+REDIS_USERNAME=prod_user
+REDIS_PASSWORD=<strong-password>
+REDIS_HOST_AND_PORT=redis.example.com:6379
+USE_REDIS=1
+```
+
+### Best Practices for the Environment Variables
+
+1. **Never Commit `.env`**: Add `.env` to `.gitignore` to prevent committing sensitive data.
+
+2. **Use Strong Passwords**: Generate strong passwords for production databases and Redis.
+
+   ```bash
+   # Generate a random password
+   openssl rand -base64 32
+   ```
+
+3. **Environment-Specific Files**: Consider using `.env.local`, `.env.dev`, `.env.prod` for different environments.
+
+4. **Validate on Startup**: The application validates required environment variables on startup.
+
+5. **Document Custom Variables**: If you add custom environment variables, document them here.
+
+6. **Use Secrets Management**: For production, consider using secrets management tools:
+   - AWS Secrets Manager
+   - HashiCorp Vault
+   - Kubernetes Secrets
+   - Azure Key Vault
 
 ---
 
@@ -464,6 +847,464 @@ async def test_create_animal():
 
 ---
 
+## Logging System
+
+This project implements a sophisticated logging system with distributed tracing support, structured logging, and context-aware log management. The system automatically tracks requests with trace IDs and provides both human-readable console output and machine-parseable JSON logs.
+
+### Architecture Overview
+
+The logging system consists of three main modules:
+
+1. **[logging.py](../main/settings/logging.py)** - Core logging configuration
+2. **[middleware.py](../common/middleware.py)** - Request tracing and logger injection
+3. **[logger_helper.py](../common/logger_helper.py)** - Context-aware logger management
+
+```mermaid
+graph TD
+    A[Incoming Request] --> B[TraceIDMiddleware]
+    B --> C[Generate/Extract Trace ID]
+    C --> D[Create LoggerAdapter]
+    D --> E[Attach to request.logger]
+    E --> F[View/Endpoint]
+    F --> G[Log Messages]
+    G --> H[TraceIDContextFilter]
+    H --> I[CustomFormatter/JSONFormatter]
+    I --> J[Console Handler]
+    I --> K[File Handler]
+    K --> L[tmp/logs/service.log]
+```
+
+### Module 1: Logging Configuration
+
+**File**: [main/settings/logging.py](../main/settings/logging.py)
+
+This module defines the Django logging configuration using the `dictConfig` format.
+
+#### Key Components
+
+**Formatters**:
+
+- `verbose` - Human-readable console output with custom formatting
+- `json` - Structured JSON logs for file output and log aggregation
+
+**Handlers**:
+
+- `console` - Outputs to stdout with verbose formatting
+- `file` - Writes JSON logs to `tmp/logs/service.log` with daily rotation (keeps 10 days)
+
+**Filters**:
+
+- `trace_id_filter` - Automatically injects trace ID and correlation ID into all log records
+
+**Loggers**:
+
+- `django` - Django framework logs
+- `django.request` - HTTP request/response logs
+- `django.db.backends` - Database query logs
+- `uvicorn.access` - ASGI server access logs
+- `uvicorn.error` - ASGI server error logs
+- `""` (root) - Catches all other logs
+
+#### Environment-Based Configuration
+
+```python
+# Development/Local (APP_ENV not in qa/dev/prod/staging)
+- Includes django.server and django.template loggers
+- More verbose output for debugging
+
+# Production/Staging/QA/Dev
+- Excludes django.server and django.template loggers
+- Cleaner logs focused on application behavior
+- Ready for Splunk integration (commented out)
+```
+
+#### Custom Formatters
+
+**FlexibleJsonFormatter**:
+
+```python
+# Adds default values for missing fields
+{
+    "levelname": "INFO",
+    "asctime": "2024-11-24 07:21:14",
+    "module": "views",
+    "trace_id": "550e8400-e29b-41d4-a716-446655440000",
+    "correlation_id": null,
+    "process": 12345,
+    "thread": 67890,
+    "message": "Creating new animal"
+}
+```
+
+**CustomFormatter**:
+
+```python
+# Human-readable format with extra context
+INFO 2024-11-24 07:21:14 views 550e8400-e29b-41d4-a716-446655440000 None 12345 67890 Creating new animal | user_id=123 endpoint=/api/v1/animals/
+```
+
+### Module 2: Trace ID Middleware
+
+**File**: [common/middleware.py](../common/middleware.py)
+
+The `TraceIDMiddleware` is responsible for request tracing and logger injection.
+
+#### How It Works
+
+1. **Trace ID Generation/Extraction**:
+   - Checks for `X-Trace-ID` header in incoming request
+   - Generates new UUID if not present
+   - Supports `X-Correlation-ID` for distributed tracing
+
+2. **Logger Injection**:
+   - Creates a `LoggerAdapter` with trace context
+   - Attaches to `request.logger` for easy access
+   - Includes request metadata (method, path, user agent, IP)
+
+3. **Request Lifecycle Logging**:
+   - Logs request start automatically
+   - Logs request completion with status code
+   - Logs exceptions with full traceback
+   - Cleans up logger context after request
+
+4. **Response Headers**:
+   - Adds `X-Trace-ID` to response
+   - Adds `X-Correlation-ID` if present
+
+#### TraceIDContextFilter
+
+This filter ensures all log messages include trace context, even if not using `request.logger`:
+
+```python
+class TraceIDContextFilter(logging.Filter):
+    def filter(self, record):
+        # Automatically adds trace_id and correlation_id to all logs
+        request_logger = get_request_logger()
+        if request_logger:
+            record.trace_id = request_logger.trace_id
+            record.correlation_id = request_logger.correlation_id
+        else:
+            record.trace_id = "no-trace-id"
+            record.correlation_id = None
+        return True
+```
+
+### Module 3: Logger Helper
+
+**File**: [common/logger_helper.py](../common/logger_helper.py)
+
+Provides context-aware logger management for both request and background task contexts.
+
+#### LoggerAdapter
+
+Custom adapter that automatically includes trace context in all log messages:
+
+```python
+class LoggerAdapter(logging.LoggerAdapter):
+    def __init__(self, logger, trace_id, correlation_id=None, **context):
+        # Stores trace_id, correlation_id, and custom context
+        
+    def process(self, msg, kwargs):
+        # Automatically adds context to 'extra' field
+        
+    def update_context(self, **context_updates):
+        # Dynamically update logging context
+        
+    def get_context(self):
+        # Retrieve current context
+```
+
+#### LoggerHelper (Singleton)
+
+Manages logger adapters using `ContextVar` for async-safe context management:
+
+```python
+logger_helper = LoggerHelper()
+
+# Create logger with trace context
+logger = logger_helper.create_logger_adapter(
+    trace_id="550e8400-e29b-41d4-a716-446655440000",
+    correlation_id="abc123",
+    logger_name="background_task",
+    task_name="data_sync"
+)
+```
+
+### Usage Patterns
+
+#### 1. Logging in Views (Recommended)
+
+Use `request.logger` - it's automatically configured with trace context:
+
+```python
+@router.post("/")
+async def create_animal(request, payload: AnimalCreateSchema):
+    # Simple logging
+    request.logger.info(f"Creating animal: {payload.name}")
+    
+    try:
+        animal = await AnimalService.create_animal(payload.name, payload.species)
+        request.logger.info(f"Created animal with ID: {animal.id}")
+        return {"data": animal, "trace_id": str(request.trace_id)}
+    except ValidationError as e:
+        request.logger.error(f"Validation failed: {e}")
+        return 400, {"error": str(e)}
+    except Exception as e:
+        request.logger.exception("Unexpected error creating animal")
+        raise
+```
+
+#### 2. Adding Dynamic Context
+
+Update logger context during request processing:
+
+```python
+@router.get("/{animal_id}/")
+async def get_animal(request, animal_id: int):
+    # Add context that will appear in all subsequent logs
+    request.logger.update_context(
+        animal_id=animal_id,
+        operation="retrieve"
+    )
+    
+    request.logger.info("Fetching animal from database")
+    animal = await AnimalService.get_animal(animal_id)
+    
+    if not animal:
+        request.logger.warning("Animal not found")
+        return 404, {"error": "Animal not found"}
+    
+    request.logger.info("Animal retrieved successfully")
+    return {"data": animal}
+```
+
+#### 3. Logging in Background Tasks
+
+For async tasks or code outside request context:
+
+```python
+import uuid
+from common.logger_helper import get_logger_with_trace
+
+async def sync_data_task():
+    # Create logger with custom trace ID
+    trace_id = str(uuid.uuid4())
+    logger = get_logger_with_trace(
+        trace_id=trace_id,
+        logger_name="background_task",
+        task_name="data_sync",
+        task_type="scheduled"
+    )
+    
+    logger.info("Starting data sync task")
+    
+    try:
+        # Your task logic
+        logger.info("Data sync completed successfully")
+    except Exception as e:
+        logger.exception("Data sync failed")
+        raise
+```
+
+#### 4. Logging in Services
+
+Services can use the standard logging module or request logger:
+
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+class AnimalService:
+    @staticmethod
+    async def create_animal(name: str, species: str) -> Animal:
+        # This will automatically include trace_id via TraceIDContextFilter
+        logger.info(f"Service: Creating animal {name}")
+        
+        animal = await Animal.objects.acreate(name=name, species=species)
+        
+        logger.info(f"Service: Animal created with ID {animal.id}")
+        return animal
+```
+
+### Log Levels and When to Use Them
+
+| Level | When to Use | Example |
+|-------|-------------|---------|
+| `DEBUG` | Detailed diagnostic information | `logger.debug("Query params: {params}")` |
+| `INFO` | General informational messages | `logger.info("User logged in successfully")` |
+| `WARNING` | Warning about potential issues | `logger.warning("API rate limit approaching")` |
+| `ERROR` | Error that doesn't stop execution | `logger.error("Failed to send email notification")` |
+| `EXCEPTION` | Error with full traceback | `logger.exception("Database connection failed")` |
+
+**Best Practices**:
+
+- Use `INFO` for normal operation flow
+- Use `WARNING` for recoverable issues
+- Use `ERROR` for failures that need attention
+- Use `EXCEPTION` in except blocks to capture traceback
+- Avoid `DEBUG` in production (set via environment)
+
+### Viewing and Analyzing Logs
+
+#### Console Logs (Development)
+
+Human-readable format with color coding:
+
+```bash
+INFO 2024-11-24 07:21:14 views 550e8400-e29b-41d4-a716-446655440000 None 12345 67890 Creating new animal | name=Simba species=Lion
+```
+
+#### File Logs (Production)
+
+JSON format in `tmp/logs/service.log`:
+
+```json
+{
+  "levelname": "INFO",
+  "asctime": "2024-11-24 07:21:14",
+  "module": "views",
+  "trace_id": "550e8400-e29b-41d4-a716-446655440000",
+  "correlation_id": null,
+  "process": 12345,
+  "thread": 67890,
+  "message": "Creating new animal",
+  "name": "Simba",
+  "species": "Lion"
+}
+```
+
+#### Log Rotation
+
+Logs are automatically rotated daily at midnight:
+
+- Current log: `service.log`
+- Rotated logs: `service.log.2024-11-23`, `service.log.2024-11-22`, etc.
+- Retention: 10 days (configurable in `logging.py`)
+
+#### Searching Logs
+
+**By Trace ID** (track entire request lifecycle):
+
+```bash
+grep "550e8400-e29b-41d4-a716-446655440000" tmp/logs/service.log
+```
+
+**By Log Level**:
+
+```bash
+grep '"levelname": "ERROR"' tmp/logs/service.log
+```
+
+**By Module**:
+
+```bash
+grep '"module": "views"' tmp/logs/service.log
+```
+
+### Distributed Tracing
+
+The system supports distributed tracing across microservices:
+
+#### Sending Trace ID to External Services
+
+```python
+import httpx
+
+async def call_external_service(request):
+    headers = {
+        "X-Trace-ID": str(request.trace_id),
+        "X-Correlation-ID": str(request.correlation_id) if request.correlation_id else None
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://external-service.com/api/endpoint",
+            headers=headers
+        )
+    
+    request.logger.info(f"External service responded with status {response.status_code}")
+    return response
+```
+
+#### Receiving Trace ID from Upstream Services
+
+The middleware automatically extracts `X-Trace-ID` and `X-Correlation-ID` from incoming requests, enabling end-to-end tracing across your entire system.
+
+### Advanced Features
+
+#### Splunk Integration (Optional)
+
+The configuration includes commented-out Splunk support:
+
+```python
+# In main/settings/logging.py
+if settings.APP_ENV in ("qa", "dev", "prod", "staging"):
+    add_splunk_handler(LOGGING)  # Uncomment to enable
+```
+
+Set environment variables:
+
+- `splunk_host` - Splunk server hostname
+- `splunk_port` - Splunk HEC port
+- `splunk_token` - Splunk HEC token
+- `splunk_index` - Target index name
+
+#### Custom Log Handlers
+
+Add custom handlers in `logging.py`:
+
+```python
+"handlers": {
+    "console": {...},
+    "file": {...},
+    "custom_handler": {
+        "class": "logging.handlers.SysLogHandler",
+        "address": ("localhost", 514),
+        "formatter": "json",
+    }
+}
+```
+
+### Troubleshooting
+
+**Issue**: Logs missing trace_id
+
+**Solution**: Ensure `TraceIDMiddleware` is in `MIDDLEWARE` settings:
+
+```python
+MIDDLEWARE = [
+    "common.middleware.TraceIDMiddleware",  # Should be early
+    # ... other middleware
+]
+```
+
+**Issue**: `request.logger` not available
+
+**Solution**: Check middleware order - `TraceIDMiddleware` must run before your code
+
+**Issue**: Logs not rotating
+
+**Solution**: Verify write permissions on `tmp/logs/` directory:
+
+```bash
+chmod 755 tmp/logs
+```
+
+**Issue**: Too many logs in production
+
+**Solution**: Adjust log levels in `logging.py`:
+
+```python
+"loggers": {
+    "django.db.backends": {
+        "level": "WARNING",  # Change from INFO
+    }
+}
+```
+
+---
+
 ## FAQ
 
 ### General Questions
@@ -475,17 +1316,20 @@ A: Always use **plural nouns** for app names (e.g., `animals_app`, `users_app`).
 **Q: When should I create a new app vs. adding to an existing one?**
 
 A: Create a new app when:
+
 - The functionality is logically separate (e.g., `payments_app` vs. `products_app`)
 - It has its own set of models and business logic
 - It could potentially be reused in other projects
 
 Add to an existing app when:
+
 - The functionality is closely related to existing features
 - It shares the same models or domain logic
 
 **Q: How do I name compound models?**
 
 A: Use PascalCase without underscores:
+
 - ✅ `OrderItem` (not `Order_Item`)
 - ✅ `UserProfile` (not `User_Profile`)
 - ✅ `ProductCategory` (not `Product_Category`)
@@ -495,6 +1339,7 @@ A: Use PascalCase without underscores:
 **Q: What if my app manages a single entity (e.g., a settings page)?**
 
 A: Use a descriptive plural or functional name:
+
 - ✅ `settings_app` (functional)
 - ✅ `configurations_app` (plural of configuration)
 - ❌ `setting_app` (singular)
@@ -502,6 +1347,7 @@ A: Use a descriptive plural or functional name:
 **Q: How do I name utility functions?**
 
 A: Use descriptive snake_case names with verb prefixes:
+
 - ✅ `calculate_total_price()`
 - ✅ `format_date_string()`
 - ✅ `validate_email_address()`
@@ -510,6 +1356,7 @@ A: Use descriptive snake_case names with verb prefixes:
 **Q: Should service methods be static or instance methods?**
 
 A: Use **static methods** for stateless operations (recommended):
+
 ```python
 class AnimalService:
     @staticmethod
@@ -524,12 +1371,14 @@ Use instance methods only if you need to maintain state.
 **Q: Should I use Black for formatting?**
 
 A: Yes! Run `make black_format` before committing. Black is configured in `pyproject.toml` with:
+
 - Line length: 88 characters
 - Python version: 3.10+
 
 **Q: How do I handle long import lines?**
 
 A: Use parentheses for multi-line imports:
+
 ```python
 from apps.animals_app.v1.schemas import (
     AnimalCreateSchema,
@@ -541,6 +1390,7 @@ from apps.animals_app.v1.schemas import (
 **Q: When should I use `Optional` vs. default values?**
 
 A: Use `Optional` when a value can be `None`:
+
 ```python
 # Good
 def get_animal(animal_id: int) -> Optional[Animal]:
@@ -561,6 +1411,7 @@ A: Yes, for consistency and performance. Django Ninja supports async views nativ
 **Q: Can I mix sync and async code?**
 
 A: Avoid it when possible. If you must call sync code from async:
+
 ```python
 from asgiref.sync import sync_to_async
 
@@ -575,6 +1426,7 @@ async def async_view():
 **Q: How do I handle async list comprehensions?**
 
 A: Use async for:
+
 ```python
 # Good
 animals = [animal async for animal in Animal.objects.all()]
@@ -588,6 +1440,7 @@ animals = [animal for animal in await Animal.objects.all()]  # Won't work
 **Q: Where should I put tests?**
 
 A: Options:
+
 1. `apps/{app_name}/v1/tests.py` - Simple apps
 2. `apps/{app_name}/v1/tests/` - Complex apps with multiple test files
 3. `tests/test_{app_name}/` - Project root tests directory
@@ -595,6 +1448,7 @@ A: Options:
 **Q: How do I test async functions?**
 
 A: Use `pytest-asyncio`:
+
 ```python
 import pytest
 
@@ -609,6 +1463,7 @@ async def test_create_animal():
 **Q: Should I register all models in admin?**
 
 A: Register models that need admin interface management:
+
 ```python
 from django.contrib import admin
 from .models import Animal
@@ -622,6 +1477,7 @@ class AnimalAdmin(admin.ModelAdmin):
 **Q: How do I customize admin for my app?**
 
 A: Use `ModelAdmin` options:
+
 - `list_display` - columns to show
 - `list_filter` - sidebar filters
 - `search_fields` - searchable fields
@@ -632,6 +1488,7 @@ A: Use `ModelAdmin` options:
 **Q: Should I use `/api/v1/` or `/v1/api/`?**
 
 A: Use `/api/v1/` (version after api):
+
 ```python
 # Good
 /api/v1/animals/
@@ -644,6 +1501,7 @@ A: Use `/api/v1/` (version after api):
 **Q: How do I handle pagination?**
 
 A: Use query parameters:
+
 ```python
 @router.get("/")
 async def list_animals(request, page: int = 1, page_size: int = 20):
@@ -654,7 +1512,8 @@ async def list_animals(request, page: int = 1, page_size: int = 20):
 
 **Q: Should I use PUT or PATCH for updates?**
 
-A: 
+A:
+
 - **PUT**: Full replacement (all fields required)
 - **PATCH**: Partial update (only changed fields)
 
@@ -675,6 +1534,7 @@ async def partial_update_animal(request, id: int, payload: AnimalUpdateSchema):
 **Q: When should I create migrations?**
 
 A: After any model changes:
+
 ```bash
 make makemigrations
 make migrate
@@ -683,6 +1543,7 @@ make migrate
 **Q: How do I name custom migrations?**
 
 A: Use descriptive names:
+
 ```bash
 python manage.py makemigrations --name add_animal_weight_field
 ```

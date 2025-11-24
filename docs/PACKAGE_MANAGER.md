@@ -576,7 +576,7 @@ Sometimes you might want to manually edit `pyproject.toml` instead of using `mak
 
 ### Step 1: Edit `pyproject.toml`
 
-Open [`pyproject.toml`](file:///Users/jayanth.ns/workspace/django-ninja-ready-to-go/pyproject.toml):
+Open [`pyproject.toml`](../pyproject.toml):
 
 #### For Production Dependencies
 
