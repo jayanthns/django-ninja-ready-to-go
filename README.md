@@ -571,6 +571,7 @@ Comprehensive guides are available in the `docs/` directory to help you get the 
   - Naming conventions (plural nouns for apps, PEP 8 standards)
   - Code style guidelines and type hints
   - Service layer patterns and async best practices
+  - **Building APIs** (complete guide using animals_app as reference)
   - **Testing naming conventions** (class-based tests, test module/method naming)
   - Comprehensive FAQ for common development questions
 
@@ -591,7 +592,7 @@ Comprehensive guides are available in the `docs/` directory to help you get the 
 
 ---
 
-## 🚀 **Quick Start**
+## 🚀 **Quick Start Setup**
 
 ### **Option 1: The "Happy Path" (Recommended)**
 

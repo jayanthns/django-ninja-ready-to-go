@@ -9,9 +9,10 @@ This guide provides naming conventions, coding standards, and best practices for
 3. [Project Structure](#project-structure)
 4. [Environment Configuration](#environment-configuration)
 5. [Best Practices](#best-practices)
-6. [Logging System](#logging-system)
-7. [Testing Naming Conventions](#testing-naming-conventions)
-8. [FAQ](#faq)
+6. [Building APIs](#building-apis-complete-guide)
+7. [Logging System](#logging-system)
+8. [Testing Naming Conventions](#testing-naming-conventions)
+9. [FAQ](#faq)
 
 ---
 
@@ -742,22 +743,185 @@ USE_REDIS=1
 
 ## Best Practices
 
-### 1. Service Layer Pattern
+1. **Follow Naming Conventions**: Use the established patterns for apps, models, schemas, and services
+2. **Use Type Hints**: Always annotate function parameters and return types
+3. **Async by Default**: Use async/await for all database operations and I/O
+4. **Service Layer Pattern**: Keep business logic in services, views should be thin
+5. **Proper Error Handling**: Use try-except blocks and log errors appropriately
+6. **Request Logging**: Use `request.logger` for automatic trace context
+7. **Schema Validation**: Let Pydantic handle all input validation
+8. **Docstrings**: Document all public functions and classes
 
-**Rule**: Keep business logic in services, not views.
+---
+
+## Building APIs: Complete Guide
+
+This section provides a comprehensive, step-by-step guide for building APIs in this Django Ninja project. We'll use the **`animals_app`** as a reference example throughout.
+
+### Overview: The Django Ninja Stack
+
+When building an API endpoint, you'll work with these layers:
+
+```bash
+┌─────────────────────────────────────────┐
+│  1. Model (models.py)                   │  ← Database schema
+├─────────────────────────────────────────┤
+│  2. Schema (schemas.py)                 │  ← Request/Response validation
+├─────────────────────────────────────────┤
+│  3. Service (services.py)               │  ← Business logic
+├─────────────────────────────────────────┤
+│  4. View (views.py)                     │  ← API endpoints
+├─────────────────────────────────────────┤
+│  5. Router (urls.py / main/urls.py)     │  ← URL routing
+└─────────────────────────────────────────┘
+```
+
+### Step 1: Define Your Model
+
+**File**: `apps/{app_name}/v1/models.py`
+
+Models define your database schema using Django ORM.
+
+**Example from animals_app**:
 
 ```python
-# Good - Logic in service
+from django.db import models
+
+
+class Animal(models.Model):
+    name = models.CharField(max_length=100)
+    species = models.CharField(max_length=50)
+    age = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return self.name
+```
+
+**Best Practices**:
+
+- Use descriptive field names
+- Add `created_at` and `updated_at` timestamps
+- Implement `__str__()` for better admin representation
+- Use appropriate field types (`CharField`, `IntegerField`, `ForeignKey`, etc.)
+- Add indexes for frequently queried fields
+
+**Common Field Types**:
+
+```python
+# Text fields
+name = models.CharField(max_length=100)  # Short text
+description = models.TextField()  # Long text
+email = models.EmailField()  # Email validation
+
+# Numeric fields
+age = models.IntegerField()
+price = models.DecimalField(max_digits=10, decimal_places=2)
+rating = models.FloatField()
+
+# Boolean
+is_active = models.BooleanField(default=True)
+
+# Dates
+created_at = models.DateTimeField(auto_now_add=True)
+updated_at = models.DateTimeField(auto_now=True)
+birth_date = models.DateField()
+
+# Relationships
+owner = models.ForeignKey(User, on_delete=models.CASCADE)
+tags = models.ManyToManyField(Tag)
+```
+
+### Step 2: Create Schemas
+
+**File**: `apps/{app_name}/v1/schemas.py`
+
+Schemas define request/response structure and validation using Pydantic.
+
+**Example from animals_app**:
+
+```python
+import uuid
+from typing import Optional
+
+from ninja import Schema
+
+
+class AnimalSchema(Schema):
+    """Response schema for Animal - includes all fields."""
+    id: int
+    name: str
+    species: str
+    age: int
+
+
+class AnimalCreateSchema(Schema):
+    """Input schema for creating/updating Animal - excludes auto-generated fields."""
+    name: str
+    species: str
+    age: int
+
+
+class AnimalResponseSchema(Schema):
+    """Wrapper schema for API responses with metadata."""
+    data: Optional[AnimalSchema] = None
+    error: Optional[dict] = None
+    trace_id: uuid.UUID
+
+    class Config:
+        arbitrary_types_allowed = True
+```
+
+**Schema Types**:
+
+1. **Response Schema** (`AnimalSchema`): Full object representation
+2. **Create Schema** (`AnimalCreateSchema`): Input for POST requests
+3. **Update Schema** (`AnimalUpdateSchema`): Input for PUT/PATCH requests
+4. **Response Wrapper** (`AnimalResponseSchema`): Standardized API response
+
+**Best Practices**:
+
+- Use descriptive schema names with suffixes (`Schema`, `CreateSchema`, `UpdateSchema`)
+- Separate input and output schemas
+- Use `Optional` for nullable fields
+- Add field validators when needed
+- Use `Config` class for Pydantic configuration
+
+**Advanced Validation Example**:
+
+```python
+from pydantic import field_validator, Field
+
+class AnimalCreateSchema(Schema):
+    name: str = Field(..., min_length=1, max_length=100)
+    species: str = Field(..., min_length=1, max_length=50)
+    age: int = Field(..., ge=0, le=150)  # Greater than or equal to 0, less than or equal to 150
+
+    @field_validator('name')
+    @classmethod
+    def name_must_not_be_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError('Name cannot be empty or whitespace')
+        return v.strip()
+```
+
+### Step 3: Implement Service Layer
+
+**File**: `apps/{app_name}/v1/services.py`
+
+Services contain business logic and database operations. Keep views thin!
+
+**Example from animals_app**:
+
+```python
+from typing import List, Optional
+
+from .models import Animal
+from .schemas import AnimalCreateSchema
+
+
 class AnimalService:
     @staticmethod
-    async def create_animal(name: str, species: str) -> Animal:
-        # Validation, business rules, etc.
-        return await Animal.objects.acreate(name=name, species=species)
-
-@router.post("/")
-async def create_animal(request, payload: AnimalCreateSchema):
-    animal = await AnimalService.create_animal(
-        payload.name, 
         payload.species
     )
     return {"data": animal}
