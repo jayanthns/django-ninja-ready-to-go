@@ -36,8 +36,8 @@ class TestJSONFileHandler:
         assert isinstance(uuid.UUID(handler.trace_id), uuid.UUID)
         mock_get_logger.assert_called_once()
 
-        # Trigger a read to generate a log call
-        file_path = Path("sample.json")
+        # Trigger a read to generate a log call - use tmp_path for cleanup
+        file_path = self.tmp_path / "sample.json"
         file_path.write_text(json.dumps({"a": 1}), encoding="utf-8")
         handler.file_path = file_path  # assign the test file path
         handler.read()
