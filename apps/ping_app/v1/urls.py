@@ -1,6 +1,6 @@
-from django.urls import path
+from django.urls import path  # noqa: F401
 
-from . import views
+from . import views  # noqa: F401
 
 app_name = "ping_app_v1"
 

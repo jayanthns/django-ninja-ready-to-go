@@ -190,7 +190,7 @@ class TestSystemHealth:
         # Step 2: Patch SystemHealthService as context manager
         from apps.ping_app.v1.views import system_views
 
-        with pytest.MonkeyPatch.context() as mp:
+        with pytest.MonkeyPatch.context() as _:
             # Assign AsyncMock to the methods
             system_views.SystemHealthService.check_system_health = AsyncMock(
                 side_effect=Exception(exception_message)

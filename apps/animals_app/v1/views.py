@@ -32,7 +32,7 @@ async def create_animal(request, payload: AnimalCreateSchema):
 
     except Exception as e:
         # Log the error with automatic trace context
-        request.logger.exception(f"Failed to create animal: {payload.name}")
+        request.logger.exception(f"Failed to create animal: {payload.name} with error: {str(e)}")
         raise
 
 
@@ -82,7 +82,7 @@ async def delete_animal(request, animal_id: int):
 
     except Exception as e:
         # Log the error
-        request.logger.exception(f"Failed to delete animal: {animal_id}")
+        request.logger.exception(f"Failed to delete animal: {animal_id} with error: {str(e)}")
         raise
 
 
@@ -105,7 +105,7 @@ async def logger_demo(request):
         result = 42 / 1  # This will succeed
         request.logger.info(f"Operation completed successfully: {result}")
     except Exception as e:
-        request.logger.exception("This would log an exception with full traceback")
+        request.logger.exception(f"This would log an exception with full traceback: {str(e)}")
 
     # Get current context
     current_context = request.logger.get_context()

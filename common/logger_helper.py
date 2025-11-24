@@ -104,7 +104,7 @@ class LoggerHelper:
         trace_id: str,
         correlation_id: Optional[str] = None,
         logger_name: str = "request",
-        **context: Any
+        **context: Any,
     ) -> LoggerAdapter:
         """
         Create a new logger adapter.
@@ -147,7 +147,7 @@ class LoggerHelper:
         trace_id: str,
         correlation_id: Optional[str] = None,
         logger_name: str = "request",
-        **context: Any
+        **context: Any,
     ) -> LoggerAdapter:
         """
         Get or create a logger adapter with specific trace context.
@@ -218,7 +218,7 @@ def log_with_trace(
     trace_id: str,
     correlation_id: Optional[str] = None,
     *args,
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Log a message with automatic trace ID context.

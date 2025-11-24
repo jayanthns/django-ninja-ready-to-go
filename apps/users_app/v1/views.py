@@ -1,5 +1,4 @@
 import uuid
-from typing import Type
 
 from django.http import HttpRequest, JsonResponse
 from ninja import Router

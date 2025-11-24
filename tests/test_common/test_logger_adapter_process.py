@@ -1,7 +1,5 @@
 import logging
 
-import pytest
-
 from common.logger_helper import LoggerAdapter
 
 

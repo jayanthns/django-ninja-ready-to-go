@@ -1,5 +1,5 @@
 import pytest
-from pydantic import EmailStr, ValidationError
+from pydantic import ValidationError
 
 from apps.users_app.v1.schemas import UserCreateSchema, UserSchema
 
