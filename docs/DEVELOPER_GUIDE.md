@@ -10,7 +10,8 @@ This guide provides naming conventions, coding standards, and best practices for
 4. [Environment Configuration](#environment-configuration)
 5. [Best Practices](#best-practices)
 6. [Logging System](#logging-system)
-7. [FAQ](#faq)
+7. [Testing Naming Conventions](#testing-naming-conventions)
+8. [FAQ](#faq)
 
 ---
 
@@ -1434,6 +1435,360 @@ animals = [animal async for animal in Animal.objects.all()]
 # Bad
 animals = [animal for animal in await Animal.objects.all()]  # Won't work
 ```
+
+---
+
+## Testing Naming Conventions
+
+### Overview
+
+This project follows strict naming conventions for tests to ensure consistency, readability, and maintainability. We **strongly recommend using class-based tests** to logically group related test scenarios.
+
+### Test Module Naming
+
+**Pattern**: `test_{module_name}.py`
+
+**Rules**:
+
+- Prefix with `test_`
+- Use snake_case
+- Name should reflect what is being tested
+- Place in `tests/test_{app_name}/` directory
+
+**Examples**:
+
+```bash
+tests/
+├── test_ping_app/
+│   ├── test_database_views.py      # Tests for database_views module
+│   ├── test_cache_views.py         # Tests for cache_views module
+│   ├── test_system_views.py        # Tests for system_views module
+│   └── test_ping_services.py       # Tests for ping services
+├── test_user_app/
+│   ├── test_user_views.py          # Tests for user views
+│   ├── test_user_services.py       # Tests for user services
+│   └── test_user_models.py         # Tests for user models
+└── test_common/
+    ├── test_middleware.py          # Tests for middleware
+    └── test_logger_helper.py       # Tests for logger helper
+```
+
+### Class-Based Tests (REQUIRED)
+
+**Why Class-Based Tests?**
+
+✅ **Logical Grouping**: Group all test scenarios for a function/method/class together
+✅ **Better Organization**: Clear hierarchy of what's being tested
+✅ **Shared Setup**: Use fixtures and setup methods efficiently
+✅ **Readability**: Easier to understand test coverage at a glance
+✅ **Maintainability**: Changes to one function's tests are in one place
+
+**Pattern**: `Test{ClassName}` or `Test{FunctionName}`
+
+**Rules**:
+
+- Prefix with `Test`
+- Use PascalCase
+- Name should reflect the unit being tested (class, function, or feature)
+- One test class per major component
+
+**Examples**:
+
+```python
+# ✅ GOOD - Class-based tests
+@pytest.mark.asyncio
+class TestDatabaseViews:
+    """Tests for database view endpoints."""
+    
+    async def test_ping_database_all_success(self):
+        """Test successful database ping with all checks passing."""
+        pass
+    
+    async def test_ping_database_read_failure_marks_unhealthy(self):
+        """Test that read failure marks database as unhealthy."""
+        pass
+    
+    async def test_ping_database_write_failure_marks_unhealthy(self):
+        """Test that write failure marks database as unhealthy."""
+        pass
+
+# ✅ GOOD - Testing a service class
+@pytest.mark.asyncio
+class TestAnimalService:
+    """Tests for AnimalService business logic."""
+    
+    async def test_create_animal_success(self):
+        pass
+    
+    async def test_create_animal_duplicate_name_raises_error(self):
+        pass
+    
+    async def test_get_animal_by_id_not_found(self):
+        pass
+
+# ❌ BAD - Function-based tests (harder to organize)
+@pytest.mark.asyncio
+async def test_ping_database_success():
+    pass
+
+@pytest.mark.asyncio
+async def test_ping_database_failure():
+    pass
+
+@pytest.mark.asyncio
+async def test_create_animal_success():
+    pass
+```
+
+### Test Method Naming
+
+**Pattern**: `test_{what}_{scenario}_{expected_result}`
+
+**Rules**:
+
+- Prefix with `test_`
+- Use snake_case
+- Be descriptive and specific
+- Include the scenario being tested
+- Include the expected outcome
+
+**Format Options**:
+
+1. `test_{function_name}_{scenario}` - For simple tests
+2. `test_{function_name}_{scenario}_{expected_result}` - For complex scenarios
+3. `test_{feature}_{condition}_{behavior}` - For behavior-driven tests
+
+**Examples**:
+
+```python
+# ✅ GOOD - Clear, descriptive names
+async def test_create_animal_with_valid_data_returns_animal(self):
+    """Test creating an animal with valid data returns the animal object."""
+    pass
+
+async def test_create_animal_with_duplicate_name_raises_validation_error(self):
+    """Test creating an animal with duplicate name raises ValidationError."""
+    pass
+
+async def test_get_animal_by_id_when_exists_returns_animal(self):
+    """Test retrieving an existing animal by ID returns the animal."""
+    pass
+
+async def test_get_animal_by_id_when_not_found_returns_none(self):
+    """Test retrieving non-existent animal by ID returns None."""
+    pass
+
+async def test_database_read_get_success(self):
+    """Test GET endpoint for database read with successful result."""
+    pass
+
+async def test_database_read_get_failure(self):
+    """Test GET endpoint for database read with failure."""
+    pass
+
+# ❌ BAD - Vague, unclear names
+async def test_animal(self):
+    pass
+
+async def test_create(self):
+    pass
+
+async def test_error(self):
+    pass
+```
+
+### Real-World Examples from This Project
+
+#### Example 1: Testing Database Views
+
+```python
+# File: tests/test_ping_app/test_database_views.py
+
+@pytest.mark.asyncio
+class TestDatabaseViews:
+    """Tests for database health check endpoints."""
+    
+    # Fixture for shared test setup
+    @pytest.fixture
+    def mock_request(self):
+        """Fixture to create a mock request object."""
+        req = MagicMock()
+        req.logger = MagicMock()
+        req.trace_id = "trace-123"
+        req.timestamp = 123456
+        return req
+    
+    # Test success scenario
+    async def test_ping_database_all_success(self, mock_db_svc, mock_request):
+        """Test ping_database with all health checks passing."""
+        # Arrange
+        mock_db_svc.check_database_health = AsyncMock(return_value=healthy_db)
+        
+        # Act
+        resp = await views.ping_database(mock_request)
+        
+        # Assert
+        assert resp["data"].is_healthy is True
+    
+    # Test failure scenarios
+    async def test_ping_database_read_failure_marks_unhealthy(self, mock_db_svc, mock_request):
+        """Test that read failure marks database as unhealthy."""
+        pass
+    
+    async def test_ping_database_write_failure_marks_unhealthy(self, mock_db_svc, mock_request):
+        """Test that write failure marks database as unhealthy."""
+        pass
+    
+    # Test exception scenarios
+    async def test_ping_database_raises_exception(self, mock_db_svc, mock_request):
+        """Test ping_database when service raises exception."""
+        pass
+```
+
+#### Example 2: Testing User Services
+
+```python
+# File: tests/test_user_app/test_user_services.py
+
+@pytest.mark.asyncio
+class TestUserService:
+    """Tests for UserService business logic."""
+    
+    async def test_create_user_with_valid_email_succeeds(self):
+        """Test creating user with valid email succeeds."""
+        pass
+    
+    async def test_create_user_with_invalid_email_raises_error(self):
+        """Test creating user with invalid email raises ValidationError."""
+        pass
+    
+    async def test_authenticate_user_with_correct_password_returns_user(self):
+        """Test authenticating user with correct password returns user object."""
+        pass
+    
+    async def test_authenticate_user_with_wrong_password_returns_none(self):
+        """Test authenticating user with wrong password returns None."""
+        pass
+```
+
+#### Example 3: Testing Middleware
+
+```python
+# File: tests/test_common/test_middleware.py
+
+@pytest.mark.asyncio
+class TestTraceIDMiddleware:
+    """Tests for TraceIDMiddleware request tracing."""
+    
+    async def test_generates_new_trace_id_when_not_provided(self):
+        """Test middleware generates new trace ID when not in request headers."""
+        pass
+    
+    async def test_uses_existing_trace_id_from_header(self):
+        """Test middleware uses existing X-Trace-ID from request headers."""
+        pass
+    
+    async def test_attaches_logger_adapter_to_request(self):
+        """Test middleware attaches logger adapter to request object."""
+        pass
+    
+    async def test_adds_trace_id_to_response_headers(self):
+        """Test middleware adds X-Trace-ID to response headers."""
+        pass
+```
+
+### Grouping Test Scenarios
+
+**Pattern**: Group all scenarios for one function/method in one test class
+
+**Example Structure**:
+
+```python
+@pytest.mark.asyncio
+class TestCreateAnimal:
+    """Tests for create_animal function - all scenarios."""
+    
+    # Success scenarios
+    async def test_create_animal_with_valid_data_returns_animal(self):
+        pass
+    
+    async def test_create_animal_with_minimum_fields_succeeds(self):
+        pass
+    
+    # Validation scenarios
+    async def test_create_animal_with_empty_name_raises_error(self):
+        pass
+    
+    async def test_create_animal_with_invalid_age_raises_error(self):
+        pass
+    
+    async def test_create_animal_with_duplicate_name_raises_error(self):
+        pass
+    
+    # Edge cases
+    async def test_create_animal_with_very_long_name_truncates(self):
+        pass
+    
+    async def test_create_animal_with_special_characters_in_name_succeeds(self):
+        pass
+    
+    # Exception scenarios
+    async def test_create_animal_when_database_unavailable_raises_error(self):
+        pass
+```
+
+### Test Docstrings
+
+**Rule**: Every test method MUST have a docstring
+
+**Format**: One-line description of what the test verifies
+
+**Examples**:
+
+```python
+async def test_create_animal_success(self):
+    """Test creating an animal with valid data returns the animal object."""
+    pass
+
+async def test_database_read_get_failure(self):
+    """Test GET endpoint for database read with failure scenario."""
+    pass
+
+async def test_middleware_generates_trace_id(self):
+    """Test middleware generates new trace ID when not provided in headers."""
+    pass
+```
+
+### Naming Conventions Summary
+
+| Component | Pattern | Example |
+|-----------|---------|---------|
+| **Test Module** | `test_{module}.py` | `test_database_views.py` |
+| **Test Class** | `Test{ClassName}` | `TestDatabaseViews` |
+| **Test Method** | `test_{what}_{scenario}_{result}` | `test_ping_database_all_success` |
+| **Fixture** | `{descriptive_name}` | `mock_request`, `sample_animal` |
+| **Helper Method** | `_{helper_name}` | `_assert_endpoint_raises` |
+
+### Best Practices for the tests
+
+1. **Use Class-Based Tests**: Always group related tests in classes
+2. **One Class Per Component**: One test class per function/class/feature being tested
+3. **Descriptive Names**: Test names should read like documentation
+4. **Consistent Patterns**: Follow the same naming pattern across all tests
+5. **Group Scenarios**: Keep all test scenarios for one function together
+6. **Use Fixtures**: Share common setup using pytest fixtures
+7. **Add Docstrings**: Every test method should have a clear docstring
+8. **Arrange-Act-Assert**: Structure test methods with clear sections
+
+### Anti-Patterns to Avoid
+
+❌ **Don't use function-based tests** when testing multiple scenarios
+❌ **Don't scatter tests** for the same function across multiple files
+❌ **Don't use vague names** like `test_1`, `test_case`, `test_error`
+❌ **Don't skip docstrings** - they serve as test documentation
+❌ **Don't mix unrelated tests** in the same class
+
+---
 
 ### Testing Questions
 
