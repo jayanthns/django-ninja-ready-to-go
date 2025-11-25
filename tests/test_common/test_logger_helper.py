@@ -1,19 +1,9 @@
 import logging
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-from common.logger_helper import (
-    debug_with_trace,
-    error_with_trace,
-    exception_with_trace,
-    get_logger_with_trace,
-    info_with_trace,
-    log_with_trace,
-    logger_helper,
-    LoggerAdapter,
-    warning_with_trace,
-)
+from common.logger_helper import get_logger_with_trace, log_with_trace, logger_helper, LoggerAdapter
 
 
 @pytest.fixture(autouse=True)
@@ -65,32 +55,3 @@ def test_log_with_trace_calls_logger_log_with_extra():
     assert extra["correlation_id"] == correlation_id
     # Original extra should be merged
     assert extra["foo"] == "bar"
-
-
-def test_convenience_functions_delegate_to_log_with_trace():
-    with patch("common.logger_helper.log_with_trace") as mock_log:
-        logger = logging.getLogger("test")
-        info_with_trace(logger, "info msg", "tid1")
-        debug_with_trace(logger, "debug msg", "tid2")
-        warning_with_trace(logger, "warn msg", "tid3")
-        error_with_trace(logger, "error msg", "tid4")
-        exception_with_trace(logger, "exc msg", "tid5")
-        # Verify calls
-        assert mock_log.call_count == 5
-        calls = mock_log.call_args_list
-        # info
-        assert calls[0][0][1] == logging.INFO
-        assert calls[0][0][2] == "info msg"
-        # debug
-        assert calls[1][0][1] == logging.DEBUG
-        assert calls[1][0][2] == "debug msg"
-        # warning
-        assert calls[2][0][1] == logging.WARNING
-        assert calls[2][0][2] == "warn msg"
-        # error
-        assert calls[3][0][1] == logging.ERROR
-        assert calls[3][0][2] == "error msg"
-        # exception should set exc_info=True in kwargs
-        assert calls[4][1]["exc_info"] is True
-        assert calls[4][0][1] == logging.ERROR
-        assert calls[4][0][2] == "exc msg"

@@ -7,7 +7,7 @@ import asyncio
 import logging
 from typing import Optional
 
-from .logger_helper import error_with_trace, get_logger_with_trace, info_with_trace
+from .logger_helper import get_logger_with_trace, log_with_trace
 
 # Get logger for this module
 logger = logging.getLogger(__name__)
@@ -106,9 +106,10 @@ def sync_background_task(trace_id: str, correlation_id: Optional[str] = None, da
         correlation_id: The correlation ID if available
         data: The data to process
     """
-    # For sync tasks, we can use the convenience functions
-    info_with_trace(
+    # For sync tasks, we can use log_with_trace directly
+    log_with_trace(
         logger=logger,
+        level=logging.INFO,
         msg="Starting sync background task",
         trace_id=trace_id,
         correlation_id=correlation_id,
@@ -122,8 +123,9 @@ def sync_background_task(trace_id: str, correlation_id: Optional[str] = None, da
         time.sleep(0.1)
 
         # Log progress
-        info_with_trace(
+        log_with_trace(
             logger=logger,
+            level=logging.INFO,
             msg="Sync task processing completed",
             trace_id=trace_id,
             correlation_id=correlation_id,
@@ -134,8 +136,9 @@ def sync_background_task(trace_id: str, correlation_id: Optional[str] = None, da
 
     except Exception as e:
         # Log error
-        error_with_trace(
+        log_with_trace(
             logger=logger,
+            level=logging.ERROR,
             msg="Sync background task failed",
             trace_id=trace_id,
             correlation_id=correlation_id,
