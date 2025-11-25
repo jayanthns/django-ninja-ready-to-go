@@ -34,20 +34,13 @@ class CacheHealthService:
             "role": None,
         }
         try:
-            test_key = "health_check_test"
-            test_value = f"test_{int(time.time())}"
+            # Use test_cache_write to verify basic connectivity and read/write permissions
+            success, write_error = await CacheHealthService.test_cache_write()
 
-            # Test write
-            await cache.aset(test_key, test_value, timeout=10)
-            # Test read
-            retrieved_value = await cache.aget(test_key)
-
-            if retrieved_value != test_value:
-                error_message = "Cache read/write test failed - value mismatch"
+            if not success:
+                error_message = write_error
             else:
-                await cache.adelete(test_key)
-
-                # Only try Redis info if backend is Redis
+                # Only try Redis info if backend is Redis and basic check passed
                 if backend_type:
                     try:
                         client = CacheHealthService._get_redis_client()
@@ -100,21 +93,32 @@ class CacheHealthService:
 
     @staticmethod
     async def test_cache_write() -> Tuple[bool, Optional[str]]:
-        """Verify cache write/read/delete operations."""
+        """
+        Test cache write permissions.
+
+        Returns:
+            tuple[bool, str | None]: (Success status, Error message if any)
+        """
+        test_key = f"health_check_write_{int(time.time())}"
         try:
-            test_key = f"write_test_{int(time.time())}"
-            test_value = "test_value"
+            test_value = "write_test"
+            await cache.aset(test_key, test_value, timeout=10)
 
-            await cache.aset(test_key, test_value, timeout=60)
-            retrieved_value = await cache.aget(test_key)
+            # Verify write
+            val = await cache.aget(test_key)
 
-            if retrieved_value != test_value:
-                return False, "Cache write test failed - value mismatch"
+            if val != test_value:
+                return False, "Write verification failed: value mismatch"
 
-            await cache.adelete(test_key)
             return True, None
         except Exception as e:
-            return False, f"Cache write test failed: {str(e)}"
+            return False, str(e)
+        finally:
+            # Clean up
+            try:
+                await cache.adelete(test_key)
+            except Exception:
+                pass
 
     @staticmethod
     async def test_cache_read() -> Tuple[bool, Optional[str]]:

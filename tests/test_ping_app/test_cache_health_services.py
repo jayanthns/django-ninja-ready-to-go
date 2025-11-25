@@ -10,16 +10,15 @@ from apps.ping_app.v1.services.cache_health_services import CacheHealthService
 class TestCacheHealthService:
     # ---------------- Test cases for the method `check_cache_health` ----------------
 
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_with_use_redis_true_returns_redis_info(
-        self, mock_time, mock_cache, mock_settings
+        self, mock_time, mock_cache, mock_settings, mock_test_write
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]  # Simulate 100ms response time
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
+        mock_test_write.return_value = (True, None)
         mock_cache.client.get_client.return_value = mock_cache
         mock_cache.client.get_connection.return_value = mock_cache
         mock_cache.info.return_value = {
@@ -35,12 +34,11 @@ class TestCacheHealthService:
         }
         mock_settings.USE_REDIS = True
 
-        mock_cache.aget.return_value = "test_1000"
         result = await CacheHealthService.check_cache_health()
         assert result.is_healthy is True
         expected = RedisHealthSchema(
             is_healthy=True,
-            response_time_ms=round((1000.2 - 1000.0) * 1000, 2),
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
             error_message=None,
             redis_version="6.0.9",
             memory_usage="1.23M",
@@ -54,21 +52,19 @@ class TestCacheHealthService:
         )
 
         assert result.dict() == expected.dict()
-        mock_cache.aset.assert_called_once()
-        mock_cache.aget.assert_called_once()
-        mock_cache.adelete.assert_called_once()
+        mock_test_write.assert_called_once()
         mock_cache.info.assert_called_once()
 
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_with_use_redis_true_with_wrapper_get_connection_returns_redis_info(
-        self, mock_time, mock_cache, mock_settings
+        self, mock_time, mock_cache, mock_settings, mock_test_write
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]  # Simulate 100ms response time
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
+        mock_test_write.return_value = (True, None)
+
         # client_wrapper should NOT have a `.client` attribute but should
         # implement `get_connection` directly. Make `get_connection` return
         # an object with an `info()` method so the service can call it.
@@ -93,12 +89,11 @@ class TestCacheHealthService:
         mock_cache.client.get_client.return_value = client_wrapper
         mock_settings.USE_REDIS = True
 
-        mock_cache.aget.return_value = "test_1000"
         result = await CacheHealthService.check_cache_health()
         assert result.is_healthy is True
         expected = RedisHealthSchema(
             is_healthy=True,
-            response_time_ms=round((1000.2 - 1000.0) * 1000, 2),
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
             error_message=None,
             redis_version="6.0.9",
             memory_usage="1.23M",
@@ -112,21 +107,18 @@ class TestCacheHealthService:
         )
 
         assert result.dict() == expected.dict()
-        mock_cache.aset.assert_called_once()
-        mock_cache.aget.assert_called_once()
-        mock_cache.adelete.assert_called_once()
+        mock_test_write.assert_called_once()
         inner.info.assert_called_once()
 
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_with_use_redis_true_with_wrapper_no_get_connection_returns_redis_info(
-        self, mock_time, mock_cache, mock_settings
+        self, mock_time, mock_cache, mock_settings, mock_test_write
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
+        mock_test_write.return_value = (True, None)
 
         # Create a wrapper that has no `.client` and no `get_connection`,
         # but does expose `info()` so that it will be returned directly
@@ -150,28 +142,23 @@ class TestCacheHealthService:
 
         mock_settings.USE_REDIS = True
 
-        mock_cache.aget.return_value = "test_1000"
-
         result = await CacheHealthService.check_cache_health()
 
         assert result.is_healthy is True
         assert result.redis_version == "6.2.1"
         assert result.memory_usage == "512K"
         assert result.connected_clients == 3
-        mock_cache.aset.assert_called_once()
-        mock_cache.aget.assert_called_once()
-        mock_cache.adelete.assert_called_once()
+        mock_test_write.assert_called_once()
 
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_with_use_redis_true_with_wrapper_get_connection_with_exception_returns_redis_info(
-        self, mock_time, mock_cache, mock_settings
+        self, mock_time, mock_cache, mock_settings, mock_test_write
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
+        mock_test_write.return_value = (True, None)
 
         # Simulate a client_wrapper where `.client.get_connection` exists
         # but calling it raises an exception. _get_redis_client should
@@ -185,8 +172,6 @@ class TestCacheHealthService:
         mock_cache.client.get_client.return_value = client_wrapper
         mock_settings.USE_REDIS = True
 
-        mock_cache.aget.return_value = "test_1000"
-
         result = await CacheHealthService.check_cache_health()
 
         # Since obtaining the redis connection failed, the service should
@@ -194,7 +179,7 @@ class TestCacheHealthService:
         # should not populate redis-specific fields.
         expected = RedisHealthSchema(
             is_healthy=True,
-            response_time_ms=round((1000.2 - 1000.0) * 1000, 2),
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
             error_message=None,
             redis_version=None,
             memory_usage=None,
@@ -208,21 +193,18 @@ class TestCacheHealthService:
         )
 
         assert result.dict() == expected.dict()
-        mock_cache.aset.assert_called_once()
-        mock_cache.aget.assert_called_once()
-        mock_cache.adelete.assert_called_once()
+        mock_test_write.assert_called_once()
         mock_cache.client.get_client.assert_called_once()
 
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_with_use_redis_false_returns_redis_info(
-        self, mock_time, mock_cache, mock_settings
+        self, mock_time, mock_cache, mock_settings, mock_test_write
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]  # Simulate 100ms response time
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
+        mock_test_write.return_value = (True, None)
         mock_cache.client.get_client.return_value = mock_cache
         mock_cache.client.get_connection.return_value = mock_cache
         mock_cache.info.return_value = {
@@ -238,12 +220,11 @@ class TestCacheHealthService:
         }
         mock_settings.USE_REDIS = False
 
-        mock_cache.aget.return_value = "test_1000"
         result = await CacheHealthService.check_cache_health()
         assert result.is_healthy is True
         expected = RedisHealthSchema(
             is_healthy=True,
-            response_time_ms=round((1000.2 - 1000.0) * 1000, 2),
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
             error_message=None,
             redis_version=None,
             memory_usage=None,
@@ -257,28 +238,27 @@ class TestCacheHealthService:
         )
 
         assert result.dict() == expected.dict()
+        mock_test_write.assert_called_once()
 
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_value_mismatch_sets_error(
-        self, mock_time, mock_cache, mock_settings
+        self, mock_time, mock_cache, mock_settings, mock_test_write
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
         mock_settings.USE_REDIS = True
 
         # Simulate a read that doesn't match the written value
-        mock_cache.aget.return_value = "different_value"
+        mock_test_write.return_value = (False, "Cache write test failed - value mismatch")
 
         result = await CacheHealthService.check_cache_health()
 
         expected = RedisHealthSchema(
             is_healthy=False,
-            response_time_ms=round((1000.2 - 1000.0) * 1000, 2),
-            error_message="Cache read/write test failed - value mismatch",
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
+            error_message="Cache write test failed - value mismatch",
             redis_version=None,
             memory_usage=None,
             connected_clients=None,
@@ -292,31 +272,26 @@ class TestCacheHealthService:
 
         assert result.dict() == expected.dict()
 
-        # When mismatch occurs, adelete and redis info should not be called
-        mock_cache.aset.assert_called_once()
-        mock_cache.aget.assert_called_once()
-        mock_cache.adelete.assert_not_called()
+        mock_test_write.assert_called_once()
 
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_aset_raises_exception_returns_error(
-        self, mock_time, mock_cache, mock_settings
+        self, mock_time, mock_cache, mock_settings, mock_test_write
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
         mock_settings.USE_REDIS = True
 
-        mock_cache.aset.side_effect = Exception("Redis Write failed")
+        mock_test_write.return_value = (False, "Cache write test failed: Redis Write failed")
 
         result = await CacheHealthService.check_cache_health()
 
         expected = RedisHealthSchema(
             is_healthy=False,
-            response_time_ms=round((1000.2 - 1000.0) * 1000, 2),
-            error_message="Cache connection failed: Redis Write failed",
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
+            error_message="Cache write test failed: Redis Write failed",
             redis_version=None,
             memory_usage=None,
             connected_clients=None,
@@ -329,30 +304,26 @@ class TestCacheHealthService:
         )
 
         assert result.dict() == expected.dict()
-        mock_cache.aset.assert_called_once()
-        mock_cache.aget.assert_not_called()
-        mock_cache.adelete.assert_not_called()
+        mock_test_write.assert_called_once()
 
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_aget_raises_exception_returns_error(
-        self, mock_time, mock_cache, mock_settings
+        self, mock_time, mock_cache, mock_settings, mock_test_write
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
         mock_settings.USE_REDIS = True
 
-        mock_cache.aget.side_effect = Exception("Redis Read failed")
+        mock_test_write.return_value = (False, "Cache write test failed: Redis Read failed")
 
         result = await CacheHealthService.check_cache_health()
 
         expected = RedisHealthSchema(
             is_healthy=False,
-            response_time_ms=round((1000.2 - 1000.0) * 1000, 2),
-            error_message="Cache connection failed: Redis Read failed",
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
+            error_message="Cache write test failed: Redis Read failed",
             redis_version=None,
             memory_usage=None,
             connected_clients=None,
@@ -366,35 +337,30 @@ class TestCacheHealthService:
 
         assert result.dict() == expected.dict()
 
-        mock_cache.aset.assert_called_once()
-        mock_cache.aget.assert_called_once()
-        mock_cache.adelete.assert_not_called()
+        mock_test_write.assert_called_once()
 
     @patch(
         "apps.ping_app.v1.services.cache_health_services.CacheHealthService._get_redis_client",
         return_value=None,
     )
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_no_redis_client_is_handled(
-        self, mock_time, mock_cache, mock_settings, mock_get_client
+        self, mock_time, mock_cache, mock_settings, mock_test_write, mock_get_client
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
+        mock_test_write.return_value = (True, None)
         mock_cache.info = AsyncMock()
         mock_settings.USE_REDIS = True
-
-        mock_cache.aget.return_value = "test_1000"
 
         result = await CacheHealthService.check_cache_health()
 
         # No redis client -> info fields remain None but health check still passes
         expected = RedisHealthSchema(
             is_healthy=True,
-            response_time_ms=round((1000.2 - 1000.0) * 1000, 2),
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
             error_message=None,
             redis_version=None,
             memory_usage=None,
@@ -408,24 +374,19 @@ class TestCacheHealthService:
         )
 
         assert result.dict() == expected.dict()
-        mock_cache.aset.assert_called_once()
-        mock_cache.aget.assert_called_once()
-        mock_cache.adelete.assert_called_once()
+        mock_test_write.assert_called_once()
 
     @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService._get_redis_client")
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
     @patch("apps.ping_app.v1.services.cache_health_services.settings")
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
     async def test_check_cache_health_client_info_raises_exception(
-        self, mock_time, mock_cache, mock_settings, mock_get_client
+        self, mock_time, mock_cache, mock_settings, mock_test_write, mock_get_client
     ) -> None:
         mock_time.time.side_effect = [1000.0, 1000.1, 1000.2]
-        mock_cache.aset = AsyncMock()
-        mock_cache.aget = AsyncMock()
-        mock_cache.adelete = AsyncMock()
+        mock_test_write.return_value = (True, None)
         mock_settings.USE_REDIS = True
-
-        mock_cache.aget.return_value = "test_1000"
 
         # Create a fake client whose info() raises
         fake_client = MagicMock()
@@ -437,7 +398,7 @@ class TestCacheHealthService:
         # Since client.info raised, the service should mark the check as failed
         expected = RedisHealthSchema(
             is_healthy=False,
-            response_time_ms=round((1000.2 - 1000.0) * 1000, 2),
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
             error_message="Failed to retrieve Redis info: Info failed",
             redis_version=None,
             memory_usage=None,
@@ -452,11 +413,42 @@ class TestCacheHealthService:
 
         assert result.dict() == expected.dict()
 
-        mock_cache.aset.assert_called_once()
-        mock_cache.aget.assert_called_once()
-        mock_cache.adelete.assert_called_once()
+        mock_test_write.assert_called_once()
         mock_get_client.assert_called_once()
         fake_client.info.assert_called_once()
+
+    @patch("apps.ping_app.v1.services.cache_health_services.CacheHealthService.test_cache_write")
+    @patch("apps.ping_app.v1.services.cache_health_services.settings")
+    @patch("apps.ping_app.v1.services.cache_health_services.cache")
+    @patch("apps.ping_app.v1.services.cache_health_services.time")
+    async def test_check_cache_health_test_write_raises_exception(
+        self, mock_time, mock_cache, mock_settings, mock_test_write
+    ) -> None:
+        mock_time.time.side_effect = [1000.0, 1000.1]
+        mock_settings.USE_REDIS = True
+
+        # Simulate test_cache_write raising an unhandled exception
+        mock_test_write.side_effect = Exception("Unexpected error")
+
+        result = await CacheHealthService.check_cache_health()
+
+        expected = RedisHealthSchema(
+            is_healthy=False,
+            response_time_ms=round((1000.1 - 1000.0) * 1000, 2),
+            error_message="Cache connection failed: Unexpected error",
+            redis_version=None,
+            memory_usage=None,
+            connected_clients=None,
+            uptime_in_seconds=None,
+            total_commands_processed=None,
+            evicted_keys=None,
+            keyspace_hits=None,
+            keyspace_misses=None,
+            role=None,
+        )
+
+        assert result.dict() == expected.dict()
+        mock_test_write.assert_called_once()
 
     # ---------------- Test cases for the method `check_cache_health` ends here ----------------
 
@@ -469,15 +461,15 @@ class TestCacheHealthService:
         mock_cache.aset = AsyncMock()
         mock_cache.aget = AsyncMock()
         mock_cache.adelete = AsyncMock()
-        mock_cache.aget.return_value = "test_value"
+        mock_cache.aget.return_value = "write_test"
 
         status, error = await CacheHealthService.test_cache_write()
         assert status is True
         assert error is None
 
-        mock_cache.aset.assert_called_once_with("write_test_1000", "test_value", timeout=60)
-        mock_cache.aget.assert_called_once_with("write_test_1000")
-        mock_cache.adelete.assert_called_once_with("write_test_1000")
+        mock_cache.aset.assert_called_once_with("health_check_write_1000", "write_test", timeout=10)
+        mock_cache.aget.assert_called_once_with("health_check_write_1000")
+        mock_cache.adelete.assert_called_once_with("health_check_write_1000")
 
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
@@ -493,11 +485,11 @@ class TestCacheHealthService:
         status, error = await CacheHealthService.test_cache_write()
 
         assert status is False
-        assert error == "Cache write test failed - value mismatch"
+        assert error == "Write verification failed: value mismatch"
 
-        mock_cache.aset.assert_called_once_with("write_test_1000", "test_value", timeout=60)
-        mock_cache.aget.assert_called_once_with("write_test_1000")
-        mock_cache.adelete.assert_not_called()
+        mock_cache.aset.assert_called_once_with("health_check_write_1000", "write_test", timeout=10)
+        mock_cache.aget.assert_called_once_with("health_check_write_1000")
+        mock_cache.adelete.assert_called_once_with("health_check_write_1000")
 
     @patch("apps.ping_app.v1.services.cache_health_services.cache")
     @patch("apps.ping_app.v1.services.cache_health_services.time")
@@ -515,9 +507,28 @@ class TestCacheHealthService:
         assert status is False
         assert "Write failed" in error
 
-        mock_cache.aset.assert_called_once_with("write_test_1000", "test_value", timeout=60)
+        mock_cache.aset.assert_called_once_with("health_check_write_1000", "write_test", timeout=10)
         mock_cache.aget.assert_not_called()
-        mock_cache.adelete.assert_not_called()
+        mock_cache.adelete.assert_called_once_with("health_check_write_1000")
+
+    @patch("apps.ping_app.v1.services.cache_health_services.cache")
+    @patch("apps.ping_app.v1.services.cache_health_services.time")
+    async def test_test_cache_write_cleanup_exception(self, mock_time, mock_cache) -> None:
+        mock_time.time.return_value = 1000.0
+        mock_cache.aset = AsyncMock()
+        mock_cache.aget = AsyncMock()
+        mock_cache.adelete = AsyncMock()
+        mock_cache.aget.return_value = "write_test"
+
+        # Simulate exception during cleanup
+        mock_cache.adelete.side_effect = Exception("Cleanup failed")
+
+        status, error = await CacheHealthService.test_cache_write()
+
+        # Should still succeed as cleanup error is suppressed
+        assert status is True
+        assert error is None
+        mock_cache.adelete.assert_called_once()
 
     # ---------------- Test cases for the method `test_cache_write` ends here ----------------
 

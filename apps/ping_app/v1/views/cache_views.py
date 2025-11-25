@@ -30,22 +30,6 @@ async def ping_cache(request):
         # Check basic connectivity
         redis_health = await CacheHealthService.check_cache_health()
 
-        # Test read permissions
-        read_success, read_error = await CacheHealthService.test_cache_read()
-        if not read_success:
-            redis_health.error_message = (
-                f"{redis_health.error_message or ''} Read test failed: {read_error}".strip()
-            )
-            redis_health.is_healthy = False
-
-        # Test write permissions
-        write_success, write_error = await CacheHealthService.test_cache_write()
-        if not write_success:
-            redis_health.error_message = (
-                f"{redis_health.error_message or ''} Write test failed: {write_error}".strip()
-            )
-            redis_health.is_healthy = False
-
         # Log the health check
         await SystemHealthService.log_health_check(
             service_name="Redis",
