@@ -20,6 +20,7 @@ This guide provides industry best practices for writing Pydantic models (Schemas
 We use **Pydantic V2**, which offers significant performance improvements and a cleaner API compared to V1.
 
 **Key Changes:**
+
 - `validator` is replaced by `field_validator`.
 - `root_validator` is replaced by `model_validator`.
 - `BaseModel` methods like `dict()` are now `model_dump()`, and `json()` is `model_dump_json()`.
@@ -46,6 +47,7 @@ class UserCreateSchema(Schema):
 ```
 
 **Best Practice:**
+
 - Use `ninja.Schema` instead of `pydantic.BaseModel` directly (Ninja's Schema inherits from BaseModel but adds Ninja-specific configuration).
 - Use `Field(...)` to define constraints (length, regex, etc.) directly in the type definition for better OpenAPI documentation.
 
@@ -114,11 +116,11 @@ Both validators support `mode='before'` and `mode='after'`. Understanding the di
 - **Runs BEFORE** Pydantic's internal parsing and validation.
 - **Input:** Raw input data (dict, JSON, etc.).
 - **Use Case:**
-    - Pre-processing data to match the expected type.
-    - Handling flexible input formats (e.g., accepting a comma-separated string for a list field).
-    - Normalizing keys or values before type checking.
+  - Pre-processing data to match the expected type.
+  - Handling flexible input formats (e.g., accepting a comma-separated string for a list field).
+  - Normalizing keys or values before type checking.
 
-**Example: flexible list input**
+#### **Example: flexible list input**
 
 ```python
 from typing import List
@@ -140,11 +142,11 @@ class TagSchema(Schema):
 - **Runs AFTER** Pydantic's internal parsing and validation.
 - **Input:** Validated python objects (e.g., `date` object, `int`, etc.).
 - **Use Case:**
-    - Business logic validation.
-    - Cross-field validation (checking dependencies between fields).
-    - Final data transformation.
+  - Business logic validation.
+  - Cross-field validation (checking dependencies between fields).
+  - Final data transformation.
 
-**Example: Business logic check**
+#### **Example: Business logic check**
 
 ```python
 @field_validator('age', mode='after')
@@ -160,12 +162,14 @@ def validate_age(cls, v: int) -> int:
 ## Best Practices
 
 ### 1. Separation of Concerns
+
 - **Schemas (Pydantic):** Handle **data integrity**, **format**, and **structure** validation.
 - **Services (Django):** Handle **business rules** involving database state (e.g., "does this user exist?", "is this email unique?").
 
 **Don't do database queries in Pydantic validators.** It makes schemas hard to test and couples them to the DB.
 
 **Bad:**
+
 ```python
 # ❌ Avoid DB calls in schemas
 @field_validator('email')
@@ -176,6 +180,7 @@ def validate_unique_email(cls, v):
 ```
 
 **Good:**
+
 ```python
 # ✅ Check uniqueness in the Service layer
 # services.py
@@ -186,6 +191,7 @@ def create_user(payload: UserCreateSchema):
 ```
 
 ### 2. Use `Field` for Simple Constraints
+
 Don't write a custom validator for simple things like string length or regex. Use `Field()`.
 
 ```python
@@ -199,9 +205,11 @@ def validate_zip(cls, v):
 ```
 
 ### 3. Explicit Error Messages
+
 Pydantic generates good default errors, but custom `ValueError` messages should be user-friendly.
 
 ### 4. Use `Alias` for Frontend Compatibility
+
 If your frontend sends `camelCase` but your python code uses `snake_case`, use `alias`.
 
 ```python
@@ -214,12 +222,14 @@ class UserSchema(Schema):
 ## Django Ninja Integration
 
 ### Schemas vs Models
+
 - **Django Models:** Representation of your Database tables.
 - **Pydantic Schemas:** Representation of your API Interface (Contract).
 
 Always map between them explicitly or use `ModelSchema` (from `ninja`) if they are 1:1.
 
 ### Using `ModelSchema`
+
 For simple CRUD, `ModelSchema` saves boilerplate.
 
 ```python
@@ -233,9 +243,12 @@ class AnimalSchema(ModelSchema):
 ```
 
 ### Handling Nested Data
+
 Use nested schemas to represent relationships.
 
 ```python
+from typing import List
+
 class AddressSchema(Schema):
     street: str
     city: str
@@ -243,6 +256,20 @@ class AddressSchema(Schema):
 class UserDetailSchema(Schema):
     name: str
     address: AddressSchema  # Nested schema
+```
+
+### Handling Lists of Nested Objects
+
+To handle a list of objects, use `List[SchemaType]`.
+
+```python
+class OrderItemSchema(Schema):
+    product_id: int
+    quantity: int
+
+class OrderCreateSchema(Schema):
+    customer_id: int
+    items: List[OrderItemSchema]  # List of nested objects
 ```
 
 ### Summary Table: When to use what?
