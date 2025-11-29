@@ -54,7 +54,12 @@ def upload_generic_file(request, file: UploadedFile = File(...)):
         # 1. Validate size
         FileService.validate_file_size(file, limit_kb=25)
 
-        response_data = {"message": "File uploaded successfully.", "filename": file.name, "size": file.size}
+        response_data = {
+            "message": "File uploaded successfully.",
+            "filename": file.name,
+            "size": file.size,
+            "human_readable_size": FileService.get_human_readable_size(file.size),
+        }
 
         return {"data": response_data, "trace_id": str(request.trace_id), "error": {}}
     except HttpError as e:
