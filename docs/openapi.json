@@ -295,6 +295,194 @@
                 ]
             }
         },
+        "/api/v1/files/upload/linear": {
+            "post": {
+                "operationId": "apps_files_app_v1_views_upload_linear_file",
+                "summary": "Upload Linear File",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "title": "Response",
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Uploads a linear data file (CSV or JSON), validates size (25KB limit),\nand returns the top 10 records.",
+                "tags": [
+                    "Files Reference"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "format": "binary",
+                                        "title": "File",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ],
+                                "title": "FileParams",
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/files/upload/generic": {
+            "post": {
+                "operationId": "apps_files_app_v1_views_upload_generic_file",
+                "summary": "Upload Generic File",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "title": "Response",
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Uploads any file, validates size (25KB limit), and returns success.",
+                "tags": [
+                    "Files Reference"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "format": "binary",
+                                        "title": "File",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ],
+                                "title": "FileParams",
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/files/download/{filename}": {
+            "get": {
+                "operationId": "apps_files_app_v1_views_download_file",
+                "summary": "Download File",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "filename",
+                        "schema": {
+                            "title": "Filename",
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "description": "Downloads a dummy file of 25KB.",
+                "tags": [
+                    "Files Reference"
+                ]
+            }
+        },
+        "/api/v1/files/stream/{filename}": {
+            "get": {
+                "operationId": "apps_files_app_v1_views_stream_file",
+                "summary": "Stream File",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "filename",
+                        "schema": {
+                            "title": "Filename",
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "description": "Streams a dummy file of 25KB.",
+                "tags": [
+                    "Files Reference"
+                ]
+            }
+        },
+        "/api/v1/files/preview/{filename}": {
+            "get": {
+                "operationId": "apps_files_app_v1_views_preview_file",
+                "summary": "Preview File",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "filename",
+                        "schema": {
+                            "title": "Filename",
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "description": "Previews the content of a dummy file (25KB).",
+                "tags": [
+                    "Files Reference"
+                ]
+            }
+        },
         "/api/v1/pings/": {
             "get": {
                 "operationId": "apps_ping_app_v1_views_system_views_ping",
@@ -938,6 +1126,65 @@
                     "password"
                 ],
                 "title": "UserCreateSchema",
+                "type": "object"
+            },
+            "LinearDataResponseSchema": {
+                "properties": {
+                    "message": {
+                        "title": "Message",
+                        "type": "string"
+                    },
+                    "filename": {
+                        "title": "Filename",
+                        "type": "string"
+                    },
+                    "total_rows": {
+                        "title": "Total Rows",
+                        "type": "integer"
+                    },
+                    "preview_rows": {
+                        "items": {
+                            "type": "object"
+                        },
+                        "title": "Preview Rows",
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "message",
+                    "filename",
+                    "total_rows",
+                    "preview_rows"
+                ],
+                "title": "LinearDataResponseSchema",
+                "type": "object"
+            },
+            "FileSuccessSchema": {
+                "properties": {
+                    "message": {
+                        "title": "Message",
+                        "type": "string"
+                    },
+                    "filename": {
+                        "title": "Filename",
+                        "type": "string"
+                    },
+                    "size": {
+                        "title": "Size",
+                        "type": "integer"
+                    },
+                    "human_readable_size": {
+                        "title": "Human Readable Size",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "message",
+                    "filename",
+                    "size",
+                    "human_readable_size"
+                ],
+                "title": "FileSuccessSchema",
                 "type": "object"
             },
             "HealthCheckResponseSchema": {
