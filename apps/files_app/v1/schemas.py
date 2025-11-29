@@ -7,6 +7,7 @@ class FileSuccessSchema(Schema):
     message: str
     filename: str
     size: int
+    human_readable_size: str
 
 
 class LinearDataResponseSchema(Schema):

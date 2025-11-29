@@ -35,6 +35,7 @@ def upload_linear_file(request, file: UploadedFile = File(...)):
             "filename": file.name,
             "total_rows": len(data),
             "preview_rows": data,
+            "human_readable_size": FileService.get_human_readable_size(file.size),
         }
 
         return {"data": response_data, "trace_id": str(request.trace_id), "error": {}}

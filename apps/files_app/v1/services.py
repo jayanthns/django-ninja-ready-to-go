@@ -19,6 +19,17 @@ class FileService:
             )
 
     @staticmethod
+    def get_human_readable_size(size_bytes: int) -> str:
+        """
+        Converts bytes to a human-readable string (e.g., '25.0 KB').
+        """
+        for unit in ["B", "KB", "MB", "GB", "TB"]:
+            if size_bytes < 1024.0:
+                return f"{size_bytes:.1f} {unit}"
+            size_bytes /= 1024.0
+        return f"{size_bytes:.1f} PB"
+
+    @staticmethod
     def parse_linear_file(file: UploadedFile) -> List[Dict[str, Any]]:
         """
         Parses a linear data file (CSV or JSON) and returns a list of records.

@@ -18,7 +18,20 @@ This app serves as a reference implementation for handling file uploads, downloa
 
 - **Input**: `file` (Multipart Form Data) - CSV or JSON.
 - **Validation**: Max size **25KB**.
-- **Output**: Top 10 records parsed from the file.
+- **Output**: Standard API Response.
+
+  ```json
+  {
+    "data": {
+      "message": "File uploaded and parsed successfully.",
+      "filename": "valid.csv",
+      "total_rows": 10,
+      "preview_rows": [...]
+    },
+    "trace_id": "...",
+    "error": {}
+  }
+  ```
 
 ### 2. Upload Generic File
 
@@ -26,7 +39,20 @@ This app serves as a reference implementation for handling file uploads, downloa
 
 - **Input**: `file` (Multipart Form Data) - Any type.
 - **Validation**: Max size **25KB**.
-- **Output**: Success message and file size.
+- **Output**: Standard API Response.
+
+  ```json
+  {
+    "data": {
+      "message": "File uploaded successfully.",
+      "filename": "test.txt",
+      "size": 1024,
+      "human_readable_size": "1.0 KB"
+    },
+    "trace_id": "...",
+    "error": {}
+  }
+  ```
 
 ### 3. Download File
 
@@ -58,6 +84,20 @@ This app serves as a reference implementation for handling file uploads, downloa
 
 - Uses `ninja.File` and `ninja.UploadedFile` for handling uploads.
 - Uses `django.http.StreamingHttpResponse` for streaming.
+
+## ⚠️ Error Handling
+
+All endpoints follow a standard error response structure. For example, if a file exceeds the size limit:
+
+```json
+{
+  "data": null,
+  "trace_id": "...",
+  "error": {
+    "message": "File size exceeds the limit of 25KB. Actual size: 26.0 KB"
+  }
+}
+```
 
 ## 📂 Sample Files
 
