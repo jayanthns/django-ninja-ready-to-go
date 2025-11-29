@@ -13,7 +13,8 @@ class FilesAppTests(TestCase):
         file = SimpleUploadedFile("test.csv", content, content_type="text/csv")
         response = self.client.post("/api/v1/files/upload/linear", {"file": file})
         self.assertEqual(response.status_code, 200)
-        data = response.json()
+        json_response = response.json()
+        data = json_response["data"]
         self.assertEqual(len(data["preview_rows"]), 2)
         self.assertEqual(data["preview_rows"][0]["name"], "Alice")
 
@@ -22,7 +23,8 @@ class FilesAppTests(TestCase):
         file = SimpleUploadedFile("test.json", content, content_type="application/json")
         response = self.client.post("/api/v1/files/upload/linear", {"file": file})
         self.assertEqual(response.status_code, 200)
-        data = response.json()
+        json_response = response.json()
+        data = json_response["data"]
         self.assertEqual(len(data["preview_rows"]), 2)
 
     def test_upload_too_large(self):
@@ -31,6 +33,13 @@ class FilesAppTests(TestCase):
         file = SimpleUploadedFile("large.txt", content, content_type="text/plain")
         response = self.client.post("/api/v1/files/upload/generic", {"file": file})
         self.assertEqual(response.status_code, 400)
+
+        # Verify standard error structure
+        json_response = response.json()
+        self.assertIsNone(json_response["data"])
+        self.assertIn("error", json_response)
+        self.assertIn("message", json_response["error"])
+        self.assertIn("File size exceeds the limit", json_response["error"]["message"])
 
     def test_download_file(self):
         response = self.client.get("/api/v1/files/download/test.txt")
