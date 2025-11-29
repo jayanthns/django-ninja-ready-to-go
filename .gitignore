@@ -144,3 +144,6 @@ cython_debug/
 tmp/
 logs/
 *.sqlite3
+
+# macOS
+.DS_Store
