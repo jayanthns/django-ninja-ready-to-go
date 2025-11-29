@@ -13,6 +13,7 @@ This guide provides naming conventions, coding standards, and best practices for
 7. [Logging System](#logging-system)
 8. [Testing Naming Conventions](#testing-naming-conventions)
 9. [FAQ](#faq)
+10. [Pydantic & Validation Guide](#pydantic--validation-guide)
 
 ---
 
@@ -833,6 +834,9 @@ tags = models.ManyToManyField(Tag)
 ```
 
 ### Step 2: Create Schemas
+
+> [!TIP]
+> For a deep dive into Pydantic V2, validation modes, and best practices, see the [Pydantic & Validation Guide](PYDANTIC_GUIDE.md).
 
 **File**: `apps/{app_name}/v1/schemas.py`
 
@@ -2107,6 +2111,12 @@ make shell            # Django shell
 | Variable | `snake_case` | `animal_count` |
 | Constant | `UPPER_SNAKE_CASE` | `MAX_ANIMALS` |
 | Class | `PascalCase` | `AnimalService` |
+
+---
+
+## Pydantic & Validation Guide
+
+For comprehensive guidelines on writing Pydantic models, using validators (v2), and integrating with Django Ninja, please refer to the dedicated [Pydantic & Validation Guide](PYDANTIC_GUIDE.md).
 
 ---
 
