@@ -14,7 +14,7 @@ A **production-ready Django Ninja API framework** with comprehensive health moni
 - [📚 Documentation](#-documentation)
 - [🛠️ Development Workflow](#️-development-workflow)
   - [Creating a New App](#creating-a-new-app)
-  - [Package Management](#package-management)
+  - [Package Management](#package-management-commands)
 - [🧪 Testing](#-testing)
 - [📦 Package Management](#-package-management)
 - [🔧 Development Commands](#-development-commands)
@@ -22,9 +22,7 @@ A **production-ready Django Ninja API framework** with comprehensive health moni
 - [🏗️ Architecture Overview](#️-architecture-overview)
 - [📱 Applications Overview](#-applications-overview)
 - [🔧 Common Utilities](#-common-utilities)
-- [🐳 Docker & Deployment](#-docker--deployment)
 - [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
 
 ## 🎯 **Key Features**
 
@@ -201,7 +199,8 @@ django-ninja-ready-to-go/
 ├── 📁 apps/                     # Django applications
 │   ├── 📁 animals_app/          # CRUD example with async operations
 │   ├── 📁 users_app/            # User management system
-│   └── 📁 ping_app/             # Health monitoring & external pinging
+│   ├── 📁 ping_app/             # Health monitoring & external pinging
+│   └── 📁 files_app/            # File handling & processing reference
 ├── 📁 common/                   # Shared utilities and middleware
 │   ├── middleware.py            # Trace ID middleware
 │   ├── logger_helper.py         # Contextual logging system
@@ -534,11 +533,35 @@ curl http://localhost:8000/api/v1/pings/external/logs/
 curl http://localhost:8000/api/v1/pings/external/stats/
 ```
 
-### **🔧 Common Utilities** (`common/`)
+### **📂 Files App** (`apps/files_app/`)
+
+Reference implementation for file handling, uploads, and processing.
+
+👉 **[Read the Files App Documentation](apps/files_app/README.md)**
+
+**Features:**
+
+- **File Uploads**: Handling linear data (CSV/JSON) and generic files
+- **Size Validation**: Enforcing file size limits (e.g., 25KB)
+- **Content Parsing**: Parsing CSV and JSON content on upload
+- **Standard Responses**: Consistent response structure with `human_readable_size`
+- **Streaming & Download**: Examples of file streaming and downloading
+
+**API Endpoints:**
+
+```bash
+POST   /api/v1/files/upload/linear   # Upload & parse CSV/JSON
+POST   /api/v1/files/upload/generic  # Upload any file
+GET    /api/v1/files/download/{name} # Download file
+GET    /api/v1/files/stream/{name}   # Stream file
+GET    /api/v1/files/preview/{name}  # Preview file content
+```
+
+## 🔧 **Common Utilities**
 
 Shared utilities and middleware providing enterprise-grade functionality:
 
-#### **Trace ID Middleware** (`middleware.py`)
+### **Trace ID Middleware** (`middleware.py`)
 
 - **Automatic Trace ID Generation**: Unique identifier for each request
 - **Correlation ID Support**: For distributed tracing across services
@@ -546,7 +569,7 @@ Shared utilities and middleware providing enterprise-grade functionality:
 - **Response Header Injection**: Adds trace headers to responses
 - **Logger Integration**: Seamless integration with contextual logging
 
-#### **Logger Helper** (`logger_helper.py`)
+### **Logger Helper** (`logger_helper.py`)
 
 - **Contextual Logging**: Request-specific logger with automatic context
 - **Background Task Support**: Logger context for async tasks
@@ -632,6 +655,7 @@ make create-app APP=your_app_name
 ```
 
 This command creates:
+
 - `apps/your_app_name/v1/` directory structure
 - All necessary files: `admin.py`, `apps.py`, `models.py`, `schemas.py`, `services.py`, `views.py`
 - Stub code with examples and best practices
@@ -640,6 +664,7 @@ This command creates:
 **Next steps after creating an app:**
 
 1. Add to `INSTALLED_APPS` in `main/settings/base.py`:
+
    ```python
    INSTALLED_APPS = [
        # ... other apps
@@ -648,12 +673,14 @@ This command creates:
    ```
 
 2. Register the router in `main/urls.py`:
+
    ```python
    from apps.your_app_name.v1.views import router as your_app_router
    api.add_router("/your_app/", your_app_router, tags=["YourApp"])
    ```
 
 3. Create and run migrations:
+
    ```bash
    make makemigrations
    make migrate
@@ -661,11 +688,11 @@ This command creates:
 
 > **💡 Advanced**: For details on how the script works and how to customize it, see [scripts/README.md](scripts/README.md).
 
-### **Package Management**
+### **Package Management Commands**
 
 This project uses **`uv`**. For common commands and workflows, see the **[Package Manager Guide](docs/PACKAGE_MANAGER.md)**.
 
-### Quick Commands
+### **Quick Commands**
 
 | Command | Description |
 |---------|-------------|
