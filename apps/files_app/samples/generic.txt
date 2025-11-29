@@ -1,0 +1,3 @@
+This is a generic text file for testing the generic upload API.
+It is small and should pass the 25KB limit validation.
+Django Ninja is awesome!

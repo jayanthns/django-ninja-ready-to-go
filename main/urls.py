@@ -24,6 +24,7 @@ api = NinjaAPI(title="My Project API")
 
 # Include routers from each app
 from apps.animals_app.v1.views import router as animals_router  # noqa
+from apps.files_app.v1.views import router as files_router  # noqa
 
 # Import ping sub-routers
 from apps.ping_app.v1.views import cache_router, database_router, external_router, system_router  # noqa
@@ -31,6 +32,7 @@ from apps.users_app.v1.views import router as users_router  # noqa
 
 api.add_router("/v1/animals/", animals_router, tags=["Animals"])
 api.add_router("/v1/users/", users_router, tags=["Users"])
+api.add_router("/v1/files/", files_router, tags=["Files Reference"])
 
 # Include ping routers with separate prefixes (matching FastAPI pattern)
 api.add_router("/v1/pings/", system_router, tags=["ping-health"])

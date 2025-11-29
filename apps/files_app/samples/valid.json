@@ -1,0 +1,12 @@
+[
+  { "name": "Alice", "age": 30, "city": "New York" },
+  { "name": "Bob", "age": 25, "city": "Los Angeles" },
+  { "name": "Charlie", "age": 35, "city": "Chicago" },
+  { "name": "David", "age": 28, "city": "Houston" },
+  { "name": "Eve", "age": 22, "city": "Phoenix" },
+  { "name": "Frank", "age": 40, "city": "Philadelphia" },
+  { "name": "Grace", "age": 33, "city": "San Antonio" },
+  { "name": "Hank", "age": 29, "city": "San Diego" },
+  { "name": "Ivy", "age": 31, "city": "Dallas" },
+  { "name": "Jack", "age": 27, "city": "San Jose" }
+]
