@@ -1,7 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from django.http import HttpResponse, StreamingHttpResponse
 from ninja import File, Router, UploadedFile
+from ninja.errors import HttpError
 
 from common.base_schemas import create_api_response_schema
 
@@ -9,9 +10,6 @@ from .schemas import FileSuccessSchema, LinearDataResponseSchema
 from .services import FileService
 
 router = Router()
-
-
-from ninja.errors import HttpError
 
 
 @router.post(
