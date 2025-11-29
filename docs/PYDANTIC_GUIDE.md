@@ -282,3 +282,83 @@ class OrderCreateSchema(Schema):
 | **Single field logic** (must be uppercase) | `@field_validator` | `mode='after'` |
 | **Multi-field logic** (start < end) | `@model_validator` | `mode='after'` |
 | **Database checks** (unique email) | **Service Layer** | N/A |
+
+---
+
+## Using Schemas in Views (DRF Comparison)
+
+This section explains how to use Schemas in your views for input validation and response formatting, comparing it to Django Rest Framework (DRF) patterns.
+
+### 1. Input Validation
+
+**DRF:** You manually instantiate the serializer and call `is_valid()`.
+**Ninja:** Validation is **automatic**. If you define a schema as an argument, Ninja validates it before calling your view.
+
+```python
+# DRF (Old way)
+def create_user(request):
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        validated_data = serializer.validated_data
+        ...
+
+# Ninja (New way)
+@router.post("/users")
+def create_user(request, payload: UserCreateSchema):
+    # If code reaches here, 'payload' is already validated!
+    # 'payload' is a Pydantic model instance, not a dict.
+    pass
+```
+
+### 2. Accessing Validated Data
+
+**DRF:** `serializer.validated_data` (returns a dict).
+**Ninja:** The `payload` argument (returns a Pydantic object).
+
+```python
+# Ninja
+def create_user(request, payload: UserCreateSchema):
+    print(payload.username)  # Access attributes directly
+    data = payload.model_dump()  # Convert to dict if needed
+```
+
+### 3. Saving Data (Model Mapping)
+
+**DRF:** `serializer.save()` (handles object creation).
+**Ninja:** You typically handle creation in a **Service** or directly in the view using the ORM. Pydantic schemas are decoupled from Models.
+
+```python
+# Ninja
+def create_user(request, payload: UserCreateSchema):
+    # Convert schema to dict and create model
+    user = User.objects.create(**payload.model_dump())
+    return user
+```
+
+### 4. Response Serialization
+
+**DRF:** You manually serialize the instance: `UserSerializer(user).data`.
+**Ninja:** You define the `response` schema in the decorator. Ninja automatically serializes the return value.
+
+```python
+# DRF (Old way)
+return Response(UserSerializer(user).data)
+
+# Ninja (New way)
+@router.post("/users", response=UserSchema)
+def create_user(request, payload: UserCreateSchema):
+    user = User.objects.create(...)
+    return user  # Ninja converts 'user' model instance to 'UserSchema' automatically
+```
+
+### 5. DRF vs Ninja Cheat Sheet
+
+| Feature | DRF Pattern | Ninja Pattern |
+| :--- | :--- | :--- |
+| **Input Definition** | `Serializer(data=request.data)` | Function argument: `payload: Schema` |
+| **Validation Trigger** | `serializer.is_valid(raise_exception=True)` | **Automatic** (before view execution) |
+| **Access Data** | `serializer.validated_data['field']` | `payload.field` (Dot notation) |
+| **To Dictionary** | `serializer.validated_data` | `payload.model_dump()` |
+| **Object Creation** | `serializer.save()` | `Model.objects.create(**payload.model_dump())` |
+| **Response Type** | `Response(Serializer(obj).data)` | `@router.get(..., response=Schema)` |
+| **Partial Updates** | `Serializer(obj, data=..., partial=True)` | Use `Schema` with `Optional` fields (PATCH) |
