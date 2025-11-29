@@ -4,16 +4,17 @@ This guide provides naming conventions, coding standards, and best practices for
 
 ## Table of Contents
 
-1. [Naming Conventions](#naming-conventions)
-2. [Code Style & Standards](#code-style--standards)
-3. [Project Structure](#project-structure)
-4. [Environment Configuration](#environment-configuration)
-5. [Best Practices](#best-practices)
-6. [Building APIs](#building-apis-complete-guide)
-7. [Logging System](#logging-system)
-8. [Testing Naming Conventions](#testing-naming-conventions)
-9. [FAQ](#faq)
-10. [Major Differences: DRF vs Django Ninja](#major-differences-drf-vs-django-ninja)
+1. [Major Differences: DRF vs Django Ninja](#major-differences-drf-vs-django-ninja)
+2. [Naming Conventions](#naming-conventions)
+3. [Code Style & Standards](#code-style--standards)
+4. [Project Structure](#project-structure)
+5. [Environment Configuration](#environment-configuration)
+6. [Best Practices](#best-practices)
+7. [Building APIs: Complete Guide](#building-apis-complete-guide)
+8. [Logging System](#logging-system)
+9. [Testing Naming Conventions](#testing-naming-conventions)
+10. [FAQ](#faq)
+11. [Pydantic & Validation Guide](#pydantic--validation-guide)
 
 ---
 
