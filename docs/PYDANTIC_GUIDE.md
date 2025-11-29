@@ -362,3 +362,62 @@ def create_user(request, payload: UserCreateSchema):
 | **Object Creation** | `serializer.save()` | `Model.objects.create(**payload.model_dump())` |
 | **Response Type** | `Response(Serializer(obj).data)` | `@router.get(..., response=Schema)` |
 | **Partial Updates** | `Serializer(obj, data=..., partial=True)` | Use `Schema` with `Optional` fields (PATCH) |
+
+---
+
+## Running Logic Before Validation
+
+In DRF, you might be used to checking permissions or modifying `request.data` *before* passing it to the serializer. In Ninja, the flow is slightly different.
+
+### 1. Authentication & Permissions (The "Gatekeeper")
+
+Ninja's `auth` callbacks run **before** your view is called and **before** the schema validation is fully processed for the view logic (though basic type checking happens at the interface level).
+
+Use this for:
+
+- Checking if the user is logged in.
+- Checking if the user is active.
+- Checking API keys.
+
+```python
+# auth.py
+def api_key_auth(request):
+    if not request.headers.get("X-API-KEY"):
+        return None  # Auth failed
+    return "user_123"
+
+# views.py
+@router.post("/secure-data", auth=api_key_auth)
+def create_secure_data(request, payload: DataSchema):
+    # This code ONLY runs if api_key_auth returns a value.
+    pass
+```
+
+### 2. Modifying Input Data
+
+**DRF approach:** Modify `request.data` -> Serializer.
+**Ninja approach:** Validate Payload -> Combine with Request Data -> Service.
+
+In Ninja, you typically **don't** modify the raw input before validation. Instead, you accept the valid payload and then combine it with other data (like `request.user`) in your view or service.
+
+#### **Example: Assigning an Owner to an Object**
+
+```python
+# Schema (Don't include owner_id here if it comes from the request!)
+class ItemCreateSchema(Schema):
+    name: str
+    description: str
+
+# View
+@router.post("/items")
+def create_item(request, payload: ItemCreateSchema):
+    # 1. 'payload' is already validated (name, description)
+    # 2. Get the user from the request (handled by auth)
+    user = request.user
+    
+    # 3. Combine them in the service layer
+    # We pass the payload AND the user separately
+    return ItemService.create_item(payload, owner=user)
+```
+
+**Why?** This keeps your schemas pure and focused on the *client's* input, while your views/services handle the *context* (who is making the request).
