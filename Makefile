@@ -48,6 +48,36 @@ generate-docs:
 	@echo "Generating API documentation..."
 	@$(VENV_ACTIVATE) && python manage.py generate_api_docs
 
+open-docs: swagger
+
+swagger: generate-docs
+	@echo "Serving Swagger UI at http://localhost:8002/swagger.html"
+	@echo "Press Ctrl+C to stop."
+	@if [ -n "$$WSL_DISTRO_NAME" ]; then \
+		(sleep 1 && wslview http://localhost:8002/swagger.html) & \
+	elif [ "$$(uname)" = "Darwin" ]; then \
+		(sleep 1 && open http://localhost:8002/swagger.html) & \
+	elif [ "$$(expr substr $$(uname -s) 1 5)" = "Linux" ]; then \
+		(sleep 1 && xdg-open http://localhost:8002/swagger.html) & \
+	elif [ "$$(expr substr $$(uname -s) 1 10)" = "MINGW32_NT" ] || [ "$$(expr substr $$(uname -s) 1 10)" = "MINGW64_NT" ]; then \
+		(sleep 1 && start http://localhost:8002/swagger.html) & \
+	fi
+	@$(VENV_ACTIVATE) && python -m http.server 8002 --directory docs
+
+redoc: generate-docs
+	@echo "Serving ReDoc at http://localhost:8002/redoc.html"
+	@echo "Press Ctrl+C to stop."
+	@if [ -n "$$WSL_DISTRO_NAME" ]; then \
+		(sleep 1 && wslview http://localhost:8002/redoc.html) & \
+	elif [ "$$(uname)" = "Darwin" ]; then \
+		(sleep 1 && open http://localhost:8002/redoc.html) & \
+	elif [ "$$(expr substr $$(uname -s) 1 5)" = "Linux" ]; then \
+		(sleep 1 && xdg-open http://localhost:8002/redoc.html) & \
+	elif [ "$$(expr substr $$(uname -s) 1 10)" = "MINGW32_NT" ] || [ "$$(expr substr $$(uname -s) 1 10)" = "MINGW64_NT" ]; then \
+		(sleep 1 && start http://localhost:8002/redoc.html) & \
+	fi
+	@$(VENV_ACTIVATE) && python -m http.server 8002 --directory docs
+
 create-app:
 	@if [ -z "$(APP)" ]; then \
 		echo "Error: APP name is required"; \
@@ -263,6 +293,8 @@ help:
 	@echo "  run_gunicorn: Run the gunicorn server"
 	@echo "  run_uvicorn: Run the uvicorn server"
 	@echo "  generate-docs          Generate static API documentation (Swagger, ReDoc)"
+	@echo "  swagger                Generate and serve Swagger UI"
+	@echo "  redoc                  Generate and serve ReDoc"
 	@echo "  create-app APP=name    Create a new Django Ninja app with v1 structure"
 	@echo ""
 	@echo "== Setup & Installation =="
@@ -316,4 +348,4 @@ help:
 	@echo "  d-exec: Execute a command in the services"
 	@echo "  help: Show this help message"
 
-.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help generate-docs
+.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help generate-docs swagger redoc

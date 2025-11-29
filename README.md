@@ -394,6 +394,14 @@ make lint             # Run code linting
 make format           # Format code
 ```
 
+### **Documentation**
+
+```bash
+make swagger          # Generate and serve Swagger UI
+make redoc            # Generate and serve ReDoc
+make generate-docs    # Generate static docs only
+```
+
 ## 🌐 **API Documentation**
 
 Once the server is running, you can access:
@@ -747,18 +755,25 @@ For troubleshooting (e.g., PostgreSQL collation errors), see the **[Testing Guid
 
 ### **Static Documentation**
 
-You can generate static documentation files (Swagger UI and ReDoc) using the Makefile command:
+You can generate and view static documentation files (Swagger UI and ReDoc) using the following Makefile commands:
 
 ```bash
-make generate-docs
+# Generate and open Swagger UI
+make swagger
+
+# Generate and open ReDoc
+make redoc
 ```
 
-This will create a `docs/` directory with `swagger.html` and `redoc.html`.
+These commands will:
+1. Generate the static HTML files in `docs/`.
+2. Start a local HTTP server (to avoid CORS issues).
+3. Automatically open the documentation in your default browser.
 
 **Viewing on GitHub:**
 GitHub's README does not support embedding interactive JavaScript applications like Swagger UI or ReDoc directly. To view these files:
 
-1. **Locally**: Open `docs/swagger.html` or `docs/redoc.html` in your browser.
+1. **Locally**: Use the `make swagger` or `make redoc` commands above.
 2. **GitHub Pages**: Enable GitHub Pages for your repository (Settings -> Pages -> Source: `main` branch, `/docs` folder). Your docs will be available at:
     - `https://<username>.github.io/<repo>/swagger.html`
     - `https://<username>.github.io/<repo>/redoc.html`
