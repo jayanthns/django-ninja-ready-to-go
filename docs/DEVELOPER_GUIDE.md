@@ -4,15 +4,89 @@ This guide provides naming conventions, coding standards, and best practices for
 
 ## Table of Contents
 
-1. [Naming Conventions](#naming-conventions)
-2. [Code Style & Standards](#code-style--standards)
-3. [Project Structure](#project-structure)
-4. [Environment Configuration](#environment-configuration)
-5. [Best Practices](#best-practices)
-6. [Building APIs](#building-apis-complete-guide)
-7. [Logging System](#logging-system)
-8. [Testing Naming Conventions](#testing-naming-conventions)
-9. [FAQ](#faq)
+1. [Major Differences: DRF vs Django Ninja](#major-differences-drf-vs-django-ninja)
+2. [Naming Conventions](#naming-conventions)
+3. [Code Style & Standards](#code-style--standards)
+4. [Project Structure](#project-structure)
+5. [Environment Configuration](#environment-configuration)
+6. [Best Practices](#best-practices)
+7. [Building APIs: Complete Guide](#building-apis-complete-guide)
+8. [Logging System](#logging-system)
+9. [Testing Naming Conventions](#testing-naming-conventions)
+10. [FAQ](#faq)
+11. [Pydantic & Validation Guide](#pydantic--validation-guide)
+
+---
+
+## Major Differences: DRF vs Django Ninja
+
+If you are coming from Django REST Framework (DRF), here are the key conceptual shifts you need to make:
+
+| Feature | Django REST Framework (DRF) | Django Ninja |
+| :--- | :--- | :--- |
+| **Serialization** | `serializers.Serializer` / `ModelSerializer` | `ninja.Schema` |
+| **Validation** | Explicit `serializer.is_valid()` call | **Automatic** (based on type hints) |
+| **Input Data** | `request.data` (dict) | Function arguments (Pydantic objects) |
+| **Async Support** | Limited / Add-on | **Native** (built on Starlette) |
+| **OpenAPI / Swagger** | Requires `drf-yasg` or `drf-spectacular` | **Built-in** (automatic generation) |
+| **Dependency Injection** | Manual (middleware / view mixins) | **Native** (Router dependencies) |
+| **Performance** | Slower (complex meta-programming) | **Faster** (Pydantic V2 core) |
+
+### Key Mindset Shifts
+
+1. **Don't look for `serializer.save()`**: In Ninja, schemas are just data containers. You handle object creation/updates explicitly in your **Service Layer** or View using standard Django ORM (`Model.objects.create(...)`).
+2. **Type Hints are King**: Ninja relies heavily on Python type hints. `payload: UserSchema` tells Ninja to parse the body as JSON, validate it against `UserSchema`, and inject the result as `payload`.
+3. **Explicit is better than Implicit**: Ninja has less "magic" than DRF's `ModelViewSet`. You write explicit view functions, which makes the flow easier to follow and debug.
+
+### Why `ninja.Schema` instead of `pydantic.BaseModel`?
+
+For beginners, this is a common point of confusion. `ninja.Schema` inherits from `pydantic.BaseModel`, so they look almost identical. However, **always use `ninja.Schema`**.
+
+#### The "Attribute vs Dictionary" Problem
+
+Django Models are Python objects. You access data using **dot notation**:
+`user.name`, `user.email`
+
+Standard Pydantic Models (`BaseModel`) expect **dictionaries** by default:
+`user['name']`, `user['email']`
+
+If you try to pass a Django model instance to a standard `BaseModel`, it will fail because it tries to read it like a dictionary.
+
+#### The Solution: `ninja.Schema`
+
+`ninja.Schema` comes pre-configured with `from_attributes=True` (formerly `orm_mode`). This tells Pydantic: *"If you can't find a dictionary key, try looking for an attribute with the same name."*
+
+#### Visual Comparison
+
+**❌ Using `pydantic.BaseModel` (Will Fail)**
+
+```python
+class UserSchema(BaseModel):
+    name: str
+
+# View
+def get_user(request):
+    user = User.objects.get(id=1)
+    # ERROR: Pydantic tries to do user['name'] and fails!
+    return UserSchema(**user) 
+```
+
+**✅ Using `ninja.Schema` (Works Automatically)**
+
+```python
+class UserSchema(Schema):
+    name: str
+
+# View
+@router.get("/user", response=UserSchema)
+def get_user(request):
+    user = User.objects.get(id=1)
+    # SUCCESS: Ninja sees 'response=UserSchema', 
+    # reads user.name automatically, and creates the JSON.
+    return user 
+```
+
+**Takeaway:** Always import `Schema` from `ninja`. It makes working with Django ORM seamless.
 
 ---
 
@@ -776,6 +850,43 @@ When building an API endpoint, you'll work with these layers:
 └─────────────────────────────────────────┘
 ```
 
+### Request Execution Flow
+
+This diagram illustrates the lifecycle of a request in our architecture:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Django as Django URL Resolver
+    participant Router as Ninja Router (api.py)
+    participant Auth as Auth Callback
+    participant Schema as Pydantic Schema
+    participant View as View (views.py)
+    participant Service as Service (services.py)
+    participant DB as Database (models.py)
+
+    Client->>Django: HTTP Request
+    Django->>Router: Match URL
+    Router->>Auth: Check Authentication
+    alt Auth Failed
+        Auth-->>Client: 401 Unauthorized
+    else Auth Success
+        Router->>Schema: Validate Payload/Params
+        alt Validation Failed
+            Schema-->>Client: 422 Unprocessable Entity
+        else Validation Success
+            Router->>View: Call View(request, payload)
+            View->>Service: Call Business Logic
+            Service->>DB: Query/Update Data
+            DB-->>Service: Model Instances
+            Service-->>View: Return Result
+            View-->>Router: Return Response Data
+            Router-->>Schema: Serialize Response
+            Schema-->>Client: JSON Response
+        end
+    end
+```
+
 ### Step 1: Define Your Model
 
 **File**: `apps/{app_name}/v1/models.py`
@@ -833,6 +944,9 @@ tags = models.ManyToManyField(Tag)
 ```
 
 ### Step 2: Create Schemas
+
+> [!TIP]
+> For a deep dive into Pydantic V2, validation modes, and best practices, see the [Pydantic & Validation Guide](PYDANTIC_GUIDE.md).
 
 **File**: `apps/{app_name}/v1/schemas.py`
 
@@ -2107,6 +2221,12 @@ make shell            # Django shell
 | Variable | `snake_case` | `animal_count` |
 | Constant | `UPPER_SNAKE_CASE` | `MAX_ANIMALS` |
 | Class | `PascalCase` | `AnimalService` |
+
+---
+
+## Pydantic & Validation Guide
+
+For comprehensive guidelines on writing Pydantic models, using validators (v2), and integrating with Django Ninja, please refer to the dedicated [Pydantic & Validation Guide](PYDANTIC_GUIDE.md).
 
 ---
 
