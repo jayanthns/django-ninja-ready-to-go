@@ -365,6 +365,40 @@ def create_user(request, payload: UserCreateSchema):
 
 ---
 
+## Execution Flow & Dependency Injection
+
+Understanding the order of execution is critical when designing your API. Django Ninja uses a dependency injection system that resolves arguments before your view logic runs.
+
+### Request Lifecycle
+
+1. **Django Middleware**: Standard Django middleware runs first.
+2. **Routing**: Ninja matches the URL to a view.
+3. **Authentication**: If `auth=` is defined on the router or view, it runs **first**. If it fails, the view is never called.
+4. **Dependency Resolution**: Ninja resolves all function arguments:
+    - `request`: Injected automatically.
+    - `payload`: Parsed and validated against the Schema.
+    - `path parameters`: Parsed from the URL.
+    - `query parameters`: Parsed from the query string.
+5. **View Execution**: If all validation passes, your view function is called.
+
+### Dependency Injection
+
+Ninja automatically injects values based on type hints.
+
+```python
+@router.post("/items/{item_id}")
+def create_item(
+    request,                  # 1. Injected Request
+    item_id: int,            # 2. Path Parameter (Validated)
+    payload: ItemSchema,     # 3. Body Payload (Validated)
+    filters: FilterSchema = Query(...) # 4. Query Params (Validated)
+):
+    # If code reaches here, EVERYTHING above is valid.
+    pass
+```
+
+---
+
 ## Running Logic Before Validation
 
 In DRF, you might be used to checking permissions or modifying `request.data` *before* passing it to the serializer. In Ninja, the flow is slightly different.
