@@ -6,13 +6,9 @@ from unittest.mock import AsyncMock, call, MagicMock, patch
 import pytest
 
 from apps.ping_app.v1.schemas import RedisHealthSchema
-from apps.ping_app.v1.views.cache_views import (
-    get_cache_info,
-    get_cache_keys,
-    ping_cache,
-    test_cache_read,
-    test_cache_write,
-)
+from apps.ping_app.v1.views.cache_views import get_cache_info, get_cache_keys, ping_cache
+from apps.ping_app.v1.views.cache_views import test_cache_read as view_test_cache_read
+from apps.ping_app.v1.views.cache_views import test_cache_write as view_test_cache_write
 
 
 @pytest.mark.asyncio
@@ -112,6 +108,7 @@ class TestCacheViewsPingCache:
         response = await ping_cache(mock_request)
         return json.loads(response.content), response
 
+    @pytest.mark.asyncio
     class TestSuccessfulScenarios:
         """Test successful cache ping scenarios."""
 
@@ -1270,11 +1267,11 @@ class TestCacheViewsCacheWrite:
         assert "error" in response_data
 
     @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_write", new_callable=AsyncMock)
-    async def test_cache_write_success_response(self, mock_test_cache_write, mock_request):
+    async def test_cache_write_success_response(self, mock_view_test_cache_write, mock_request):
 
-        mock_test_cache_write.return_value = (True, None)
+        mock_view_test_cache_write.return_value = (True, None)
 
-        response = await test_cache_write(mock_request)
+        response = await view_test_cache_write(mock_request)
 
         response_data = json.loads(response.content)
 
@@ -1289,7 +1286,7 @@ class TestCacheViewsCacheWrite:
         assert response_data["trace_id"] == str(mock_request.trace_id)
         assert response_data["error"] == {}
 
-        mock_test_cache_write.assert_called_once()
+        mock_view_test_cache_write.assert_called_once()
 
         assert mock_request.logger.mock_calls == [
             call.info("Testing cache write permissions"),
@@ -1297,11 +1294,11 @@ class TestCacheViewsCacheWrite:
         ]
 
     @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_write", new_callable=AsyncMock)
-    async def test_cache_write_failed_error_response(self, mock_test_cache_write, mock_request):
+    async def test_cache_write_failed_error_response(self, mock_view_test_cache_write, mock_request):
 
-        mock_test_cache_write.return_value = (False, "Cache write error")
+        mock_view_test_cache_write.return_value = (False, "Cache write error")
 
-        response = await test_cache_write(mock_request)
+        response = await view_test_cache_write(mock_request)
 
         response_data = json.loads(response.content)
 
@@ -1316,7 +1313,7 @@ class TestCacheViewsCacheWrite:
         assert response_data["trace_id"] == str(mock_request.trace_id)
         assert response_data["error"] == {}
 
-        mock_test_cache_write.assert_called_once()
+        mock_view_test_cache_write.assert_called_once()
 
         assert mock_request.logger.mock_calls == [
             call.info("Testing cache write permissions"),
@@ -1324,11 +1321,11 @@ class TestCacheViewsCacheWrite:
         ]
 
     @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_write", new_callable=AsyncMock)
-    async def test_cache_write_exception_error_response(self, mock_test_cache_write, mock_request):
+    async def test_cache_write_exception_error_response(self, mock_view_test_cache_write, mock_request):
 
-        mock_test_cache_write.side_effect = AsyncMock(side_effect=Exception("Cache write exception"))
+        mock_view_test_cache_write.side_effect = AsyncMock(side_effect=Exception("Cache write exception"))
 
-        response = await test_cache_write(mock_request)
+        response = await view_test_cache_write(mock_request)
 
         response_data = json.loads(response.content)
 
@@ -1342,7 +1339,7 @@ class TestCacheViewsCacheWrite:
             "details": "Cache write exception",
         }
 
-        mock_test_cache_write.assert_called_once()
+        mock_view_test_cache_write.assert_called_once()
 
         assert mock_request.logger.mock_calls == [
             call.info("Testing cache write permissions"),
@@ -1366,11 +1363,11 @@ class TestCacheViewsCacheRead:
         assert "error" in response_data
 
     @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_read", new_callable=AsyncMock)
-    async def test_cache_read_success_response(self, mock_test_cache_read, mock_request):
+    async def test_cache_read_success_response(self, mock_view_test_cache_read, mock_request):
 
-        mock_test_cache_read.return_value = (True, None)
+        mock_view_test_cache_read.return_value = (True, None)
 
-        response = await test_cache_read(mock_request)
+        response = await view_test_cache_read(mock_request)
 
         response_data = json.loads(response.content)
 
@@ -1385,7 +1382,7 @@ class TestCacheViewsCacheRead:
         assert response_data["trace_id"] == str(mock_request.trace_id)
         assert response_data["error"] == {}
 
-        mock_test_cache_read.assert_called_once()
+        mock_view_test_cache_read.assert_called_once()
 
         assert mock_request.logger.mock_calls == [
             call.info("Testing cache read permissions"),
@@ -1393,11 +1390,11 @@ class TestCacheViewsCacheRead:
         ]
 
     @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_read", new_callable=AsyncMock)
-    async def test_cache_read_failed_error_response(self, mock_test_cache_read, mock_request):
+    async def test_cache_read_failed_error_response(self, mock_view_test_cache_read, mock_request):
 
-        mock_test_cache_read.return_value = (False, "Cache read error")
+        mock_view_test_cache_read.return_value = (False, "Cache read error")
 
-        response = await test_cache_read(mock_request)
+        response = await view_test_cache_read(mock_request)
 
         response_data = json.loads(response.content)
 
@@ -1412,7 +1409,7 @@ class TestCacheViewsCacheRead:
         assert response_data["trace_id"] == str(mock_request.trace_id)
         assert response_data["error"] == {}
 
-        mock_test_cache_read.assert_called_once()
+        mock_view_test_cache_read.assert_called_once()
 
         assert mock_request.logger.mock_calls == [
             call.info("Testing cache read permissions"),
@@ -1420,11 +1417,11 @@ class TestCacheViewsCacheRead:
         ]
 
     @patch("apps.ping_app.v1.views.cache_views.CacheHealthService.test_cache_read", new_callable=AsyncMock)
-    async def test_cache_read_exception_error_response(self, mock_test_cache_read, mock_request):
+    async def test_cache_read_exception_error_response(self, mock_view_test_cache_read, mock_request):
 
-        mock_test_cache_read.side_effect = AsyncMock(side_effect=Exception("Cache read exception"))
+        mock_view_test_cache_read.side_effect = AsyncMock(side_effect=Exception("Cache read exception"))
 
-        response = await test_cache_read(mock_request)
+        response = await view_test_cache_read(mock_request)
 
         response_data = json.loads(response.content)
 
@@ -1438,7 +1435,7 @@ class TestCacheViewsCacheRead:
             "details": "Cache read exception",
         }
 
-        mock_test_cache_read.assert_called_once()
+        mock_view_test_cache_read.assert_called_once()
 
         assert mock_request.logger.mock_calls == [
             call.info("Testing cache read permissions"),
