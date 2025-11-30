@@ -138,6 +138,21 @@
       }
     },
     {
+      "label": "Run API Tests",
+      "type": "shell",
+      "command": "make test-api",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
       "label": "Run Static Tests",
       "type": "shell",
       "command": "make static-tests",

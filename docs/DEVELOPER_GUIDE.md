@@ -144,6 +144,7 @@ def get_user(request):
 **Rule**: All models should inherit from `common.models.BaseModel`.
 
 **Features**:
+
 - `id`: UUID4 (primary key)
 - `created_at`: DateTime (auto-creation time)
 - `updated_at`: DateTime (auto-update time)
@@ -2144,6 +2145,14 @@ class TestAnimalService:
         mock_create.assert_called_once_with(name="Simba")
 ```
 
+### API Contract Testing
+
+To ensure "100% safe" API modifications, the API test suite enforces strict structure validation on all API responses.
+
+**The Rule**: Any change to the API response structure (adding/removing fields, changing types) MUST cause a test failure.
+
+For a detailed guide on **how to write API tests** and handle contract changes, please refer to the [Project Testing Guide](TESTING.md).
+
 ### Anti-Patterns to Avoid
 
 ❌ **Don't use function-based tests** when testing multiple scenarios
@@ -2307,6 +2316,26 @@ make shell            # Django shell
 | Variable | `snake_case` | `animal_count` |
 | Constant | `UPPER_SNAKE_CASE` | `MAX_ANIMALS` |
 | Class | `PascalCase` | `AnimalService` |
+
+### VS Code Tasks
+
+This project includes pre-configured VS Code tasks for common operations, including viewing Docker logs.
+
+To run a task:
+
+1. Open the Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`)
+2. Type `Tasks: Run Task`
+3. Select the desired task
+
+**Available Log Tasks**:
+
+- **Display All Logs**: Tails all logs in `/var/log/supervisor/` (Supervisor, Uvicorn, Gunicorn, Celery)
+- **Display Supervisor Logs**: Tails the main Supervisor log
+- **Display Uvicorn Logs**: Tails Uvicorn access/error logs
+- **Display Gunicorn Logs**: Tails Gunicorn error logs
+- **Display Celery Logs**: Tails the log for the first Celery worker
+
+These tasks use the `make` commands defined in the `Makefile` to stream logs directly from the Docker container to your VS Code terminal.
 
 ---
 

@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, Dict, List
 
 from ninja import Router
@@ -45,7 +46,7 @@ async def list_animals(request):
 
 # @router.get("/{animal_id}/", response={200: APIResponseSchema[AnimalSchema], 404: APIResponseSchema[Dict[str, Any]]})
 @router.get("/{animal_id}/", response={200: AnimalSchema, 404: Dict[str, Any]})
-async def get_animal(request, animal_id: int):
+async def get_animal(request, animal_id: uuid.UUID):
     """Retrieve a single animal by ID (Async)."""
     animal = await AnimalService.get_animal(animal_id)
     if not animal:
@@ -55,7 +56,7 @@ async def get_animal(request, animal_id: int):
 
 # @router.put("/{animal_id}/", response={200: APIResponseSchema[AnimalSchema], 404: APIResponseSchema[Dict[str, Any]]})
 @router.put("/{animal_id}/", response={200: AnimalSchema, 404: Dict[str, Any]})
-async def update_animal(request, animal_id: int, payload: AnimalCreateSchema):
+async def update_animal(request, animal_id: uuid.UUID, payload: AnimalCreateSchema):
     """Update an animal (Async)."""
     animal = await AnimalService.update_animal(animal_id, payload)
     if not animal:
@@ -63,9 +64,9 @@ async def update_animal(request, animal_id: int, payload: AnimalCreateSchema):
     return animal
 
 
-# @router.delete("/{animal_id}/", response={200: APIResponseSchema[Dict[str, str]], 404: APIResponseSchema[Dict[str, str]]})
+# @router.delete("/{animal_id}/", response={200: APIResponseSchema[Dict[str, str]], 404: APIResponseSchema[Dict[str, str]]}) # noqa: E501
 @router.delete("/{animal_id}/", response={200: Dict[str, str], 404: Dict[str, str]})
-async def delete_animal(request, animal_id: int):
+async def delete_animal(request, animal_id: uuid.UUID):
     """Delete an animal (Async)."""
     # Use request.logger directly
     request.logger.info(f"Attempting to delete animal with ID: {animal_id}")
