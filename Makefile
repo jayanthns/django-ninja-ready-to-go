@@ -312,6 +312,21 @@ d-push:
 d-exec:
 	docker exec -it django_ninja_api_container /bin/bash
 
+d-supervisor-logs:
+	docker exec -it django_ninja_api_container tail -f /var/log/supervisor/supervisord.log
+
+d-uvicorn-logs:
+	docker exec -it django_ninja_api_container tail -f /var/log/supervisor/uvicorn.log
+
+d-gunicorn-logs:
+	docker exec -it django_ninja_api_container tail -f /var/log/supervisor/gunicorn_error.log
+
+d-celery-logs:
+	docker exec -it django_ninja_api_container tail -f /var/log/supervisor/celery_worker_0.log
+
+d-all-logs:
+	docker exec -it django_ninja_api_container sh -c "tail -f /var/log/supervisor/*.log"
+
 help:
 	@echo "Available Makefile commands:"
 	@echo ""
@@ -382,6 +397,11 @@ help:
 	@echo "  d-pull: Pull the services"
 	@echo "  d-push: Push the services"
 	@echo "  d-exec: Execute a command in the services"
+	@echo "  d-supervisor-logs: Show Supervisor logs"
+	@echo "  d-uvicorn-logs: Show Uvicorn logs"
+	@echo "  d-gunicorn-logs: Show Gunicorn logs"
+	@echo "  d-celery-logs: Show Celery logs (worker 0)"
+	@echo "  d-all-logs: Show all Supervisor logs"
 	@echo "  help: Show this help message"
 
-.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help generate-docs swagger redoc
+.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec d-supervisor-logs d-uvicorn-logs d-gunicorn-logs d-celery-logs d-all-logs help generate-docs swagger redoc

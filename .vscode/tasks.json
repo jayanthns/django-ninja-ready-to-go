@@ -1,223 +1,283 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Docker DB and Redis Up",
-            "type": "shell",
-            "command": "make d-db-and-redis",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Docker DB Up",
-            "type": "shell",
-            "command": "make d-db",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Docker DB Down",
-            "type": "shell",
-            "command": "make d-db-down",
-            "problemMatcher": [],
-            "group": {
-                "kind": "none",
-                "isDefault": false
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Docker DB Restart",
-            "type": "shell",
-            "command": "make d-db-restart",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Docker Compose Up",
-            "type": "shell",
-            "command": "docker compose up",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Docker Compose Up With Build",
-            "type": "shell",
-            "command": "docker compose up --build",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Docker Compose Up Web",
-            "type": "shell",
-            "command": "docker compose up web --build",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Docker Compose Down",
-            "type": "shell",
-            "command": "docker compose down",
-            "problemMatcher": [],
-            "group": {
-                "kind": "none",
-                "isDefault": false
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Run Dynamic Tests (pytest)",
-            "type": "shell",
-            "command": "make pytest",
-            "problemMatcher": [],
-            "group": {
-                "kind": "test",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                // "close": true
-            }
-        },
-        {
-            "label": "Run Static Tests",
-            "type": "shell",
-            "command": "make static-tests",
-            "problemMatcher": [],
-            "group": {
-                "kind": "test",
-                "isDefault": false
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                // "close": true
-            }
-        },
-        {
-            "label": "Display Dramatiq Logs",
-            "type": "shell",
-            "command": "make d-dramatiq-logs",
-            "problemMatcher": [],
-            "group": {
-                "kind": "none",
-                "isDefault": false
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                // "close": true
-            }
-        },
-        {
-            "label": "Display Uvicorn Logs",
-            "type": "shell",
-            "command": "make d-uvicorn-logs",
-            "problemMatcher": [],
-            "group": {
-                "kind": "none",
-                "isDefault": false
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                // "close": true
-            }
-        },
-        {
-            "label": "Pre Commit Run",
-            "type": "shell",
-            "command": "make precommit-check",
-            "problemMatcher": [],
-            "group": {
-                "kind": "test",
-                "isDefault": false
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                // "close": true
-            }
-        },
-        {
-            "label": "Docker: Full Test Pipeline",
-            "type": "shell",
-            "command": "./run_full_test_pipeline.sh",
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": [],
-            "group": {
-                "kind": "test",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared",
-                "clear": true
-            }
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Docker DB and Redis Up",
+      "type": "shell",
+      "command": "make d-db-and-redis",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker DB Up",
+      "type": "shell",
+      "command": "make d-db",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker DB Down",
+      "type": "shell",
+      "command": "make d-db-down",
+      "problemMatcher": [],
+      "group": {
+        "kind": "none",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker DB Restart",
+      "type": "shell",
+      "command": "make d-db-restart",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker Compose Up",
+      "type": "shell",
+      "command": "docker compose up",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker Compose Up With Build",
+      "type": "shell",
+      "command": "docker compose up --build",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker Compose Up Web",
+      "type": "shell",
+      "command": "docker compose up web --build",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Docker Compose Down",
+      "type": "shell",
+      "command": "docker compose down",
+      "problemMatcher": [],
+      "group": {
+        "kind": "none",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Run Dynamic Tests (pytest)",
+      "type": "shell",
+      "command": "make pytest",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+        // "close": true
+      }
+    },
+    {
+      "label": "Run Static Tests",
+      "type": "shell",
+      "command": "make static-tests",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+        // "close": true
+      }
+    },
+    {
+      "label": "Display Dramatiq Logs",
+      "type": "shell",
+      "command": "make d-dramatiq-logs",
+      "problemMatcher": [],
+      "group": {
+        "kind": "none",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+        // "close": true
+      }
+    },
+    {
+      "label": "Display Uvicorn Logs",
+      "type": "shell",
+      "command": "make d-uvicorn-logs",
+      "problemMatcher": [],
+      "group": {
+        "kind": "none",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+        // "close": true
+      }
+    },
+    {
+      "label": "Display Supervisor Logs",
+      "type": "shell",
+      "command": "make d-supervisor-logs",
+      "problemMatcher": [],
+      "group": {
+        "kind": "none",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Display Gunicorn Logs",
+      "type": "shell",
+      "command": "make d-gunicorn-logs",
+      "problemMatcher": [],
+      "group": {
+        "kind": "none",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Display Celery Logs",
+      "type": "shell",
+      "command": "make d-celery-logs",
+      "problemMatcher": [],
+      "group": {
+        "kind": "none",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Display All Logs",
+      "type": "shell",
+      "command": "make d-all-logs",
+      "problemMatcher": [],
+      "group": {
+        "kind": "none",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Pre Commit Run",
+      "type": "shell",
+      "command": "make precommit-check",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+        // "close": true
+      }
+    },
+    {
+      "label": "Docker: Full Test Pipeline",
+      "type": "shell",
+      "command": "./run_full_test_pipeline.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    }
+  ]
 }
