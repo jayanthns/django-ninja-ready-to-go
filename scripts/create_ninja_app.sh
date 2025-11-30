@@ -52,14 +52,12 @@ EOF
 
 # Create models.py
 cat > "$APP_DIR/models.py" << 'EOF'
-from django.db import models
+from common.models import BaseModel
 
 
 # Example model - customize as needed
-# class YourModel(models.Model):
+# class YourModel(BaseModel):
 #     name = models.CharField(max_length=100)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
 #
 #     def __str__(self) -> str:
 #         return self.name
@@ -80,7 +78,7 @@ from ninja import Schema
 
 # Example schemas - customize as needed
 # class YourModelSchema(Schema):
-#     id: int
+#     id: uuid.UUID
 #     name: str
 #     created_at: str
 #

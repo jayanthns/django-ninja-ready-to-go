@@ -6,7 +6,7 @@ from pydantic import ConfigDict
 
 
 class AnimalSchema(Schema):
-    id: int
+    id: uuid.UUID
     name: str
     species: str
     age: int

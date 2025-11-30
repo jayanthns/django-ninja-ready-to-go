@@ -21,7 +21,8 @@ class TestUserViews:
         req = await self._make_request()
         payload = UserCreateSchema(username="testuser", email="test@example.com", password="password123")
 
-        user_data = UserSchema(id=1, username="testuser", email="test@example.com")
+        user_id = uuid.uuid4()
+        user_data = UserSchema(id=user_id, username="testuser", email="test@example.com")
 
         mock_user_service.create_user = AsyncMock(return_value=user_data)
 
@@ -47,7 +48,7 @@ class TestUserViews:
     @patch("apps.users_app.v1.views.UserService")
     async def test_get_user_success(self, mock_user_service):
         req = await self._make_request()
-        user_id = 1
+        user_id = uuid.uuid4()
 
         user_data = UserSchema(id=user_id, username="testuser", email="test@example.com")
 
@@ -61,7 +62,7 @@ class TestUserViews:
     @patch("apps.users_app.v1.views.UserService")
     async def test_get_user_not_found(self, mock_user_service):
         req = await self._make_request()
-        user_id = 999
+        user_id = uuid.uuid4()
 
         mock_user_service.get_user_by_id = AsyncMock(return_value=None)
 
@@ -73,7 +74,7 @@ class TestUserViews:
     @patch("apps.users_app.v1.views.UserService")
     async def test_get_user_exception(self, mock_user_service):
         req = await self._make_request()
-        user_id = 1
+        user_id = uuid.uuid4()
 
         mock_user_service.get_user_by_id = AsyncMock(side_effect=Exception("Database error"))
 

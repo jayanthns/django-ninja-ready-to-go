@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from pydantic import ValidationError
 
@@ -9,22 +11,25 @@ from apps.users_app.v1.schemas import UserCreateSchema, UserSchema
 
 
 def test_user_schema_valid_data():
-    data = {"id": 1, "username": "testuser", "email": "test@example.com"}
+    user_id = uuid.uuid4()
+    data = {"id": user_id, "username": "testuser", "email": "test@example.com"}
     user = UserSchema(**data)
-    assert user.id == 1
+    assert user.id == user_id
     assert user.username == "testuser"
     assert user.email == "test@example.com"
 
 
 def test_user_schema_invalid_email():
-    data = {"id": 1, "username": "testuser", "email": "not-an-email"}
+    user_id = uuid.uuid4()
+    data = {"id": user_id, "username": "testuser", "email": "not-an-email"}
     with pytest.raises(ValidationError) as exc:
         UserSchema(**data)
     assert "value is not a valid email address" in str(exc.value)
 
 
 def test_user_schema_missing_field():
-    data = {"id": 1, "email": "test@example.com"}
+    user_id = uuid.uuid4()
+    data = {"id": user_id, "email": "test@example.com"}
     with pytest.raises(ValidationError) as exc:
         UserSchema(**data)
     assert "username" in str(exc.value)

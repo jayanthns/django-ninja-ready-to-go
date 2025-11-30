@@ -139,6 +139,25 @@ def get_user(request):
 - Django convention: models represent single instances
 - PascalCase follows Python class naming conventions (PEP 8)
 
+### Base Model
+
+**Rule**: All models should inherit from `common.models.BaseModel`.
+
+**Features**:
+- `id`: UUID4 (primary key)
+- `created_at`: DateTime (auto-creation time)
+- `updated_at`: DateTime (auto-update time)
+
+**Example**:
+
+```python
+from common.models import BaseModel
+
+class Animal(BaseModel):
+    name = models.CharField(max_length=100)
+    # id, created_at, updated_at are automatic
+```
+
 ### Schema Names
 
 **Rule**: Use descriptive names with appropriate suffixes.

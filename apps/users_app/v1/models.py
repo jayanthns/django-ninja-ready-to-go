@@ -2,14 +2,13 @@ from asgiref.sync import sync_to_async
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 
+from common.models import BaseModel
 
-class User(models.Model):
+
+class User(BaseModel):
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)  # Store hashed passwords
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     async def set_password(self, raw_password: str):
         """Asynchronously hash the password before saving."""

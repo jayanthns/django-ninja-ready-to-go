@@ -1,8 +1,10 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserSchema(BaseModel):
-    id: int
+    id: uuid.UUID
     username: str
     email: EmailStr
 
