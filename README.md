@@ -201,6 +201,7 @@ django-ninja-ready-to-go/
 │   ├── 📁 animals_app/          # CRUD example with async operations
 │   ├── 📁 users_app/            # User management system
 │   ├── 📁 ping_app/             # Health monitoring & external pinging
+│   ├── 📁 audit_app/            # Generic audit logging system
 │   └── 📁 files_app/            # File handling & processing reference
 ├── 📁 common/                   # Shared utilities and middleware
 │   ├── middleware.py            # Trace ID middleware
@@ -570,6 +571,29 @@ POST   /api/v1/files/upload/generic  # Upload any file
 GET    /api/v1/files/download/{name} # Download file
 GET    /api/v1/files/stream/{name}   # Stream file
 GET    /api/v1/files/preview/{name}  # Preview file content
+```
+
+### **📜 Audit App** (`apps/audit_app/`)
+
+Reusable system for tracking events and changes.
+
+👉 **[Read the Audit App Documentation](apps/audit_app/README.md)**
+
+**Features:**
+
+- **Loose Coupling**: Decoupled from `auth.User`, suitable for microservices
+- **Flexible Actions**: String-based actions to avoid migration churn
+- **Generic Tracking**: Track changes on any model
+- **JSON Diffs**: Store before/after state of changes
+
+**Usage:**
+
+```python
+await AuditService.log_create(
+    instance=animal,
+    actor_id="123",
+    changes={"name": "Dog"}
+)
 ```
 
 ## 🔧 **Common Utilities**

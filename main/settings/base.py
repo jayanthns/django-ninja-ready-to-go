@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "apps.animals_app.v1",
     "apps.users_app.v1",
     "apps.ping_app.v1",
+    "apps.audit_app.v1",
     "main",
 ]
 
