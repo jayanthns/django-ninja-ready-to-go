@@ -2058,6 +2058,73 @@ async def test_middleware_generates_trace_id(self):
 7. **Add Docstrings**: Every test method should have a clear docstring
 8. **Arrange-Act-Assert**: Structure test methods with clear sections
 
+### Writing DB-Independent Tests
+
+Writing tests that do not depend on the database is crucial for speed and reliability.
+
+**Benefits**:
+
+- **Speed**: Tests run instantly without DB setup/teardown overhead.
+- **Isolation**: Tests focus purely on logic, not DB state.
+- **Reliability**: No flaky tests due to DB contention or state pollution.
+
+**When to use `@pytest.mark.django_db`**:
+
+- ONLY when you **must** save/retrieve data from the actual database.
+- For integration tests involving complex queries.
+
+**How to avoid DB dependency**:
+
+1. **Use `MagicMock` / `AsyncMock`**: Mock service calls or DB operations.
+2. **Use In-Memory Objects**: Create model instances without saving them.
+3. **Test Pure Logic**: Extract logic into pure functions/methods that don't touch the DB.
+
+#### Example: Testing a Service without DB
+
+```python
+# Service
+class UserService:
+    async def get_user_status(self, user):
+        if user.is_active:
+            return "Active"
+        return "Inactive"
+
+# Test
+@pytest.mark.asyncio
+class TestUserService:
+    async def test_get_user_status_active(self):
+        # Create user instance in memory (not saved to DB)
+        user = User(is_active=True)
+        service = UserService()
+        
+        status = await service.get_user_status(user)
+        
+        assert status == "Active"
+```
+
+#### Example: Mocking DB Calls
+
+```python
+# Service
+class AnimalService:
+    async def create_animal(self, name):
+        # ... logic ...
+        return await Animal.objects.acreate(name=name)
+
+# Test
+@pytest.mark.asyncio
+class TestAnimalService:
+    @patch("apps.animals_app.v1.services.Animal.objects.acreate")
+    async def test_create_animal(self, mock_create):
+        mock_create.return_value = Animal(id=1, name="Simba")
+        service = AnimalService()
+        
+        result = await service.create_animal("Simba")
+        
+        assert result.name == "Simba"
+        mock_create.assert_called_once_with(name="Simba")
+```
+
 ### Anti-Patterns to Avoid
 
 ❌ **Don't use function-based tests** when testing multiple scenarios
