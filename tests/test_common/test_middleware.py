@@ -13,7 +13,6 @@ from common.middleware import (
 )
 
 
-@pytest.mark.django_db
 class TestTraceIDMiddleware:
 
     def _build_request(self, method="GET", path="/test", meta=None, user=None):

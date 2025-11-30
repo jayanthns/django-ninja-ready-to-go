@@ -3,7 +3,6 @@ import pytest
 from apps.users_app.v1.models import User
 
 
-@pytest.mark.django_db
 @pytest.mark.asyncio
 class TestUserModel:
 
