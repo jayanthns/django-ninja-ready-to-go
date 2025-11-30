@@ -19,11 +19,15 @@ def run(client: APIClient):
     print("  - Getting user...")
     resp = client.get(f"/api/v1/users/{user_id}/")
     assert resp.status_code == 200, f"Get user failed: {resp.text}"
-    # Get user returns wrapped response: create_api_response_schema(UserSchema)
-    # Checked views.py: return create_api_response_schema(UserSchema)(data=user, ...)
-    data = resp.json()["data"]
-    assert data["id"] == user_id
-    assert data["email"] == "test_user_get@example.com"
+
+    data = resp.json()
+    from api_tests.assertions import assert_structure
+
+    expected_user = {"id": str, "username": str, "email": str}
+    expected_response = {"data": expected_user, "trace_id": str, "error": (dict, type(None))}
+    assert_structure(data, expected_response, path="get_user_response")
+    assert data["data"]["id"] == user_id
+    assert data["data"]["email"] == "test_user_get@example.com"
 
     # Update/Delete/Me are not implemented in users_app views.
 

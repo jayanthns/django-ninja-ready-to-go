@@ -35,7 +35,7 @@ def run(client: APIClient):
         # Check if AuditLog table exists and has entries
         # Table name is likely audit_app_auditlog
         cur.execute("SELECT count(*) FROM audit_app_auditlog WHERE target_model = 'animals_app.animal'")
-        count = cur.fetchone()[0]
+        _ = cur.fetchone()[0]
         # Note: AnimalService doesn't log automatically yet (as seen in previous steps),
         # so this might fail if we expect it to.
         # But the user asked to "cover all the apis".

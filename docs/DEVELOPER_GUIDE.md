@@ -144,6 +144,7 @@ def get_user(request):
 **Rule**: All models should inherit from `common.models.BaseModel`.
 
 **Features**:
+
 - `id`: UUID4 (primary key)
 - `created_at`: DateTime (auto-creation time)
 - `updated_at`: DateTime (auto-update time)
@@ -2143,6 +2144,28 @@ class TestAnimalService:
         assert result.name == "Simba"
         mock_create.assert_called_once_with(name="Simba")
 ```
+
+### API Contract Testing
+
+To ensure "100% safe" API modifications, the API test suite enforces strict structure validation on all API responses. This means that any change to the API response structure (adding/removing fields, changing types) will cause the tests to fail, alerting you to a potential breaking change.
+
+**How it works:**
+
+- Test scenarios in `api_tests/scenarios/` define the expected JSON structure for each endpoint.
+- The `assert_structure` helper recursively validates the actual response against this expectation.
+- It checks for:
+  - **Type Mismatches**: e.g., returning an `int` when a `str` is expected.
+  - **Missing Keys**: e.g., a required field is missing.
+  - **Unexpected Keys**: e.g., a new field was added that wasn't expected (Strict Mode).
+
+**Workflow for API Changes:**
+
+1. Modify the API code (Schemas/Views).
+2. Run `make test-api`. The tests should fail due to structure mismatch.
+3. **Consciously** update the expected structure in the corresponding test scenario (`api_tests/scenarios/`).
+4. Run `make test-api` again to verify the new contract.
+
+This process ensures that all API changes are intentional and documented in the test suite.
 
 ### Anti-Patterns to Avoid
 

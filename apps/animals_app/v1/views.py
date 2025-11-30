@@ -64,7 +64,7 @@ async def update_animal(request, animal_id: uuid.UUID, payload: AnimalCreateSche
     return animal
 
 
-# @router.delete("/{animal_id}/", response={200: APIResponseSchema[Dict[str, str]], 404: APIResponseSchema[Dict[str, str]]})
+# @router.delete("/{animal_id}/", response={200: APIResponseSchema[Dict[str, str]], 404: APIResponseSchema[Dict[str, str]]}) # noqa: E501
 @router.delete("/{animal_id}/", response={200: Dict[str, str], 404: Dict[str, str]})
 async def delete_animal(request, animal_id: uuid.UUID):
     """Delete an animal (Async)."""

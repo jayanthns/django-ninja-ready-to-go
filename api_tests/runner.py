@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 
 from api_tests import utils
 from api_tests.client import APIClient
