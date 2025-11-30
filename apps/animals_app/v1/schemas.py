@@ -2,6 +2,7 @@ import uuid
 from typing import Optional
 
 from ninja import Schema
+from pydantic import ConfigDict
 
 
 class AnimalSchema(Schema):
@@ -22,5 +23,4 @@ class AnimalResponseSchema(Schema):
     error: Optional[dict] = None  # ✅ Default as None (avoid mutable defaults)
     trace_id: uuid.UUID  # ✅ Proper UUID type (Swagger will show as UUID)
 
-    class Config:
-        arbitrary_types_allowed = True  # ✅ Needed if using custom types
+    model_config = ConfigDict(arbitrary_types_allowed=True)

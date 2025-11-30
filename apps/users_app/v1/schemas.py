@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserSchema(BaseModel):
@@ -6,8 +6,7 @@ class UserSchema(BaseModel):
     username: str
     email: EmailStr
 
-    class Config:
-        from_attributes = True  # ✅ Allows async model conversion
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserCreateSchema(BaseModel):

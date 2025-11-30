@@ -14,7 +14,6 @@ from apps.files_app.v1.views import (
 )
 
 
-@pytest.mark.asyncio
 class TestFilesAppViews:
     @pytest.fixture
     def mock_request(self):

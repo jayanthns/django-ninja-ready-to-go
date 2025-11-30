@@ -10,11 +10,11 @@ authors = [
 
 dependencies = [
     "Django==4.2.16",
-    "django-ninja==1.1.0",
+    "django-ninja>=1.3.0",
     "uvicorn==0.30.6",
     "pydantic==2.9.2",
     "pydantic[email]==2.9.2",
-    "django-shinobi==1.4.0",
+    "django-shinobi>=1.4.0",
     "python-json-logger==2.0.7",
     "gunicorn==22.0.0",
     "python-dotenv==1.0.1",
@@ -52,7 +52,8 @@ pythonpath = "src"
 python_files = "test_*.py"
 filterwarnings = [
     "ignore:pkg_resources is deprecated:DeprecationWarning",
-    "ignore:'cgi' is deprecated:DeprecationWarning"
+    "ignore:'cgi' is deprecated:DeprecationWarning",
+    "ignore:Support for class-based `config` is deprecated:pydantic.warnings.PydanticDeprecatedSince20"
 ]
 addopts = "--reuse-db --disable-warnings"
 asyncio_default_fixture_loop_scope = "function"

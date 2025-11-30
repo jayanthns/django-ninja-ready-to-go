@@ -236,6 +236,10 @@ pytest-k:
 	fi
 	@$(VENV_ACTIVATE) && pytest -k "$(K)"
 
+pytest-w:
+	@echo "Running Pytest (Show Warnings)"
+	@$(VENV_ACTIVATE) && pytest -o "addopts=--reuse-db" -W always
+
 dynamic-test: pytest-run
 run-tests: pytest-run
 pytest: pytest-run
@@ -357,6 +361,7 @@ help:
 	@echo "  pytest-x: Stop testing after the first failure"
 	@echo "  pytest-slow: Show the 10 slowest tests"
 	@echo "  pytest-k K=term: Run tests matching the keyword 'term'"
+	@echo "  pytest-w: Run tests and display all warnings"
 	@echo "  pytest-open-report: Open the HTML coverage report in browser"
 	@echo ""
 	@echo "== Docker Commands =="
@@ -379,4 +384,4 @@ help:
 	@echo "  d-exec: Execute a command in the services"
 	@echo "  help: Show this help message"
 
-.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help generate-docs swagger redoc
+.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help generate-docs swagger redoc
