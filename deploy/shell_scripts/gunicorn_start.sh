@@ -14,8 +14,6 @@ fi
 # Set default workers to 4 if UVICORN_WORKERS is not set
 WORKERS=${UVICORN_WORKERS:-4}
 
-# Change directory to `src/`
-cd src || { echo "Failed to change directory to src"; exit 1; }
 
 # Start Gunicorn with Uvicorn workers
 exec gunicorn main.asgi:application \

@@ -11,8 +11,6 @@ else
     echo "Warning: env/.env file not found. Skipping environment variable loading."
 fi
 
-# Change to `src/` directory
-cd src || { echo "Failed to change directory to src"; exit 1; }
 
 # Configuration Variables
 WORKER_COUNT=${CELERY_WORKERS:-4}  # Number of Celery workers

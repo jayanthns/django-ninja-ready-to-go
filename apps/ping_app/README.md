@@ -23,8 +23,8 @@ The **Ping App** is a comprehensive health check and monitoring system for Djang
 
 ## 📁 App Structure
 
-```
-src/apps/ping_app/
+```bash
+/apps/ping_app/
 ├── v1/
 │   ├── __init__.py
 │   ├── admin.py          # Django admin configuration
