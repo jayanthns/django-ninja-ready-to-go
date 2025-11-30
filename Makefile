@@ -203,9 +203,38 @@ flake8:
 static-tests: isort_check black_check flake8
 
 pytest-run:
-	@echo "Running Pytest"
+	@echo "Running Pytest with Coverage"
 	@echo "pytest --cov --cov-report=html"
 	@$(VENV_ACTIVATE) &&  pytest --cov --cov-report=html
+
+pytest-v:
+	@echo "Running Pytest (Verbose)"
+	@$(VENV_ACTIVATE) && pytest -v
+
+pytest-q:
+	@echo "Running Pytest (Quiet)"
+	@$(VENV_ACTIVATE) && pytest -q
+
+pytest-lf:
+	@echo "Running Pytest (Last Failed)"
+	@$(VENV_ACTIVATE) && pytest --lf
+
+pytest-x:
+	@echo "Running Pytest (Exit on First Failure)"
+	@$(VENV_ACTIVATE) && pytest -x
+
+pytest-slow:
+	@echo "Running Pytest (Show Slowest Tests)"
+	@$(VENV_ACTIVATE) && pytest --durations=10
+
+pytest-k:
+	@echo "Running Pytest (Keyword Search)"
+	@echo "Usage: make pytest-k K=keyword"
+	@if [ -z "$(K)" ]; then \
+		echo "Error: K (keyword) is required. Example: make pytest-k K=test_login"; \
+		exit 1; \
+	fi
+	@$(VENV_ACTIVATE) && pytest -k "$(K)"
 
 dynamic-test: pytest-run
 run-tests: pytest-run
@@ -321,12 +350,14 @@ help:
 	@echo "  black_check: Run black check"
 	@echo "  flake8: Run flake8 check"
 	@echo "  static-tests: Run isort, black, and flake8 checks"
-	@echo "  pytest-run: Run pytest"
-	@echo "  dynamic-test: Run pytest"
-	@echo "  run-tests: Run pytest"
-	@echo "  pytest: Run pytest"
-	@echo "  pytest-open-report: Open the pytest report"
-	@echo "  test-report: Open the pytest report"
+	@echo "  pytest: Run all tests with coverage report (default)"
+	@echo "  pytest-v: Run tests in verbose mode (more details)"
+	@echo "  pytest-q: Run tests in quiet mode (less output)"
+	@echo "  pytest-lf: Run only the last failed tests"
+	@echo "  pytest-x: Stop testing after the first failure"
+	@echo "  pytest-slow: Show the 10 slowest tests"
+	@echo "  pytest-k K=term: Run tests matching the keyword 'term'"
+	@echo "  pytest-open-report: Open the HTML coverage report in browser"
 	@echo ""
 	@echo "== Docker Commands =="
 	@echo "  d-shell: Log into the Django container shell"
@@ -348,4 +379,4 @@ help:
 	@echo "  d-exec: Execute a command in the services"
 	@echo "  help: Show this help message"
 
-.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help generate-docs swagger redoc
+.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec help generate-docs swagger redoc
