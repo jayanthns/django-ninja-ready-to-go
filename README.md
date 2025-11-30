@@ -28,6 +28,7 @@ A **production-ready Django Ninja API framework** with comprehensive health moni
 
 - **🏗️ Modern Architecture**: Django Ninja with async support, structured apps, and clean separation of concerns
 - **🔍 Advanced Logging**: Request tracing with `trace_id` and `correlation_id`, contextual logging, and structured JSON logs
+- **🥷 Django Shinobi**: Enhanced Django Ninja features with better organization, helpers, and utilities
 - **🏥 Health Monitoring**: Comprehensive health checks for databases, Redis, external services, and system status
 - **🐳 Docker Ready**: Complete Docker setup with multi-stage builds, development and production configurations
 - **⚡ Performance**: Async views, background tasks, and optimized database operations
@@ -436,6 +437,12 @@ Once the server is running, you can access:
 - **Background Tasks**: Celery integration for long-running operations
 - **Database Operations**: Optimized async database queries
 - **HTTP Clients**: aiohttp for external service communication
+
+#### **🥷 Django Shinobi Integration**
+
+- **Enhanced Utilities**: Additional tools and helpers for Django Ninja
+- **Better Organization**: Structured approach to API development
+- **Productivity Boosters**: Simplified patterns for common tasks
 
 ---
 
