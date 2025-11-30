@@ -207,6 +207,10 @@ pytest-run:
 	@echo "pytest --cov --cov-report=html"
 	@$(VENV_ACTIVATE) &&  pytest --cov --cov-report=html
 
+test-api:
+	@echo "Running API tests..."
+	@$(VENV_ACTIVATE) && python -m api_tests.runner
+
 pytest-v:
 	@echo "Running Pytest (Verbose)"
 	@$(VENV_ACTIVATE) && pytest -v
@@ -402,6 +406,7 @@ help:
 	@echo "  d-gunicorn-logs: Show Gunicorn logs"
 	@echo "  d-celery-logs: Show Celery logs (worker 0)"
 	@echo "  d-all-logs: Show all Supervisor logs"
+	@echo "  test-api: Run API test suite"
 	@echo "  help: Show this help message"
 
-.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec d-supervisor-logs d-uvicorn-logs d-gunicorn-logs d-celery-logs d-all-logs help generate-docs swagger redoc
+.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report test-api d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec d-supervisor-logs d-uvicorn-logs d-gunicorn-logs d-celery-logs d-all-logs help generate-docs swagger redoc

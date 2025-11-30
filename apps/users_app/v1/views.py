@@ -14,11 +14,11 @@ router = Router()
 async def register_user(request: HttpRequest, payload: UserCreateSchema) -> JsonResponse:
     """Register a new user (Async)."""
     data = await UserService.create_user(payload)
-    return {"data": data, "trace_id": uuid.uuid4(), "error": {}}  # ✅ Fully async
+    return {"data": data, "trace_id": str(uuid.uuid4()), "error": {}}  # ✅ Fully async
 
 
 @router.get("/{user_id}/", response=create_api_response_schema(UserSchema))
-async def get_user(request: HttpRequest, user_id: int) -> create_api_response_schema(UserSchema):
+async def get_user(request: HttpRequest, user_id: uuid.UUID) -> create_api_response_schema(UserSchema):
     """Retrieve a user by ID (Async)."""
     user = await UserService.get_user_by_id(user_id)
     if not user:
