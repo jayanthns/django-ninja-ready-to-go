@@ -55,6 +55,7 @@ filterwarnings = [
     "ignore:'cgi' is deprecated:DeprecationWarning"
 ]
 addopts = "--reuse-db --disable-warnings"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 branch = true
