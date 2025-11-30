@@ -2308,6 +2308,26 @@ make shell            # Django shell
 | Constant | `UPPER_SNAKE_CASE` | `MAX_ANIMALS` |
 | Class | `PascalCase` | `AnimalService` |
 
+### VS Code Tasks
+
+This project includes pre-configured VS Code tasks for common operations, including viewing Docker logs.
+
+To run a task:
+
+1. Open the Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`)
+2. Type `Tasks: Run Task`
+3. Select the desired task
+
+**Available Log Tasks**:
+
+- **Display All Logs**: Tails all logs in `/var/log/supervisor/` (Supervisor, Uvicorn, Gunicorn, Celery)
+- **Display Supervisor Logs**: Tails the main Supervisor log
+- **Display Uvicorn Logs**: Tails Uvicorn access/error logs
+- **Display Gunicorn Logs**: Tails Gunicorn error logs
+- **Display Celery Logs**: Tails the log for the first Celery worker
+
+These tasks use the `make` commands defined in the `Makefile` to stream logs directly from the Docker container to your VS Code terminal.
+
 ---
 
 ## Pydantic & Validation Guide
