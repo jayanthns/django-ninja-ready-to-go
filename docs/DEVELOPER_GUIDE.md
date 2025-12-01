@@ -15,6 +15,7 @@ This guide provides naming conventions, coding standards, and best practices for
 9. [Testing Naming Conventions](#testing-naming-conventions)
 10. [FAQ](#faq)
 11. [Pydantic & Validation Guide](#pydantic--validation-guide)
+12. [Background Tasks (Celery & Dramatiq)](#background-tasks-celery--dramatiq)
 
 ---
 
@@ -2342,6 +2343,68 @@ These tasks use the `make` commands defined in the `Makefile` to stream logs dir
 ## Pydantic & Validation Guide
 
 For comprehensive guidelines on writing Pydantic models, using validators (v2), and integrating with Django Ninja, please refer to the dedicated [Pydantic & Validation Guide](PYDANTIC_GUIDE.md).
+
+---
+
+---
+
+## Background Tasks (Celery & Dramatiq)
+
+This project supports both **Celery** and **Dramatiq** for asynchronous task processing. The setup is designed to be flexible, allowing you to use either or both without hard dependencies.
+
+### Flexible Configuration
+
+The configuration is handled in `main/settings/cache.py` and respects environment variables defined in your `.env` file.
+
+#### Celery
+
+To configure Celery, set the following in your `.env`:
+
+```bash
+RUN_CELERY_TOGETHER=true
+CELERY_WORKERS=2
+CELERY_WORKER_CONCURRENCY=2
+CELERY_PREFETCH_MULTIPLIER=2
+CELERY_POOL=gevent  # Recommended for I/O bound tasks
+CELERY_QUEUE_NAME="django_ninja_ready_to_go_queue"
+```
+
+#### Dramatiq
+
+To configure Dramatiq, set the following in your `.env`:
+
+```bash
+RUN_DRAMATIQ_TOGETHER=true
+DRAMATIQ_WORKERS=2
+DRAMATIQ_WORKER_CONCURRENCY=2
+DRAMATIQ_PREFETCH_MULTIPLIER=2
+DRAMATIQ_POOL=gevent
+DRAMATIQ_QUEUE_NAME="django_ninja_dramatiq_queue"
+```
+
+### Running Workers Locally
+
+We provide convenient `Makefile` commands to run workers locally. These commands automatically pick up your configuration from the `.env` file.
+
+**Run Celery Worker:**
+
+```bash
+make celery
+```
+
+**Run Dramatiq Worker:**
+
+```bash
+make dramatiq
+```
+
+### Dramatiq Implementation Details
+
+Since `django-dramatiq` is not used to avoid hard dependencies, we use a custom entry point and middleware:
+
+1. **Entry Point**: `main/dramatiq.py` handles Django setup and task discovery.
+2. **Middleware**: `common/dramatiq_middleware.py` ensures Django database connections are closed after each task to prevent connection leaks.
+3. **Broker**: The broker is configured in `main/settings/cache.py` and exposed in `main/dramatiq.py`.
 
 ---
 

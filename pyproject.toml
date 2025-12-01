@@ -27,6 +27,7 @@ dependencies = [
     "email-validator==2.3.0",
     "celery==5.3.6",
     "dramatiq==1.10.0",
+    "gevent==24.2.1",
 ]
 
 [project.optional-dependencies]
@@ -78,6 +79,10 @@ omit = [
     "**/signals.py",
     "common/background_tasks.py",
     "api_tests/*",
+    "main/celery.py",
+    "main/dramatiq.py",
+    "main/__init__.py",
+    "common/dramatiq_middleware.py",
 ]
 source = ["."]
 
