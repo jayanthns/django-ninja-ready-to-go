@@ -15,6 +15,7 @@ class PingLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, help_text="When the ping was performed")
 
     class Meta:
+        db_table = "ping_logs"
         ordering = ["-created_at"]
         verbose_name = "Ping Log"
         verbose_name_plural = "Ping Logs"

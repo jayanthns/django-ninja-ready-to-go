@@ -21,25 +21,32 @@ class AuditService:
         action: str,
         target_model: str,
         target_object_id: str,
+        trace_id: Optional[str] = None,
+        correlation_id: Optional[str] = None,
+        object_representation: Optional[str] = None,
         actor_id: Optional[str] = None,
         actor_email: Optional[str] = None,
         changes: Optional[Dict[str, Any]] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
+        session_key: Optional[str] = None,
     ) -> AuditLog:
         """
         Generic method to log an event.
         Accepts actor_id and actor_email directly.
         """
         return await AuditLog.objects.acreate(
-            actor_id=actor_id,
-            actor_email=actor_email,
             action=action,
             target_model=target_model,
             target_object_id=target_object_id,
+            trace_id=trace_id,
+            correlation_id=correlation_id,
+            actor_id=actor_id,
+            actor_email=actor_email,
             changes=changes or {},
             ip_address=ip_address,
             user_agent=user_agent,
+            session_key=session_key,
         )
 
     @classmethod
@@ -58,6 +65,8 @@ class AuditService:
             action=AuditAction.CREATE,
             target_model=f"{instance._meta.app_label}.{instance._meta.model_name}",
             target_object_id=str(instance.pk),
+            trace_id=kwargs.get("trace_id"),
+            correlation_id=kwargs.get("correlation_id"),
             actor_id=actor_id,
             actor_email=actor_email,
             changes=changes,
@@ -80,6 +89,8 @@ class AuditService:
             action=AuditAction.UPDATE,
             target_model=f"{instance._meta.app_label}.{instance._meta.model_name}",
             target_object_id=str(instance.pk),
+            trace_id=kwargs.get("trace_id"),
+            correlation_id=kwargs.get("correlation_id"),
             actor_id=actor_id,
             actor_email=actor_email,
             changes=changes,

@@ -18,5 +18,8 @@ class User(BaseModel):
         """Asynchronously check if the given password matches the stored hash."""
         return await sync_to_async(check_password)(raw_password, self.password)
 
+    class Meta:
+        db_table = "users"
+
     def __str__(self):
         return self.email  # pragma: no cover

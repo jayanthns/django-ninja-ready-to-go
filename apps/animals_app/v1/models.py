@@ -8,5 +8,8 @@ class Animal(BaseModel):
     species = models.CharField(max_length=50)
     age = models.IntegerField()
 
+    class Meta:
+        db_table = "animals"
+
     def __str__(self) -> str:
         return self.name
