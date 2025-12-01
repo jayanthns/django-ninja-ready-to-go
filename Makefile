@@ -339,7 +339,10 @@ d-gunicorn-logs:
 	docker exec -it django_ninja_api_container tail -f /var/log/supervisor/gunicorn_error.log
 
 d-celery-logs:
-	docker exec -it django_ninja_api_container tail -f /var/log/supervisor/celery_worker_0.log
+	docker exec -it django_ninja_api_container sh -c "tail -f /var/log/supervisor/celery_worker_0.log"
+
+d-dramatiq-logs:
+	docker exec -it django_ninja_api_container sh -c "tail -f /var/log/supervisor/dramatiq_worker_0.log"
 
 d-all-logs:
 	docker exec -it django_ninja_api_container sh -c "tail -f /var/log/supervisor/*.log"
@@ -433,6 +436,7 @@ help:
 	@echo "  d-uvicorn-logs: Show Uvicorn logs"
 	@echo "  d-gunicorn-logs: Show Gunicorn logs"
 	@echo "  d-celery-logs: Show Celery logs (worker 0)"
+	@echo "  d-dramatiq-logs: Show Dramatiq logs (worker 0)"
 	@echo "  d-all-logs: Show all Supervisor logs"
 	@echo "  d-volumes: List Docker volumes for this project"
 	@echo "  d-clean-volumes: Remove Docker volumes for this project (down -v)"

@@ -14,9 +14,12 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 WORKDIR $APP_HOME
 
 # Install dependencies
-COPY requirements/requirements.txt requirements/requirements.txt
-RUN python -m pip install --upgrade uv pip wheel
-RUN python -m uv pip install -r requirements/requirements.txt
+COPY pyproject.toml uv.lock ./
+RUN python -m pip install --upgrade uv
+RUN uv sync --frozen
+
+# Place the virtual environment in the PATH
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy project
 COPY . .
@@ -27,6 +30,7 @@ RUN chown -R appuser:appuser $APP_HOME
 # Copy supervisord configuration
 COPY deploy/supervisor_scripts/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY deploy/supervisor_scripts/celery_supervisord.conf /etc/supervisor/conf.d/celery_supervisord.conf
+COPY deploy/supervisor_scripts/dramatiq_supervisord.conf /etc/supervisor/conf.d/dramatiq_supervisord.conf
 COPY deploy/supervisor_scripts/gunicorn_supervisord.conf /etc/supervisor/conf.d/gunicorn_supervisord.conf
 
 # Change permissions for deploy folder scripts
