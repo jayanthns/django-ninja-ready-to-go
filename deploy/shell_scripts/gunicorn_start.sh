@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Load environment variables from env/.env file
-echo "Loading the environment variables..."
-if [ -f env/.env ]; then
-    set -a
-    . env/.env || { echo "Failed to load environment variables"; exit 1; }
-    set +a
-    echo "Environment variables loaded successfully."
-else
-    echo "Warning: env/.env file not found. Skipping environment variable loading."
-fi
+# echo "Loading the environment variables..."
+# if [ -f env/.env ]; then
+#     set -a
+#     . env/.env || { echo "Failed to load environment variables"; exit 1; }
+#     set +a
+#     echo "Environment variables loaded successfully."
+# else
+#     echo "Warning: env/.env file not found. Skipping environment variable loading."
+# fi
 
 # Set default workers to 4 if UVICORN_WORKERS is not set
 WORKERS=${UVICORN_WORKERS:-4}
