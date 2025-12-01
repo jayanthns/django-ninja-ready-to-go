@@ -548,6 +548,11 @@ dev = [
     { name = "requests-mock" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "requests" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = "==3.9.1" },
@@ -558,7 +563,6 @@ requires-dist = [
     { name = "django-redis", specifier = "==6.0.0" },
     { name = "django-shinobi", specifier = ">=1.4.0" },
     { name = "dramatiq", specifier = "==1.10.0" },
-    { name = "dramatiq", extras = ["gevent"], specifier = "==1.10.0" },
     { name = "email-validator", specifier = "==2.3.0" },
     { name = "flake8", marker = "extra == 'dev'", specifier = "==7.1.1" },
     { name = "flake8-pyproject", marker = "extra == 'dev'", specifier = "==1.2.3" },
@@ -584,6 +588,9 @@ requires-dist = [
     { name = "xlrd", specifier = "==2.0.2" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "requests", specifier = ">=2.32.5" }]
 
 [[package]]
 name = "django-redis"

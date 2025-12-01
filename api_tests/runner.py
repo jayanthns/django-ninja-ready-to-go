@@ -3,7 +3,7 @@ import sys
 
 from api_tests import utils
 from api_tests.client import APIClient
-from api_tests.scenarios import animals, audit, auth, files, users
+from api_tests.scenarios import animals, audit, auth, files, tasks, users
 
 TEST_DB_NAME = "test_db_api"
 TEST_PORT = 8001
@@ -39,6 +39,7 @@ def main():
         animals.run(client)
         files.run(client)
         audit.run(client)
+        tasks.run(client)
 
         print("\n=== All Tests Passed Successfully! ===")
 
