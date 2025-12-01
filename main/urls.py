@@ -27,7 +27,13 @@ from apps.animals_app.v1.views import router as animals_router  # noqa
 from apps.files_app.v1.views import router as files_router  # noqa
 
 # Import ping sub-routers
-from apps.ping_app.v1.views import cache_router, database_router, external_router, system_router  # noqa
+from apps.ping_app.v1.views import (  # noqa
+    cache_router,
+    database_router,
+    external_router,
+    system_router,
+    tasks_router,
+)
 from apps.users_app.v1.views import router as users_router  # noqa
 
 api.add_router("/v1/animals/", animals_router, tags=["Animals"])
@@ -39,6 +45,7 @@ api.add_router("/v1/pings/", system_router, tags=["ping-health"])
 api.add_router("/v1/pings/cache/", cache_router, tags=["cache-pings"])
 api.add_router("/v1/pings/db/", database_router, tags=["database-pings"])
 api.add_router("/v1/pings/external/", external_router, tags=["external-pings"])
+api.add_router("/v1/tasks/", tasks_router, tags=["background-tasks"])
 
 
 urlpatterns = [

@@ -2477,6 +2477,40 @@ Since `django-dramatiq` is not used to avoid hard dependencies, we use a custom 
 2. **Middleware**: `common/dramatiq_middleware.py` ensures Django database connections are closed after each task to prevent connection leaks.
 3. **Broker**: The broker is configured in `main/settings/cache.py` and exposed in `main/dramatiq.py`.
 
+### Testing Background Tasks
+
+We recommend using a cache-based approach for tracking task status, rather than relying on the backend's result storage directly. This provides a consistent way to track status across different task queues (Celery/Dramatiq).
+
+**Recommended Pattern:**
+
+1. **Generate a Trace ID**: Create a unique ID (e.g., UUID) before triggering the task.
+2. **Set Initial Status**: Set the status in the cache (e.g., `QUEUED`) using the trace ID.
+3. **Pass Trace ID**: Pass the trace ID as an argument to the task.
+4. **Update Status in Task**:
+    - On start: Update cache to `RUNNING`.
+    - On success: Update cache to `SUCCESS` with result.
+    - On failure: Update cache to `FAILURE` with error.
+5. **Check Status**: Use an API endpoint to retrieve the status from the cache using the trace ID.
+
+**Example (Celery):**
+
+```python
+# View
+trace_id = str(uuid.uuid4())
+cache.set(f"task_status:{trace_id}", "QUEUED", timeout=300)
+ping_celery_task.delay(duration=5, trace_id=trace_id)
+return {"task_id": trace_id}
+
+# Task
+@shared_task(bind=True)
+def ping_celery_task(self, duration: int = 0, trace_id: str = None):
+    if trace_id:
+        cache.set(f"task_status:{trace_id}", "RUNNING", timeout=300)
+    # ... logic ...
+    if trace_id:
+        cache.set(f"task_status:{trace_id}", {"status": "SUCCESS", "result": result}, timeout=300)
+```
+
 ---
 
 ## Additional Resources

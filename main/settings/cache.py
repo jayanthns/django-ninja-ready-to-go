@@ -90,6 +90,7 @@ try:
     if DRAMATIQ_BROKER_URL:
         dramatiq_broker = RedisBroker(url=DRAMATIQ_BROKER_URL)
         dramatiq_broker.add_middleware(DjangoDBConnectionsMiddleware())
+
         dramatiq.set_broker(dramatiq_broker)
 except ImportError:
     pass
