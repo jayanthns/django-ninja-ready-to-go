@@ -331,6 +331,19 @@ d-celery-logs:
 d-all-logs:
 	docker exec -it django_ninja_api_container sh -c "tail -f /var/log/supervisor/*.log"
 
+d-volumes:
+	@echo "Listing volumes for project 'django-ninja-ready-to-go'..."
+	docker volume ls --filter label=com.docker.compose.project=django-ninja-ready-to-go
+
+d-clean-volumes:
+	@echo "Removing project volumes (if any named volumes exist)..."
+	docker compose -f docker-compose.yaml down -v
+
+d-wipe-local-data:
+	@echo "Removing local data directories (bind mounts) from /var/lib/docker-data/..."
+	docker run --rm -v /var/lib/docker-data:/data alpine sh -c "rm -rf /data/django_ninja_db_data /data/django_ninja_redis_data"
+	@echo "Data wiped."
+
 help:
 	@echo "Available Makefile commands:"
 	@echo ""
@@ -406,7 +419,10 @@ help:
 	@echo "  d-gunicorn-logs: Show Gunicorn logs"
 	@echo "  d-celery-logs: Show Celery logs (worker 0)"
 	@echo "  d-all-logs: Show all Supervisor logs"
+	@echo "  d-volumes: List Docker volumes for this project"
+	@echo "  d-clean-volumes: Remove Docker volumes for this project (down -v)"
+	@echo "  d-wipe-local-data: Wipe local data directories (bind mounts)"
 	@echo "  test-api: Run API test suite"
 	@echo "  help: Show this help message"
 
-.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report test-api d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec d-supervisor-logs d-uvicorn-logs d-gunicorn-logs d-celery-logs d-all-logs help generate-docs swagger redoc
+.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report test-api d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec d-supervisor-logs d-uvicorn-logs d-gunicorn-logs d-celery-logs d-all-logs d-volumes d-clean-volumes d-wipe-local-data help generate-docs swagger redoc
