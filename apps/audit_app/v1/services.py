@@ -13,7 +13,7 @@ User = get_user_model()
 class AuditService:
     """
     Service for creating audit logs.
-    Designed to be injected into other services.
+    Ensures all audit-mode fields are fully captured.
     """
 
     @staticmethod
@@ -21,33 +21,39 @@ class AuditService:
         action: str,
         target_model: str,
         target_object_id: str,
-        trace_id: Optional[str] = None,
-        correlation_id: Optional[str] = None,
-        object_representation: Optional[str] = None,
+        trace_id: str,
+        changes: Optional[Dict[str, Any]] = None,
         actor_id: Optional[str] = None,
         actor_email: Optional[str] = None,
-        changes: Optional[Dict[str, Any]] = None,
+        correlation_id: Optional[str] = None,
+        session_key: Optional[str] = None,
+        object_representation: Optional[str] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
-        session_key: Optional[str] = None,
     ) -> AuditLog:
         """
-        Generic method to log an event.
-        Accepts actor_id and actor_email directly.
+        Lowest-level unified audit log writer.
+        All parameters must flow through this method.
         """
+
         return await AuditLog.objects.acreate(
             action=action,
             target_model=target_model,
             target_object_id=target_object_id,
             trace_id=trace_id,
-            correlation_id=correlation_id,
+            changes=changes or {},
             actor_id=actor_id,
             actor_email=actor_email,
-            changes=changes or {},
+            correlation_id=correlation_id,
+            session_key=session_key,
+            object_representation=object_representation,
             ip_address=ip_address,
             user_agent=user_agent,
-            session_key=session_key,
         )
+
+    # -------------------------------------------------------------------------
+    # CREATE
+    # -------------------------------------------------------------------------
 
     @classmethod
     async def log_create(
@@ -56,22 +62,32 @@ class AuditService:
         actor_id: Optional[str] = None,
         actor_email: Optional[str] = None,
         changes: Optional[Dict[str, Any]] = None,
-        **kwargs,
+        trace_id: str = "",
+        correlation_id: Optional[str] = None,
+        session_key: Optional[str] = None,
+        object_representation: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
-        """
-        Log a creation event.
-        """
+
         return await cls.log_event(
             action=AuditAction.CREATE,
             target_model=f"{instance._meta.app_label}.{instance._meta.model_name}",
             target_object_id=str(instance.pk),
-            trace_id=kwargs.get("trace_id"),
-            correlation_id=kwargs.get("correlation_id"),
+            trace_id=trace_id,
+            changes=changes,
             actor_id=actor_id,
             actor_email=actor_email,
-            changes=changes,
-            **kwargs,
+            correlation_id=correlation_id,
+            session_key=session_key,
+            object_representation=object_representation,
+            ip_address=ip_address,
+            user_agent=user_agent,
         )
+
+    # -------------------------------------------------------------------------
+    # UPDATE
+    # -------------------------------------------------------------------------
 
     @classmethod
     async def log_update(
@@ -80,35 +96,58 @@ class AuditService:
         changes: Dict[str, Any],
         actor_id: Optional[str] = None,
         actor_email: Optional[str] = None,
-        **kwargs,
+        trace_id: str = "",
+        correlation_id: Optional[str] = None,
+        session_key: Optional[str] = None,
+        object_representation: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
-        """
-        Log an update event.
-        """
+
         return await cls.log_event(
             action=AuditAction.UPDATE,
             target_model=f"{instance._meta.app_label}.{instance._meta.model_name}",
             target_object_id=str(instance.pk),
-            trace_id=kwargs.get("trace_id"),
-            correlation_id=kwargs.get("correlation_id"),
+            trace_id=trace_id,
+            changes=changes,
             actor_id=actor_id,
             actor_email=actor_email,
-            changes=changes,
-            **kwargs,
+            correlation_id=correlation_id,
+            session_key=session_key,
+            object_representation=object_representation,
+            ip_address=ip_address,
+            user_agent=user_agent,
         )
+
+    # -------------------------------------------------------------------------
+    # DELETE
+    # -------------------------------------------------------------------------
 
     @classmethod
     async def log_delete(
-        cls, instance: Model, actor_id: Optional[str] = None, actor_email: Optional[str] = None, **kwargs
+        cls,
+        instance: Model,
+        actor_id: Optional[str] = None,
+        actor_email: Optional[str] = None,
+        trace_id: str = "",
+        correlation_id: Optional[str] = None,
+        session_key: Optional[str] = None,
+        object_representation: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
-        """
-        Log a deletion event.
-        """
+
         return await cls.log_event(
             action=AuditAction.DELETE,
             target_model=f"{instance._meta.app_label}.{instance._meta.model_name}",
             target_object_id=str(instance.pk),
+            trace_id=trace_id,
+            changes={},
             actor_id=actor_id,
             actor_email=actor_email,
-            **kwargs,
+            correlation_id=correlation_id,
+            session_key=session_key,
+            object_representation=object_representation,
+            ip_address=ip_address,
+            user_agent=user_agent,
         )
