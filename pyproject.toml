@@ -75,6 +75,7 @@ omit = [
     "**/apps.py",
     "**/signals.py",
     "common/background_tasks.py",
+    "api_tests/*",
 ]
 source = ["."]
 
