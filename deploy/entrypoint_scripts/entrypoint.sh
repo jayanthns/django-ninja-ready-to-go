@@ -25,22 +25,27 @@ if [ "$USE_SUPERVISOR" = "false" ]; then
     exec /app/deploy/shell_scripts/gunicorn_start.sh
 else
     echo "USE_SUPERVISOR is enabled, proceeding with Supervisor setup..."
-
+    
     # Check if the environment variable RUN_CELERY_TOGETHER is set, defaulting to false
     if [ -z "${RUN_CELERY_TOGETHER}" ]; then
         echo "WARNING: Environment variable [RUN_CELERY_TOGETHER] not found, setting to default (false)" >&2
         RUN_CELERY_TOGETHER=false
     fi
 
+    # Check if the environment variable RUN_DRAMATIQ_TOGETHER is set, defaulting to false
+    if [ -z "${RUN_DRAMATIQ_TOGETHER}" ]; then
+        echo "WARNING: Environment variable [RUN_DRAMATIQ_TOGETHER] not found, setting to default (false)" >&2
+        RUN_DRAMATIQ_TOGETHER=false
+    fi
+
     # Normalize to lowercase
     RUN_CELERY_TOGETHER=$(echo "$RUN_CELERY_TOGETHER" | tr '[:upper:]' '[:lower:]')
+    RUN_DRAMATIQ_TOGETHER=$(echo "$RUN_DRAMATIQ_TOGETHER" | tr '[:upper:]' '[:lower:]')
+    
+    # Export them so Supervisor can see them for %(ENV_...)s expansion
+    export RUN_CELERY_TOGETHER
+    export RUN_DRAMATIQ_TOGETHER
 
-    # Start the appropriate Supervisor configuration
-    if [ "$RUN_CELERY_TOGETHER" = "true" ]; then
-        echo "Starting supervisord with both Uvicorn and Celery..."
-        exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
-    else
-        echo "Starting supervisord with Uvicorn only..."
-        exec /usr/bin/supervisord -c /etc/supervisor/conf.d/gunicorn_supervisord.conf
-    fi
+    echo "Starting supervisord (Celery: $RUN_CELERY_TOGETHER, Dramatiq: $RUN_DRAMATIQ_TOGETHER)..."
+    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 fi

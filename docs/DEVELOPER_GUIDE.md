@@ -640,6 +640,56 @@ Celery is used for asynchronous task processing. All Celery variables are option
 - **Description**: Name of the Celery task queue.
 - **Example**: `CELERY_QUEUE_NAME=django_ninja_queue`
 
+### Dramatiq Configuration
+
+Dramatiq is an alternative task queue. All Dramatiq variables are optional.
+
+#### `RUN_DRAMATIQ_TOGETHER`
+
+- **Type**: Boolean String
+- **Default**: Empty (disabled)
+- **Options**: `true`, `false`, or empty
+- **Description**: Whether to run Dramatiq workers alongside Django server.
+- **Example**:
+  - Enable: `RUN_DRAMATIQ_TOGETHER=true`
+  - Disable: `RUN_DRAMATIQ_TOGETHER=false`
+
+#### `DRAMATIQ_WORKERS`
+
+- **Type**: Integer
+- **Default**: Empty (uses Dramatiq default)
+- **Description**: Number of Dramatiq worker processes to spawn.
+- **Example**: `DRAMATIQ_WORKERS=4`
+
+#### `DRAMATIQ_WORKER_CONCURRENCY`
+
+- **Type**: Integer
+- **Default**: Empty (uses Dramatiq default)
+- **Description**: Number of concurrent threads/greenlets per worker.
+- **Example**: `DRAMATIQ_WORKER_CONCURRENCY=5`
+
+#### `DRAMATIQ_PREFETCH_MULTIPLIER`
+
+- **Type**: Integer
+- **Default**: Empty (uses Dramatiq default)
+- **Description**: Number of tasks to prefetch per worker.
+- **Example**: `DRAMATIQ_PREFETCH_MULTIPLIER=6`
+
+#### `DRAMATIQ_POOL`
+
+- **Type**: String
+- **Default**: Empty (uses `gevent`)
+- **Options**: `gevent`, `thread`
+- **Description**: Execution pool implementation for Dramatiq workers.
+- **Example**: `DRAMATIQ_POOL=gevent`
+
+#### `DRAMATIQ_QUEUE_NAME`
+
+- **Type**: String
+- **Default**: Empty (uses `default` queue)
+- **Description**: Name of the Dramatiq task queue.
+- **Example**: `DRAMATIQ_QUEUE_NAME=django_ninja_dramatiq_queue`
+
 ### Uvicorn Configuration
 
 #### `UVICORN_WORKERS`
@@ -732,6 +782,14 @@ CELERY_PREFETCH_MULTIPLIER=
 CELERY_POOL=
 CELERY_QUEUE_NAME=
 
+# Dramatiq - Optional for local dev
+RUN_DRAMATIQ_TOGETHER=
+DRAMATIQ_WORKERS=
+DRAMATIQ_WORKER_CONCURRENCY=
+DRAMATIQ_PREFETCH_MULTIPLIER=
+DRAMATIQ_POOL=
+DRAMATIQ_QUEUE_NAME=
+
 UVICORN_WORKERS=
 
 USE_SUPERVISOR=
@@ -767,6 +825,13 @@ CELERY_PREFETCH_MULTIPLIER=4
 CELERY_POOL=prefork
 CELERY_QUEUE_NAME=django_ninja_queue
 
+RUN_DRAMATIQ_TOGETHER=true
+DRAMATIQ_WORKERS=2
+DRAMATIQ_WORKER_CONCURRENCY=4
+DRAMATIQ_PREFETCH_MULTIPLIER=4
+DRAMATIQ_POOL=gevent
+DRAMATIQ_QUEUE_NAME=django_ninja_dramatiq_queue
+
 UVICORN_WORKERS=2
 
 USE_SUPERVISOR=false
@@ -799,6 +864,12 @@ CELERY_WORKERS=8
 CELERY_WORKER_CONCURRENCY=10
 CELERY_PREFETCH_MULTIPLIER=2
 CELERY_POOL=prefork
+
+RUN_DRAMATIQ_TOGETHER=false
+DRAMATIQ_WORKERS=8
+DRAMATIQ_WORKER_CONCURRENCY=10
+DRAMATIQ_PREFETCH_MULTIPLIER=2
+DRAMATIQ_POOL=gevent
 CELERY_QUEUE_NAME=prod_queue
 
 UVICORN_WORKERS=9  # (2 × 4 cores) + 1
