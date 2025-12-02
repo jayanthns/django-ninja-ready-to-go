@@ -5,8 +5,7 @@ from typing import Optional, Union
 from django.core.cache import cache
 from ninja import Router, Schema
 
-from apps.ping_app.v1.actors import ping_dramatiq_task
-from apps.ping_app.v1.tasks import ping_celery_task
+from apps.ping_app.v1.tasks import ping_celery_task, ping_dramatiq_task
 
 logger = logging.getLogger(__name__)
 

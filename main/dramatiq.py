@@ -28,7 +28,6 @@ django.setup()
 # This will look for 'tasks.py' (or 'actors.py' if you prefer, but 'tasks' is common)
 # in all installed apps.
 autodiscover_modules("tasks")
-autodiscover_modules("actors")
 
 # ------------------------------------------------------------------------------
 # 📡 Expose Broker for CLI

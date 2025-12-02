@@ -2,8 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from apps.ping_app.v1.actors import ping_dramatiq_task
-from apps.ping_app.v1.tasks import ping_celery_task
+from apps.ping_app.v1.tasks import ping_celery_task, ping_dramatiq_task
 
 
 class MockCache:
@@ -20,7 +19,10 @@ class MockCache:
 @pytest.fixture
 def mock_cache():
     c = MockCache()
-    with patch("apps.ping_app.v1.tasks.cache", c), patch("apps.ping_app.v1.actors.cache", c):
+    with (
+        patch("apps.ping_app.v1.tasks.celery_tasks.cache", c),
+        patch("apps.ping_app.v1.tasks.dramatiq_tasks.cache", c),
+    ):
         yield c
 
 
