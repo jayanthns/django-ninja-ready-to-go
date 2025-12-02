@@ -53,11 +53,11 @@ def get_celery_status(request, task_id: str):
         "task_id": task_id,
         "status": status_data,
         "trace_id": trace_id,
+        "result": None,
     }
 
     if status_data is None:
         response_data["status"] = "UNKNOWN"
-        response_data["result"] = None
 
     if isinstance(status_data, dict):
         response_data["status"] = status_data.get("status")
@@ -95,11 +95,11 @@ def get_dramatiq_status(request, task_id: str):
         "task_id": task_id,
         "status": status_data,
         "trace_id": trace_id,
+        "result": None,
     }
 
     if status_data is None:
         response_data["status"] = "UNKNOWN"
-        response_data["result"] = None
 
     if isinstance(status_data, dict):
         response_data["status"] = status_data.get("status")

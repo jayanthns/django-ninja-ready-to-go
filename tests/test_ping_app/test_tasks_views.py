@@ -34,6 +34,7 @@ def mock_cache():
 def mock_request():
     req = MagicMock()
     req.logger = MagicMock()
+    req.trace_id = str(uuid.uuid4())
     return req
 
 
@@ -108,7 +109,8 @@ class TestTasksViews:
         mock_send.assert_called_once()
         args, kwargs = mock_send.call_args
         assert kwargs["duration"] == 1
-        assert kwargs["trace_id"] == response["task_id"]
+        assert kwargs["task_id"] == response["task_id"]
+        assert kwargs["trace_id"] == response["trace_id"]
 
         # Verify cache
         assert mock_cache.get(f"task_status:{response['task_id']}") == "QUEUED"

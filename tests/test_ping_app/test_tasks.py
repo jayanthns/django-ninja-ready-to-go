@@ -36,7 +36,7 @@ def test_ping_celery_task_execution(mock_cache):
 
     # We need to mock time.sleep to avoid waiting
     with patch("time.sleep"):
-        result = ping_celery_task(duration=1, trace_id=trace_id)
+        result = ping_celery_task(duration=1, task_id=trace_id, trace_id=trace_id)
 
     assert result["message"] == "pong"
     assert result["service"] == "celery"
@@ -52,7 +52,7 @@ def test_ping_celery_task_failure(mock_cache):
 
     with patch("time.sleep", side_effect=Exception("Boom")):
         with pytest.raises(Exception):
-            ping_celery_task(duration=1, trace_id=trace_id)
+            ping_celery_task(duration=1, task_id=trace_id, trace_id=trace_id)
 
     # Check cache
     status = mock_cache.get(f"task_status:{trace_id}")
