@@ -1,14 +1,30 @@
 from unittest.mock import patch
 
 import pytest
-from django.core.cache import cache
 
 from apps.ping_app.v1.actors import ping_dramatiq_task
 from apps.ping_app.v1.tasks import ping_celery_task
 
 
-@pytest.mark.django_db
-def test_ping_celery_task_execution():
+class MockCache:
+    def __init__(self):
+        self._data = {}
+
+    def get(self, key, default=None):
+        return self._data.get(key, default)
+
+    def set(self, key, value, timeout=None):
+        self._data[key] = value
+
+
+@pytest.fixture
+def mock_cache():
+    c = MockCache()
+    with patch("apps.ping_app.v1.tasks.cache", c), patch("apps.ping_app.v1.actors.cache", c):
+        yield c
+
+
+def test_ping_celery_task_execution(mock_cache):
     trace_id = "celery-unit-test-id"
 
     # Run task synchronously
@@ -24,13 +40,12 @@ def test_ping_celery_task_execution():
     assert result["service"] == "celery"
 
     # Check cache
-    status = cache.get(f"task_status:{trace_id}")
+    status = mock_cache.get(f"task_status:{trace_id}")
     assert status["status"] == "SUCCESS"
     assert status["result"] == result
 
 
-@pytest.mark.django_db
-def test_ping_celery_task_failure():
+def test_ping_celery_task_failure(mock_cache):
     trace_id = "celery-fail-test-id"
 
     with patch("time.sleep", side_effect=Exception("Boom")):
@@ -38,13 +53,12 @@ def test_ping_celery_task_failure():
             ping_celery_task(duration=1, trace_id=trace_id)
 
     # Check cache
-    status = cache.get(f"task_status:{trace_id}")
+    status = mock_cache.get(f"task_status:{trace_id}")
     assert status["status"] == "FAILURE"
     assert "Boom" in status["error"]
 
 
-@pytest.mark.django_db
-def test_ping_dramatiq_task_execution():
+def test_ping_dramatiq_task_execution(mock_cache):
     trace_id = "dramatiq-unit-test-id"
 
     with patch("time.sleep"):
@@ -54,13 +68,12 @@ def test_ping_dramatiq_task_execution():
     assert result["service"] == "dramatiq"
 
     # Check cache
-    status = cache.get(f"task_status:{trace_id}")
+    status = mock_cache.get(f"task_status:{trace_id}")
     assert status["status"] == "SUCCESS"
     assert status["result"] == result
 
 
-@pytest.mark.django_db
-def test_ping_dramatiq_task_failure():
+def test_ping_dramatiq_task_failure(mock_cache):
     trace_id = "dramatiq-fail-test-id"
 
     with patch("time.sleep", side_effect=Exception("Boom")):
@@ -68,13 +81,12 @@ def test_ping_dramatiq_task_failure():
             ping_dramatiq_task(duration=1, trace_id=trace_id)
 
     # Check cache
-    status = cache.get(f"task_status:{trace_id}")
+    status = mock_cache.get(f"task_status:{trace_id}")
     assert status["status"] == "FAILURE"
     assert "Boom" in status["error"]
 
 
-@pytest.mark.django_db
-def test_ping_celery_task_no_trace_id():
+def test_ping_celery_task_no_trace_id(mock_cache):
     # Test execution without trace_id
     with patch("time.sleep"):
         result = ping_celery_task(duration=1, trace_id=None)
@@ -84,16 +96,14 @@ def test_ping_celery_task_no_trace_id():
     # No cache check needed as trace_id is None
 
 
-@pytest.mark.django_db
-def test_ping_celery_task_failure_no_trace_id():
+def test_ping_celery_task_failure_no_trace_id(mock_cache):
     # Test failure without trace_id
     with patch("time.sleep", side_effect=Exception("Boom")):
         with pytest.raises(Exception):
             ping_celery_task(duration=1, trace_id=None)
 
 
-@pytest.mark.django_db
-def test_ping_dramatiq_task_no_trace_id():
+def test_ping_dramatiq_task_no_trace_id(mock_cache):
     # Test execution without trace_id
     with patch("time.sleep"):
         result = ping_dramatiq_task(duration=1, trace_id=None)
@@ -102,8 +112,7 @@ def test_ping_dramatiq_task_no_trace_id():
     assert result["service"] == "dramatiq"
 
 
-@pytest.mark.django_db
-def test_ping_dramatiq_task_failure_no_trace_id():
+def test_ping_dramatiq_task_failure_no_trace_id(mock_cache):
     # Test failure without trace_id
     with patch("time.sleep", side_effect=Exception("Boom")):
         with pytest.raises(Exception):
