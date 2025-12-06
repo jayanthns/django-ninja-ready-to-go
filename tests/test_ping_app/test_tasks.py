@@ -62,28 +62,30 @@ def test_ping_celery_task_failure(mock_cache):
 
 def test_ping_dramatiq_task_execution(mock_cache):
     trace_id = "dramatiq-unit-test-id"
+    task_id = trace_id
 
     with patch("time.sleep"):
-        result = ping_dramatiq_task(duration=1, trace_id=trace_id)
+        result = ping_dramatiq_task(duration=1, task_id=task_id, trace_id=trace_id)
 
     assert result["message"] == "pong"
     assert result["service"] == "dramatiq"
 
     # Check cache
-    status = mock_cache.get(f"task_status:{trace_id}")
+    status = mock_cache.get(f"task_status:{task_id}")
     assert status["status"] == "SUCCESS"
     assert status["result"] == result
 
 
 def test_ping_dramatiq_task_failure(mock_cache):
     trace_id = "dramatiq-fail-test-id"
+    task_id = trace_id
 
     with patch("time.sleep", side_effect=Exception("Boom")):
         with pytest.raises(Exception):
-            ping_dramatiq_task(duration=1, trace_id=trace_id)
+            ping_dramatiq_task(duration=1, task_id=task_id, trace_id=trace_id)
 
     # Check cache
-    status = mock_cache.get(f"task_status:{trace_id}")
+    status = mock_cache.get(f"task_status:{task_id}")
     assert status["status"] == "FAILURE"
     assert "Boom" in status["error"]
 
