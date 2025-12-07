@@ -174,11 +174,11 @@ class AuditPatcher:
         model = self.model
 
         if not getattr(model, "AUDIT_ENABLED", False):
-            return await self.__original_adelete_queryset__(**kwargs)
+            return await self.__original_adelete__(**kwargs)
 
         before = [obj async for obj in self._clone().all()]
 
-        deleted, details = await self.__original_adelete_queryset__(**kwargs)
+        deleted, details = await self.__original_adelete__(**kwargs)
 
         if deleted:
             for inst in before:

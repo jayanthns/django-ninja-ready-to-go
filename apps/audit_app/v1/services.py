@@ -28,15 +28,15 @@ def build_payload(
     action: str,
     target_model: str,
     target_object_id: str,
-    object_representation: str,
-    trace_id: str,
-    actor_id: Optional[str],
-    actor_email: Optional[str],
-    correlation_id: Optional[str],
-    session_key: Optional[str],
-    ip_address: Optional[str],
-    user_agent: Optional[str],
-    changes: Dict[str, Any],
+    object_representation: str = None,
+    trace_id: str = None,
+    actor_id: Optional[str] = None,
+    actor_email: Optional[str] = None,
+    correlation_id: Optional[str] = None,
+    session_key: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+    changes: Dict[str, Any] = None,
 ):
     """Centralized payload builder — NO Django model objects."""
     return {
@@ -73,8 +73,26 @@ class AuditService:
     # PUBLIC METHODS (Async)
     # ------------------------------
 
+    @staticmethod
+    def _resolve_instance(kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """Extracts target_model/id from 'instance' if present."""
+        instance = kwargs.pop("instance", None)
+        if instance:
+            if "target_model" not in kwargs:
+                kwargs["target_model"] = f"{instance._meta.app_label}.{instance._meta.model_name}"
+            if "target_object_id" not in kwargs:
+                kwargs["target_object_id"] = str(instance.pk)
+            if "object_representation" not in kwargs:
+                kwargs["object_representation"] = str(instance)
+        return kwargs
+
+    # ------------------------------
+    # PUBLIC METHODS (Async)
+    # ------------------------------
+
     @classmethod
     async def log_async(cls, *, action: str, **payload_fields):
+        payload_fields = cls._resolve_instance(payload_fields)
         payload = build_payload(action=action, **payload_fields)
         return await cls.write_async(payload)
 
@@ -96,6 +114,7 @@ class AuditService:
 
     @classmethod
     def log_sync(cls, *, action: str, **payload_fields):
+        payload_fields = cls._resolve_instance(payload_fields)
         payload = build_payload(action=action, **payload_fields)
         return cls.write_sync(payload)
 
@@ -110,3 +129,6 @@ class AuditService:
     @classmethod
     def log_delete_sync(cls, **payload_fields):
         return cls.log_sync(action=AuditAction.DELETE, **payload_fields)
+
+    # Alias for backward compatibility
+    log_event = log_async

@@ -3,7 +3,7 @@ from django.conf import settings
 from common.logger_helper import get_logger_with_trace
 from common.utils import normalize_value
 
-USE_CELERY = getattr(settings, "AUDIT_USE_CELERY", True)
+USE_CELERY = getattr(settings, "AUDIT_USE_CELERY", False)
 USE_DRAMATIQ = getattr(settings, "AUDIT_USE_DRAMATIQ", False)
 
 if USE_CELERY:

@@ -11,7 +11,6 @@ class TestPatchExports:
         expected = [
             "audited_asave",
             "audited_adelete",
-            "audited_acreate",
             "audited_aupdate",
             "audited_adelete_queryset",
             "audited_save",
@@ -28,7 +27,6 @@ class TestPatchExports:
         async_names = [
             "audited_asave",
             "audited_adelete",
-            "audited_acreate",
             "audited_aupdate",
             "audited_adelete_queryset",
         ]
@@ -64,7 +62,6 @@ class TestPatchExports:
         allowed = {
             "audited_asave",
             "audited_adelete",
-            "audited_acreate",
             "audited_aupdate",
             "audited_adelete_queryset",
             "audited_save",

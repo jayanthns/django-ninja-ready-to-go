@@ -2,7 +2,6 @@ from .patcher import AuditPatcher
 
 audited_asave = AuditPatcher.asave
 audited_adelete = AuditPatcher.adelete
-audited_acreate = AuditPatcher.acreate
 audited_aupdate = AuditPatcher.aupdate
 audited_adelete_queryset = AuditPatcher.adelete_queryset
 

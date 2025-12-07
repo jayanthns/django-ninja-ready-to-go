@@ -91,6 +91,31 @@ class TestAuditService:
 
     @patch("apps.audit_app.v1.services.normalize_value")
     @patch("apps.audit_app.v1.services.AuditLog.objects.acreate", new_callable=AsyncMock)
+    async def test_log_create_with_overrides(self, mock_acreate, mock_normalize):
+        """Test providing instance BUT overriding target_model and target_object_id."""
+        mock_normalize.side_effect = lambda x: x
+        animal = Animal(name="OverrideDog", species="Dog", age=3)
+        animal.id = 1
+
+        mock_log = MagicMock()
+        mock_acreate.return_value = mock_log
+
+        await AuditService.log_create(
+            instance=animal,
+            target_model="custom.Model",
+            target_object_id="999",
+            changes={},
+        )
+
+        mock_acreate.assert_called_once()
+        kwargs = mock_acreate.call_args[1]
+        assert kwargs["target_model"] == "custom.Model"
+        assert kwargs["target_object_id"] == "999"
+        # Should still default object_representation if not override
+        assert kwargs["object_representation"] == str(animal)
+
+    @patch("apps.audit_app.v1.services.normalize_value")
+    @patch("apps.audit_app.v1.services.AuditLog.objects.acreate", new_callable=AsyncMock)
     async def test_log_update_helper(self, mock_acreate, mock_normalize):
         mock_normalize.side_effect = lambda x: x
         animal = Animal(name="AuditCat", species="Cat", age=2)
@@ -117,7 +142,7 @@ class TestAuditService:
             actor_email=None,
             correlation_id="correlation_id",
             session_key="session_key",
-            object_representation=None,
+            object_representation="AuditCat",
             ip_address=None,
             user_agent=None,
         )
@@ -149,7 +174,7 @@ class TestAuditService:
             actor_email=None,
             correlation_id="correlation_id",
             session_key="session_key",
-            object_representation=None,
+            object_representation="AuditBird",
             ip_address=None,
             user_agent=None,
         )
