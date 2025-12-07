@@ -213,7 +213,11 @@ flake8:
 	@echo "Running flake8 check..."
 	@$(VENV_ACTIVATE) &&  flake8 .
 
-static-tests: isort_check black_check flake8
+check-loggers:
+	@echo "Running logger usage check..."
+	@$(VENV_ACTIVATE) && python3 scripts/check_logger_usage.py
+
+static-tests: isort_check black_check flake8 check-loggers
 
 pytest-run:
 	@echo "Running Pytest with Coverage"
@@ -403,6 +407,7 @@ help:
 	@echo "  isort_check: Run isort check"
 	@echo "  black_check: Run black check"
 	@echo "  flake8: Run flake8 check"
+	@echo "  check-loggers: Check for logger usage in code"
 	@echo "  static-tests: Run isort, black, and flake8 checks"
 	@echo "  pytest: Run all tests with coverage report (default)"
 	@echo "  pytest-v: Run tests in verbose mode (more details)"
