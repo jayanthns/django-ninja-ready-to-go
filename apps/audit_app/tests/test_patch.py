@@ -352,3 +352,311 @@ class TestPatch:
         self.mock_audit_service.log_update.assert_called_once()
         call_kwargs = self.mock_audit_service.log_update.call_args.kwargs
         assert call_kwargs["changes"] == {}
+
+    def test_audited_save_create(self):
+        # Sync test for save()
+        from apps.audit_app.v1.patch import audited_save
+
+        class DummyModel:
+            _meta = MagicMock()
+            AUDIT_ENABLED = True
+            pk = None
+            field1 = "val"
+
+        DummyModel._meta.fields = [MagicMock(name="field1")]
+        DummyModel._meta.fields[0].name = "field1"
+
+        instance = DummyModel()
+        instance.__original_save__ = MagicMock()
+
+        # ACT
+        audited_save(instance)
+
+        # ASSERT
+        instance.__original_save__.assert_called_once()
+        self.mock_audit_service.log_create_sync.assert_called_once()
+        call_kwargs = self.mock_audit_service.log_create_sync.call_args.kwargs
+        assert call_kwargs["instance"] == instance
+        assert call_kwargs["changes"] == {"field1": {"old": None, "new": "val"}}
+        # Should rely on get_normalized_context for actor info
+
+    def test_audited_save_update(self):
+        from apps.audit_app.v1.patch import audited_save
+
+        class DummyModel:
+            objects = MagicMock()
+            _meta = MagicMock()
+            AUDIT_ENABLED = True
+            pk = 10
+            field1 = "new"
+
+        # Sync get
+        old_instance = MagicMock()
+        old_instance.field1 = "old"
+        DummyModel.objects.get.return_value = old_instance
+
+        DummyModel._meta.fields = [MagicMock(name="field1")]
+        DummyModel._meta.fields[0].name = "field1"
+
+        instance = DummyModel()
+        instance.__original_save__ = MagicMock()
+
+        # ACT
+        audited_save(instance)
+
+        # ASSERT
+        instance.__original_save__.assert_called_once()
+        self.mock_audit_service.log_update_sync.assert_called_once()
+        call_kwargs = self.mock_audit_service.log_update_sync.call_args.kwargs
+        assert call_kwargs["instance"] == instance
+        assert call_kwargs["changes"] == {"field1": {"old": "old", "new": "new"}}
+
+    def test_audited_delete(self):
+        from apps.audit_app.v1.patch import audited_delete
+
+        instance = MagicMock()
+        instance.AUDIT_ENABLED = True
+        instance.__original_delete__ = MagicMock()
+
+        audited_delete(instance)
+
+        instance.__original_delete__.assert_called_once()
+        self.mock_audit_service.log_delete_sync.assert_called_once()
+        assert self.mock_audit_service.log_delete_sync.call_args.kwargs["instance"] == instance
+
+    def test_audited_save_disabled(self):
+        from apps.audit_app.v1.patch import audited_save
+
+        class DummyModel:
+            AUDIT_ENABLED = False
+            pk = None
+
+        instance = DummyModel()
+        instance.__original_save__ = MagicMock()
+
+        audited_save(instance)
+
+    def test_audited_save_update_missing_old(self):
+        from apps.audit_app.v1.patch import audited_save
+
+        class DummyModel:
+            objects = MagicMock()
+            _meta = MagicMock()
+            AUDIT_ENABLED = True
+            pk = 10
+            field1 = "new"
+
+            class DoesNotExist(Exception):
+                pass
+
+        # Simulate race condition: pk exists but DB get fails
+        DummyModel.objects.get.side_effect = DummyModel.DoesNotExist
+
+        instance = DummyModel()
+        instance.__original_save__ = MagicMock()
+
+        # ACT
+        audited_save(instance)
+
+        # ASSERT
+        instance.__original_save__.assert_called_once()
+        # Should NOT log update because we couldn't fetch old state
+        self.mock_audit_service.log_update_sync.assert_not_called()
+
+    def test_audited_save_update_no_changes(self):
+        from apps.audit_app.v1.patch import audited_save
+
+        class DummyModel:
+            objects = MagicMock()
+            _meta = MagicMock()
+            AUDIT_ENABLED = True
+            pk = 10
+            field1 = "same"
+
+        # Sync get
+        old_instance = MagicMock()
+        old_instance.field1 = "same"
+        DummyModel.objects.get.return_value = old_instance
+        DummyModel._meta.fields = [MagicMock(name="field1")]
+        DummyModel._meta.fields[0].name = "field1"
+
+        instance = DummyModel()
+        instance.__original_save__ = MagicMock()
+
+        # ACT
+        audited_save(instance)
+
+        # ASSERT
+        # Should be called with empty changes
+        self.mock_audit_service.log_update_sync.assert_called_once()
+        assert self.mock_audit_service.log_update_sync.call_args.kwargs["changes"] == {}
+
+    def test_audited_delete_disabled(self):
+        from apps.audit_app.v1.patch import audited_delete
+
+        instance = MagicMock()
+        instance.AUDIT_ENABLED = False
+        instance.__original_delete__ = MagicMock()
+
+        # ACT
+        audited_delete(instance)
+
+        # ASSERT
+        instance.__original_delete__.assert_called_once()
+        self.mock_audit_service.log_delete_sync.assert_not_called()
+
+    def test_audited_update_queryset_sync(self):
+        # Sync version of queryset update
+        from apps.audit_app.v1.patch import audited_update
+
+        # QuerySet mock
+        qs = MagicMock()
+        qs.model.AUDIT_ENABLED = True
+        qs.model._meta.fields = [MagicMock(name="f1")]
+        qs.model._meta.fields[0].name = "f1"
+
+        # Explicitly set the "magic" method attribute
+        mock_orig_update = MagicMock(return_value=1)
+        qs.__original_update__ = mock_orig_update
+
+        # Mock _clone().all() (sync iterator)
+        obj_before = MagicMock(f1="old")
+        obj_after = MagicMock(f1="new")
+
+        # Mock clone
+        qs_clone_1 = MagicMock()
+        qs_clone_1.all.return_value = [obj_before]
+
+        qs_clone_2 = MagicMock()
+        qs_clone_2.all.return_value = [obj_after]
+
+        qs._clone.side_effect = [qs_clone_1, qs_clone_2]
+
+        # ACT
+        audited_update(qs, f1="new")
+
+        # ASSERT
+        mock_orig_update.assert_called_once()
+        self.mock_audit_service.log_update_sync.assert_called_once()
+        call_kwargs = self.mock_audit_service.log_update_sync.call_args.kwargs
+        assert call_kwargs["changes"] == {"f1": {"old": "old", "new": "new"}}
+
+    def test_audited_delete_queryset_sync(self):
+        # Sync version of queryset delete
+        from apps.audit_app.v1.patch import audited_delete_queryset
+
+        qs = MagicMock()
+        qs.model.AUDIT_ENABLED = True
+
+        # Explicitly set the "magic" method attribute
+        mock_orig_delete = MagicMock(return_value=(1, {}))
+        qs.__original_delete__ = mock_orig_delete
+
+        inst = MagicMock()
+        qs_clone = MagicMock()
+        qs_clone.all.return_value = [inst]
+        qs._clone.return_value = qs_clone
+
+        # ACT
+        audited_delete_queryset(qs)
+
+        # ASSERT
+        mock_orig_delete.assert_called_once()
+        self.mock_audit_service.log_delete_sync.assert_called_once()
+        assert self.mock_audit_service.log_delete_sync.call_args.kwargs["instance"] == inst
+
+    def test_audited_update_disabled(self):
+        from apps.audit_app.v1.patch import audited_update
+
+        qs = MagicMock()
+        qs.model.AUDIT_ENABLED = False
+        mock_orig_update = MagicMock(return_value=1)
+        qs.__original_update__ = mock_orig_update
+
+        audited_update(qs)
+
+        mock_orig_update.assert_called_once()
+        self.mock_audit_service.log_update_sync.assert_not_called()
+
+    def test_audited_update_zero_count(self):
+        from apps.audit_app.v1.patch import audited_update
+
+        qs = MagicMock()
+        qs.model.AUDIT_ENABLED = True
+        mock_orig_update = MagicMock(return_value=0)
+        qs.__original_update__ = mock_orig_update
+
+        # Act
+        audited_update(qs)
+
+        # Assert
+        mock_orig_update.assert_called_once()
+        # Should return early
+        self.mock_audit_service.log_update_sync.assert_not_called()
+
+    def test_audited_delete_queryset_disabled(self):
+        from apps.audit_app.v1.patch import audited_delete_queryset
+
+        qs = MagicMock()
+        qs.model.AUDIT_ENABLED = False
+        mock_orig_delete = MagicMock(return_value=(1, {}))
+        qs.__original_delete__ = mock_orig_delete
+
+        audited_delete_queryset(qs)
+
+        mock_orig_delete.assert_called_once()
+        self.mock_audit_service.log_delete_sync.assert_not_called()
+
+    def test_audited_delete_queryset_zero_count(self):
+        from apps.audit_app.v1.patch import audited_delete_queryset
+
+        qs = MagicMock()
+        qs.model.AUDIT_ENABLED = True
+        mock_orig_delete = MagicMock(return_value=(0, {}))
+        qs.__original_delete__ = mock_orig_delete
+
+        # We need clone to iterate (before snapshot)
+        # Assuming implementation clones first.
+        qs_clone = MagicMock()
+        qs_clone.all.return_value = []
+        qs._clone.return_value = qs_clone
+
+        audited_delete_queryset(qs)
+
+        mock_orig_delete.assert_called_once()
+        self.mock_audit_service.log_delete_sync.assert_not_called()
+
+    def test_audited_update_queryset_no_changes(self):
+        # Sync version: values didn't change (False case of if old_val != new_val)
+        from apps.audit_app.v1.patch import audited_update
+
+        # QuerySet mock
+        qs = MagicMock()
+        qs.model.AUDIT_ENABLED = True
+        qs.model._meta.fields = [MagicMock(name="f1")]
+        qs.model._meta.fields[0].name = "f1"
+
+        # Explicitly set the "magic" method attribute
+        mock_orig_update = MagicMock(return_value=1)
+        qs.__original_update__ = mock_orig_update
+
+        # Mock _clone().all() (sync iterator)
+        obj_before = MagicMock(f1="same")
+        obj_after = MagicMock(f1="same")
+
+        qs_clone_1 = MagicMock()
+        qs_clone_1.all.return_value = [obj_before]
+
+        qs_clone_2 = MagicMock()
+        qs_clone_2.all.return_value = [obj_after]
+
+        qs._clone.side_effect = [qs_clone_1, qs_clone_2]
+
+        # ACT
+        audited_update(qs, f1="same")
+
+        # ASSERT
+        mock_orig_update.assert_called_once()
+        self.mock_audit_service.log_update_sync.assert_called_once()
+        call_kwargs = self.mock_audit_service.log_update_sync.call_args.kwargs
+        assert call_kwargs["changes"] == {}

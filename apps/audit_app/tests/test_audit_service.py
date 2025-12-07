@@ -153,3 +153,93 @@ class TestAuditService:
             ip_address=None,
             user_agent=None,
         )
+
+    @patch("apps.audit_app.v1.services.normalize_value")
+    @patch("apps.audit_app.v1.services.AuditLog.objects.create")
+    def test_log_create_sync(self, mock_create, mock_normalize):
+        mock_normalize.side_effect = lambda x: x
+        animal = Animal(name="SyncDog", species="Dog", age=4)
+        animal.id = 4
+        mock_create.return_value = MagicMock()
+
+        AuditService.log_create_sync(
+            instance=animal,
+            actor_id="101",
+            changes={"name": {"old": None, "new": "SyncDog"}},
+            trace_id="trace_id",
+            object_representation="SyncDog",
+        )
+
+        mock_create.assert_called_once_with(
+            action=AuditAction.CREATE,
+            target_model="apps_animals_app_v1.animal",
+            target_object_id="4",
+            trace_id="trace_id",
+            changes={"name": {"old": None, "new": "SyncDog"}},
+            actor_id="101",
+            actor_email=None,
+            correlation_id=None,
+            session_key=None,
+            object_representation="SyncDog",
+            ip_address=None,
+            user_agent=None,
+        )
+
+    @patch("apps.audit_app.v1.services.normalize_value")
+    @patch("apps.audit_app.v1.services.AuditLog.objects.create")
+    def test_log_update_sync(self, mock_create, mock_normalize):
+        mock_normalize.side_effect = lambda x: x
+        animal = Animal(name="SyncCat", species="Cat", age=5)
+        animal.id = 5
+        mock_create.return_value = MagicMock()
+
+        AuditService.log_update_sync(
+            instance=animal,
+            changes={"age": {"old": 5, "new": 6}},
+            trace_id="trace_id",
+            object_representation="SyncCat",
+        )
+
+        mock_create.assert_called_once_with(
+            action=AuditAction.UPDATE,
+            target_model="apps_animals_app_v1.animal",
+            target_object_id="5",
+            trace_id="trace_id",
+            changes={"age": {"old": 5, "new": 6}},
+            actor_id=None,
+            actor_email=None,
+            correlation_id=None,
+            session_key=None,
+            object_representation="SyncCat",
+            ip_address=None,
+            user_agent=None,
+        )
+
+    @patch("apps.audit_app.v1.services.normalize_value")
+    @patch("apps.audit_app.v1.services.AuditLog.objects.create")
+    def test_log_delete_sync(self, mock_create, mock_normalize):
+        mock_normalize.side_effect = lambda x: x
+        animal = Animal(name="SyncBird", species="Bird", age=6)
+        animal.id = 6
+        mock_create.return_value = MagicMock()
+
+        AuditService.log_delete_sync(
+            instance=animal,
+            trace_id="trace_id",
+            object_representation="SyncBird",
+        )
+
+        mock_create.assert_called_once_with(
+            action=AuditAction.DELETE,
+            target_model="apps_animals_app_v1.animal",
+            target_object_id="6",
+            trace_id="trace_id",
+            changes={},
+            actor_id=None,
+            actor_email=None,
+            correlation_id=None,
+            session_key=None,
+            object_representation="SyncBird",
+            ip_address=None,
+            user_agent=None,
+        )
