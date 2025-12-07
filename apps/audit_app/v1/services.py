@@ -145,6 +145,7 @@ class AuditService:
     async def log_delete(
         cls,
         instance: Model,
+        changes: Optional[Dict[str, Any]] = None,
         actor_id: Optional[str] = None,
         actor_email: Optional[str] = None,
         trace_id: str = "",
@@ -160,7 +161,7 @@ class AuditService:
             target_model=f"{instance._meta.app_label}.{instance._meta.model_name}",
             target_object_id=str(instance.pk),
             trace_id=trace_id,
-            changes={},
+            changes=changes,
             actor_id=actor_id,
             actor_email=actor_email,
             correlation_id=correlation_id,
@@ -287,6 +288,7 @@ class AuditService:
     def log_delete_sync(
         cls,
         instance: Model,
+        changes: Optional[Dict[str, Any]] = None,
         actor_id: Optional[str] = None,
         actor_email: Optional[str] = None,
         trace_id: str = "",
@@ -301,7 +303,7 @@ class AuditService:
             target_model=f"{instance._meta.app_label}.{instance._meta.model_name}",
             target_object_id=str(instance.pk),
             trace_id=trace_id,
-            changes={},
+            changes=changes,
             actor_id=actor_id,
             actor_email=actor_email,
             correlation_id=correlation_id,

@@ -45,13 +45,12 @@ async def audited_asave(self, *args, **kwargs):
     else:
         # UPDATE diff
         diff = {}
-        if old:
-            for f in self._meta.fields:
-                name = f.name
-                old_val = getattr(old, name)
-                new_val = getattr(self, name)
-                if old_val != new_val:
-                    diff[name] = {"old": old_val, "new": new_val}
+        for f in self._meta.fields:
+            name = f.name
+            old_val = getattr(old, name)
+            new_val = getattr(self, name)
+            if old_val != new_val:
+                diff[name] = {"old": old_val, "new": new_val}
 
             await AuditService.log_update(
                 instance=self,
@@ -65,29 +64,6 @@ async def audited_asave(self, *args, **kwargs):
                 ip_address=ctx["ip_address"],
                 user_agent=ctx["user_agent"],
             )
-
-    return result
-
-
-async def audited_adelete(self, *args, **kwargs):
-    result = await self.__original_adelete__(*args, **kwargs)
-
-    if not getattr(self, "AUDIT_ENABLED", False):
-        return result
-
-    ctx = get_normalized_context()
-
-    await AuditService.log_delete(
-        instance=self,
-        actor_id=ctx["actor_id"],
-        actor_email=ctx["actor_email"],
-        trace_id=ctx["trace_id"],
-        correlation_id=ctx["correlation_id"],
-        session_key=ctx["session_key"],
-        object_representation=str(self),
-        ip_address=ctx["ip_address"],
-        user_agent=ctx["user_agent"],
-    )
 
     return result
 
@@ -186,8 +162,10 @@ async def audited_adelete_queryset(self, **kwargs):
 
     # CREATE DELETE AUDIT ENTRY FOR EACH ROW
     for inst in before_instances:
+        changes = {f.name: {"old": getattr(inst, f.name), "new": None} for f in model._meta.fields}
         await AuditService.log_delete(
             instance=inst,
+            changes=changes,
             actor_id=ctx["actor_id"],
             actor_email=ctx["actor_email"],
             trace_id=ctx["trace_id"],
@@ -245,13 +223,12 @@ def audited_save(self, *args, **kwargs):
     else:
         # UPDATE diff
         diff = {}
-        if old:
-            for f in self._meta.fields:
-                name = f.name
-                old_val = getattr(old, name)
-                new_val = getattr(self, name)
-                if old_val != new_val:
-                    diff[name] = {"old": old_val, "new": new_val}
+        for f in self._meta.fields:
+            name = f.name
+            old_val = getattr(old, name)
+            new_val = getattr(self, name)
+            if old_val != new_val:
+                diff[name] = {"old": old_val, "new": new_val}
 
             AuditService.log_update_sync(
                 instance=self,
@@ -269,7 +246,37 @@ def audited_save(self, *args, **kwargs):
     return result
 
 
+async def audited_adelete(self, *args, **kwargs):
+    # Capture snapshot BEFORE delete
+    changes = {f.name: {"old": getattr(self, f.name), "new": None} for f in self._meta.fields}
+
+    result = await self.__original_adelete__(*args, **kwargs)
+
+    if not getattr(self, "AUDIT_ENABLED", False):
+        return result
+
+    ctx = get_normalized_context()
+
+    await AuditService.log_delete(
+        instance=self,
+        changes=changes,
+        actor_id=ctx["actor_id"],
+        actor_email=ctx["actor_email"],
+        trace_id=ctx["trace_id"],
+        correlation_id=ctx["correlation_id"],
+        session_key=ctx["session_key"],
+        object_representation=str(self),
+        ip_address=ctx["ip_address"],
+        user_agent=ctx["user_agent"],
+    )
+
+    return result
+
+
 def audited_delete(self, *args, **kwargs):
+    # Capture snapshot BEFORE delete
+    changes = {f.name: {"old": getattr(self, f.name), "new": None} for f in self._meta.fields}
+
     result = self.__original_delete__(*args, **kwargs)
 
     if not getattr(self, "AUDIT_ENABLED", False):
@@ -279,6 +286,7 @@ def audited_delete(self, *args, **kwargs):
 
     AuditService.log_delete_sync(
         instance=self,
+        changes=changes,
         actor_id=ctx["actor_id"],
         actor_email=ctx["actor_email"],
         trace_id=ctx["trace_id"],
@@ -358,8 +366,10 @@ def audited_delete_queryset(self, **kwargs):
 
     # CREATE DELETE AUDIT ENTRY FOR EACH ROW
     for inst in before_instances:
+        changes = {f.name: {"old": getattr(inst, f.name), "new": None} for f in model._meta.fields}
         AuditService.log_delete_sync(
             instance=inst,
+            changes=changes,
             actor_id=ctx["actor_id"],
             actor_email=ctx["actor_email"],
             trace_id=ctx["trace_id"],
