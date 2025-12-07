@@ -27,12 +27,6 @@ class AuditAppConfig(AppConfig):
             safe_patch(model, "delete", AuditPatcher.delete)
 
             # ---------------------------------------------------------
-            # 2️⃣ MANAGER-LEVEL METHODS
-            # ---------------------------------------------------------
-            manager = model.objects.__class__
-            safe_patch(manager, "acreate", AuditPatcher.acreate)
-
-            # ---------------------------------------------------------
             # 3️⃣ QUERYSET-LEVEL METHODS
             # ---------------------------------------------------------
             qs_class = model.objects._queryset_class
