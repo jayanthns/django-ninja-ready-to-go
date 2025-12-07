@@ -121,9 +121,48 @@ async def test_my_service_logs_audit():
         # Verify AuditLog was created with expected data
         mock_create.assert_called_once()
         call_kwargs = mock_create.call_args.kwargs
-        
         assert call_kwargs["action"] == AuditAction.UPDATE
         assert call_kwargs["actor_id"] == "123"
+This approach ensures your tests are fast and don't pollute the test database with audit logs.
+
+## Automated Auditing via Patching
+
+Instead of manually calling `AuditService` in every view or service, the application uses an **automated patching mechanism** to intercept and log database changes for models that have `AUDIT_ENABLED = True`.
+
+### How it Works
+
+1. **Initialization**:
+   When the Django application starts, the `AuditAppConfig.ready()` method in `apps/audit_app/v1/apps.py` is called. This triggers the `_patch_async_methods()` function.
+
+2. **Model Discovery**:
+   The patcher iterates through all registered models in the project using `apps.get_models()`. It checks for an `AUDIT_ENABLED = True` attribute on each model class.
+
+3. **Method Interception**:
+   For every enabled model, the following asynchronous methods are monkey-patched (replaced) with wrappers from `apps/audit_app/v1/patch.py`:
+   - `model.asave()`: Captures INSERTs and UPDATEs.
+   - `model.adelete()`: Captures DELETEs.
+   - `model.objects.acreate()`: Captures Manager-level creations.
+   - `queryset.aupdate()`: Captures bulk updates.
+   - `queryset.adelete()`: Captures bulk deletes.
+
+4. **Context Capture**:
+   The `AuditContextMiddleware` (in `apps/audit_app/v1/middleware.py`) captures request-scoped information (User ID, Email, IP, Trace ID) and stores it in a `contextvars.ContextVar`. The patched methods retrieve this context to populate the `actor_id`, `actor_email`, etc., without needing to pass `request` objects through generic model methods.
+
+5. **Change Detection**:
+   - **Updates (`asave`)**: The wrapper fetches the "before" state of the object using `aget()`. It then runs the original save, compares the "before" and "after" states, and logs a diff of changed fields.
+   - **Creates (`asave`, `acreate`)**: The wrapper logs the new object's state.
+   - **Deletes**: The wrapper logs the object's representation before deletion.
+
+### Enabling Auditing for a Model
+
+To enable automated auditing for a model, simply add the `AUDIT_ENABLED` flag:
+
+```python
+class MyModel(models.Model):
+    AUDIT_ENABLED = True  # <--- Enables automated audit logging
+    
+    name = models.CharField(max_length=100)
+    # ...
 ```
 
-This approach ensures your tests are fast and don't pollute the test database with audit logs.
+This drastically reduces boilerplate code and ensures consistent audit trails across the entire application.
