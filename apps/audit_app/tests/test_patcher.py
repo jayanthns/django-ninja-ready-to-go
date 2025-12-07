@@ -276,6 +276,24 @@ class TestAuditPatcherSyncSave:
 
         mocked.assert_not_called()
 
+    def test_sync_save_does_not_exist(self):
+        # Case where pk exists but object is not found in DB (treated as new)
+        inst = make_instance(audit_enabled=True)
+        # inst.pk is "123" by default from make_instance
+
+        inst.__original_save__ = MagicMock(return_value="saved")
+        # Mock DoesNotExist exception
+        inst.__class__.DoesNotExist = Exception
+        inst.__class__.objects.get.side_effect = inst.__class__.DoesNotExist
+
+        with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={"x": 1}):
+            with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync") as mocked:
+                result = AuditPatcher.save(inst)
+
+        # Should be treated as create
+        mocked.assert_called_once_with(inst, {"x": 1})
+        assert result == "saved"
+
 
 class TestAuditPatcherSyncDelete:
 
@@ -311,7 +329,7 @@ class TestAuditPatcherSyncUpdate:
         qs.__original_update__ = MagicMock(return_value=1)
 
         qs._clone.side_effect = [qs, qs]  # before, after
-        qs._clone().all.side_effect = [[old_obj], [new_obj]]
+        qs.all.side_effect = [[old_obj], [new_obj]]
 
         with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"k": 7}):
             with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync") as mocked:
@@ -355,3 +373,162 @@ class TestAuditPatcherSyncDeleteQueryset:
             AuditPatcher.delete_queryset(qs)
 
         mocked.assert_not_called()
+
+
+# ============================================================
+#  DISPATCHER LOGIC (Empty checks)
+# ============================================================
+
+
+class TestAuditPatcherDispatchers:
+
+    @pytest.mark.asyncio
+    async def test_audit_update_async_skips_empty_changes(self):
+        with patch("apps.audit_app.v1.services.AuditService.log_update", new=AsyncMock()) as mock_log:
+            await AuditPatcher.audit_update_async(MagicMock(), {})
+            mock_log.assert_not_called()
+
+    def test_audit_update_sync_skips_empty_changes(self):
+        with patch("apps.audit_app.v1.services.AuditService.log_update_sync") as mock_log:
+            AuditPatcher.audit_update_sync(MagicMock(), {})
+            mock_log.assert_not_called()
+
+
+# ============================================================
+#  ZERO IMPACT SCENARIOS (Coverage for early returns)
+# ============================================================
+
+
+class TestAuditPatcherZeroImpacts:
+
+    @pytest.mark.asyncio
+    async def test_aupdate_zero_impact(self):
+        qs = make_qs(MagicMock(AUDIT_ENABLED=True))
+        qs.__original_aupdate__ = AsyncMock(return_value=0)
+
+        # Setup iterator for "before" snapshot
+        async def async_iter():
+            yield MagicMock()
+
+        qs.all.return_value = qs
+        qs.__aiter__ = lambda *args: async_iter()
+
+        with patch(
+            "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
+        ) as mock_audit:
+            await AuditPatcher.aupdate(qs)
+            mock_audit.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_adelete_queryset_zero_impact(self):
+        qs = make_qs(MagicMock(AUDIT_ENABLED=True))
+        qs.__original_adelete_queryset__ = AsyncMock(return_value=(0, {}))
+
+        async def async_iter():
+            yield MagicMock()
+
+        qs.all.return_value = qs
+        qs.__aiter__ = lambda *args: async_iter()
+
+        with patch(
+            "apps.audit_app.v1.patcher.AuditPatcher.audit_delete_async", new=AsyncMock()
+        ) as mock_audit:
+            await AuditPatcher.adelete_queryset(qs)
+            mock_audit.assert_not_called()
+
+    def test_sync_update_zero_impact(self):
+        qs = make_qs(MagicMock(AUDIT_ENABLED=True))
+        qs.__original_update__ = MagicMock(return_value=0)
+
+        qs._clone().all.return_value = [MagicMock()]
+
+        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync") as mock_audit:
+            AuditPatcher.update(qs)
+            mock_audit.assert_not_called()
+
+    def test_sync_delete_queryset_zero_impact(self):
+        qs = make_qs(MagicMock(AUDIT_ENABLED=True))
+        qs.__original_delete_queryset__ = MagicMock(return_value=(0, {}))
+        qs._clone().all.return_value = [MagicMock()]
+
+        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync") as mock_audit:
+            AuditPatcher.delete_queryset(qs)
+            mock_audit.assert_not_called()
+
+
+class TestAuditPatcherInternals:
+
+    @pytest.mark.asyncio
+    async def test_audit_create_async_internals(self):
+        with patch(
+            "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test"}
+        ) as mock_ctx:
+            with patch("apps.audit_app.v1.services.AuditService.log_create", new=AsyncMock()) as mock_log:
+                inst = MagicMock()
+                changes = {"a": 1}
+                await AuditPatcher.audit_create_async(inst, changes)
+
+                mock_ctx.assert_called_once()
+                mock_log.assert_awaited_once_with(instance=inst, changes=changes, user="test")
+
+    @pytest.mark.asyncio
+    async def test_audit_update_async_internals(self):
+        with patch(
+            "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test1"}
+        ) as mock_ctx:
+            with patch("apps.audit_app.v1.services.AuditService.log_update", new=AsyncMock()) as mock_log:
+                inst = MagicMock()
+                changes = {"b": 2}
+                await AuditPatcher.audit_update_async(inst, changes)
+
+                mock_ctx.assert_called_once()
+                mock_log.assert_awaited_once_with(instance=inst, changes=changes, user="test1")
+
+    @pytest.mark.asyncio
+    async def test_audit_delete_async_internals(self):
+        with patch(
+            "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test2"}
+        ) as mock_ctx:
+            with patch("apps.audit_app.v1.services.AuditService.log_delete", new=AsyncMock()) as mock_log:
+                inst = MagicMock()
+                changes = {"c": 3}
+                await AuditPatcher.audit_delete_async(inst, changes)
+
+                mock_ctx.assert_called_once()
+                mock_log.assert_awaited_once_with(instance=inst, changes=changes, user="test2")
+
+    def test_audit_create_sync_internals(self):
+        with patch(
+            "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test3"}
+        ) as mock_ctx:
+            with patch("apps.audit_app.v1.services.AuditService.log_create_sync") as mock_log:
+                inst = MagicMock()
+                changes = {"a": 1}
+                AuditPatcher.audit_create_sync(inst, changes)
+
+                mock_ctx.assert_called_once()
+                mock_log.assert_called_once_with(instance=inst, changes=changes, user="test3")
+
+    def test_audit_update_sync_internals(self):
+        with patch(
+            "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test4"}
+        ) as mock_ctx:
+            with patch("apps.audit_app.v1.services.AuditService.log_update_sync") as mock_log:
+                inst = MagicMock()
+                changes = {"b": 2}
+                AuditPatcher.audit_update_sync(inst, changes)
+
+                mock_ctx.assert_called_once()
+                mock_log.assert_called_once_with(instance=inst, changes=changes, user="test4")
+
+    def test_audit_delete_sync_internals(self):
+        with patch(
+            "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test5"}
+        ) as mock_ctx:
+            with patch("apps.audit_app.v1.services.AuditService.log_delete_sync") as mock_log:
+                inst = MagicMock()
+                changes = {"c": 3}
+                AuditPatcher.audit_delete_sync(inst, changes)
+
+                mock_ctx.assert_called_once()
+                mock_log.assert_called_once_with(instance=inst, changes=changes, user="test5")
