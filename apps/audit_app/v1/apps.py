@@ -22,11 +22,15 @@ class AuditAppConfig(AppConfig):
             audited_update,
         )
 
+        print("[AuditAppConfig] Ready called - starting patch")
+
         for model in apps.get_models():
 
             # Skip models not audited
             if not getattr(model, "AUDIT_ENABLED", False):
                 continue
+
+            print(f"[AuditAppConfig] Patching model: {model.__name__}")
 
             # ──────────────────────────────────────────────
             # 1️⃣ PATCH model.asave() AND model.save()

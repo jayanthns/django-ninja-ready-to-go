@@ -8,7 +8,13 @@ async def audited_asave(self, *args, **kwargs):
     # BEFORE state
     old = None
     if not is_new:
-        old = await self.__class__.objects.aget(pk=self.pk)
+        try:
+            old = await self.__class__.objects.aget(pk=self.pk)
+        except self.__class__.DoesNotExist:
+            old = None
+
+    if old is None:
+        is_new = True
 
     # Perform actual save
     result = await self.__original_asave__(*args, **kwargs)
@@ -39,25 +45,26 @@ async def audited_asave(self, *args, **kwargs):
     else:
         # UPDATE diff
         diff = {}
-        for f in self._meta.fields:
-            name = f.name
-            old_val = getattr(old, name)
-            new_val = getattr(self, name)
-            if old_val != new_val:
-                diff[name] = {"old": old_val, "new": new_val}
+        if old:
+            for f in self._meta.fields:
+                name = f.name
+                old_val = getattr(old, name)
+                new_val = getattr(self, name)
+                if old_val != new_val:
+                    diff[name] = {"old": old_val, "new": new_val}
 
-        await AuditService.log_update(
-            instance=self,
-            changes=diff,
-            actor_id=ctx["actor_id"],
-            actor_email=ctx["actor_email"],
-            trace_id=ctx["trace_id"],
-            correlation_id=ctx["correlation_id"],
-            session_key=ctx["session_key"],
-            object_representation=str(self),
-            ip_address=ctx["ip_address"],
-            user_agent=ctx["user_agent"],
-        )
+            await AuditService.log_update(
+                instance=self,
+                changes=diff,
+                actor_id=ctx["actor_id"],
+                actor_email=ctx["actor_email"],
+                trace_id=ctx["trace_id"],
+                correlation_id=ctx["correlation_id"],
+                session_key=ctx["session_key"],
+                object_representation=str(self),
+                ip_address=ctx["ip_address"],
+                user_agent=ctx["user_agent"],
+            )
 
     return result
 
@@ -203,8 +210,11 @@ def audited_save(self, *args, **kwargs):
         try:
             old = self.__class__.objects.get(pk=self.pk)
         except self.__class__.DoesNotExist:
-            # Should not happen typically unless race condition or logic error
             old = None
+
+    # Correction for UUIDs: if we couldn't find it, it's new
+    if old is None:
+        is_new = True
 
     # Perform actual save
     result = self.__original_save__(*args, **kwargs)
@@ -333,13 +343,13 @@ def audited_delete_queryset(self, **kwargs):
 
     # Skip non-audited models
     if not getattr(model, "AUDIT_ENABLED", False):
-        return self.__original_delete__(**kwargs)
+        return self.__original_delete_queryset__(**kwargs)
 
     # BEFORE SNAPSHOT (Sync)
     before_instances = list(self._clone().all())
 
     # ACTUAL DELETE
-    deleted_count, details = self.__original_delete__(**kwargs)
+    deleted_count, details = self.__original_delete_queryset__(**kwargs)
 
     if deleted_count == 0:
         return deleted_count, details

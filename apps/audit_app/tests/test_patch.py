@@ -460,7 +460,9 @@ class TestPatch:
 
         # ASSERT
         instance.__original_save__.assert_called_once()
-        # Should NOT log update because we couldn't fetch old state
+        # With new logic: if we can't find old object (e.g. UUID or race condition),
+        # we treat it as a CREATE.
+        self.mock_audit_service.log_create_sync.assert_called_once()
         self.mock_audit_service.log_update_sync.assert_not_called()
 
     def test_audited_save_update_no_changes(self):
@@ -550,7 +552,7 @@ class TestPatch:
 
         # Explicitly set the "magic" method attribute
         mock_orig_delete = MagicMock(return_value=(1, {}))
-        qs.__original_delete__ = mock_orig_delete
+        qs.__original_delete_queryset__ = mock_orig_delete
 
         inst = MagicMock()
         qs_clone = MagicMock()
@@ -600,7 +602,7 @@ class TestPatch:
         qs = MagicMock()
         qs.model.AUDIT_ENABLED = False
         mock_orig_delete = MagicMock(return_value=(1, {}))
-        qs.__original_delete__ = mock_orig_delete
+        qs.__original_delete_queryset__ = mock_orig_delete
 
         audited_delete_queryset(qs)
 
@@ -613,7 +615,7 @@ class TestPatch:
         qs = MagicMock()
         qs.model.AUDIT_ENABLED = True
         mock_orig_delete = MagicMock(return_value=(0, {}))
-        qs.__original_delete__ = mock_orig_delete
+        qs.__original_delete_queryset__ = mock_orig_delete
 
         # We need clone to iterate (before snapshot)
         # Assuming implementation clones first.
@@ -660,3 +662,71 @@ class TestPatch:
         self.mock_audit_service.log_update_sync.assert_called_once()
         call_kwargs = self.mock_audit_service.log_update_sync.call_args.kwargs
         assert call_kwargs["changes"] == {}
+
+    def test_audited_save_create_with_uuid(self):
+        # Test creation where PK is already set (e.g. UUID)
+        import uuid
+
+        from apps.audit_app.v1.patch import audited_save
+
+        class DummyModel:
+            objects = MagicMock()
+            _meta = MagicMock()
+            AUDIT_ENABLED = True
+            pk = uuid.uuid4()  # PK is set!
+            field1 = "val"
+
+            class DoesNotExist(Exception):
+                pass
+
+        DummyModel._meta.fields = [MagicMock(name="field1")]
+        DummyModel._meta.fields[0].name = "field1"
+
+        # Simulate new object: PK exists in memory but NOT in DB
+        DummyModel.objects.get.side_effect = DummyModel.DoesNotExist
+
+        instance = DummyModel()
+        instance.__original_save__ = MagicMock()
+
+        # ACT
+        audited_save(instance)
+
+        # ASSERT
+        instance.__original_save__.assert_called_once()
+        # Should be logged as CREATE, not update (and not ignored!)
+        self.mock_audit_service.log_create_sync.assert_called_once()
+        call_kwargs = self.mock_audit_service.log_create_sync.call_args.kwargs
+        assert call_kwargs["instance"] == instance
+        assert call_kwargs["changes"] == {"field1": {"old": None, "new": "val"}}
+
+    async def test_audited_asave_create_with_uuid(self):
+        # Async version: PK is set (e.g. UUID) but object doesn't exist in DB
+        import uuid
+
+        class DummyModel:
+            objects = MagicMock()
+            _meta = MagicMock()
+            AUDIT_ENABLED = True
+            pk = uuid.uuid4()
+            field1 = "val"
+
+            class DoesNotExist(Exception):
+                pass
+
+        DummyModel._meta.fields = [MagicMock(name="field1")]
+        DummyModel._meta.fields[0].name = "field1"
+
+        # Mock objects.aget to raise DoesNotExist
+        DummyModel.objects.aget = AsyncMock(side_effect=DummyModel.DoesNotExist)
+
+        instance = DummyModel()
+        instance.__original_asave__ = AsyncMock()
+
+        # ACT
+        await audited_asave(instance)
+
+        # ASSERT
+        instance.__original_asave__.assert_called_once()
+        self.mock_audit_service.log_create.assert_called_once()
+        call_kwargs = self.mock_audit_service.log_create.call_args.kwargs
+        assert call_kwargs["changes"] == {"field1": {"old": None, "new": "val"}}
