@@ -1,13 +1,14 @@
 # Audit App
 
-The `audit_app` is a reusable, loosely coupled Django application designed to track system events such as creations, updates, and deletions of objects. It provides a generic `AuditLog` model and a service layer for easy integration with other applications.
+The `audit_app` is a reusable, loosely coupled Django application designed to track system events such as creations, updates, and deletions of objects. It provides a generic `AuditLog` model and a mechanism for **automated audit logging** via monkey-patching.
 
 ## Key Features
 
-- **Loose Coupling**: Does not depend on the `auth.User` model via ForeignKeys. Instead, it stores `actor_id` and `actor_email` as strings, allowing it to be used in microservices or contexts where the user model might vary or be absent.
-- **Flexible Actions**: The `action` field is a simple string, allowing you to define and use new action types without requiring database migrations.
-- **Generic Tracking**: Can track changes for any model using `target_model` (app_label.model_name) and `target_object_id`.
+- **Loose Coupling**: Does not depend on the `auth.User` model via ForeignKeys. Instead, it stores `actor_id` and `actor_email` as strings, allowing it to be used in microservices or contexts where the user model might vary.
+- **Automated Tracking**: Automatically intercepts Sync and Async database operations (`save`, `delete`, `update`, `create`) for models with `AUDIT_ENABLED = True`.
+- **Context Awareness**: Captures the "Actor" (User/Service) performing the action using Django's `contextvars`, working seamlessly across views and background tasks.
 - **JSON Changes**: Stores detailed changes (before/after states) in a JSONField.
+- **Async & Sync Support**: Fully supports Django's async ORM capabilities (`asave`, `acreate`, etc.) alongside traditional sync methods.
 
 ## Architecture
 
@@ -22,147 +23,94 @@ Located in `apps/audit_app/v1/models.py`.
 | `action` | `CharField` | Type of action (e.g., "CREATE", "UPDATE", "DELETE"). |
 | `target_model` | `CharField` | Path to the model being affected (e.g., "apps.animals_app.Animal"). |
 | `target_object_id` | `CharField` | Primary key of the affected object. |
-| `changes` | `JSONField` | Dictionary containing details of the change. |
+| `changes` | `JSONField` | Dictionary containing details of the change (diff). |
 | `ip_address` | `GenericIPAddressField` | IP address of the request. |
-| `user_agent` | `TextField` | User agent string of the client. |
 | `timestamp` | `DateTimeField` | Auto-generated timestamp of the event. |
 
-### Service: `AuditService`
+### Core Logic: `AuditPatcher`
 
-Located in `apps/audit_app/v1/services.py`.
+Located in `apps/audit_app/v1/patcher.py`.
 
-This service provides static methods to log events. It is designed to be injected or called directly from other services.
+This class is responsible for computing diffs and dispatching log events. It serves as the central handler for the patched model methods.
 
-#### Methods
+## Installation & Configuration
 
-- `log_event(...)`: The core method to create an `AuditLog` entry.
-- `log_create(instance, ...)`: Helper for logging object creation.
-- `log_update(instance, changes, ...)`: Helper for logging object updates.
-- `log_delete(instance, ...)`: Helper for logging object deletion.
+### 1. Add to Installed Apps
+
+Ensure the app is added to your `INSTALLED_APPS` (usually done automatically by the project structure, but good to verify):
+
+```python
+INSTALLED_APPS = [
+    # ...
+    "apps.audit_app.v1",
+    # ...
+]
+```
+
+### 2. Add Middleware
+
+To capture the user context (who is performing the action) from HTTP requests, add the `AuditContextMiddleware` to your `MIDDLEWARE` setting:
+
+```python
+MIDDLEWARE = [
+    # ...
+    "apps.audit_app.v1.middleware.AuditContextMiddleware",
+    # ...
+]
+```
+
+ This middleware uses `contextvars` to store the request user/IP, making it available to the deep model-level patches without passing `request` objects around.
 
 ## Usage
 
-### 1. Defining Actions
+### Enabling Automated Auditing
 
-Actions are defined in `common/enums.py` to maintain a single source of truth.
-
-```python
-# common/enums.py
-from django.db import models
-from django.utils.translation import gettext_lazy as _
-
-class AuditAction(models.TextChoices):
-    CREATE = "CREATE", _("Create")
-    UPDATE = "UPDATE", _("Update")
-    DELETE = "DELETE", _("Delete")
-    LOGIN = "LOGIN", _("Login")
-    # Add your custom actions here
-    EXPORT = "EXPORT", _("Export Data")
-```
-
-**Note**: Since `AuditLog.action` is a simple `CharField`, adding a new value here **does not** require a migration.
-
-### 2. Logging Events
-
-Inject or import `AuditService` in your business logic.
+The easiest way to track a model is to simply set `AUDIT_ENABLED = True` on the model class.
 
 ```python
-from apps.audit_app.v1.services import AuditService
-from common.enums import AuditAction
-
-async def create_animal(self, name: str, user: User):
-    # ... create logic ...
-    animal = await Animal.objects.acreate(name=name)
-
-    # Log the creation
-    await AuditService.log_create(
-        instance=animal,
-        actor_id=str(user.id),
-        actor_email=user.email,
-        changes={"name": name},
-        ip_address="127.0.0.1" # Optional
-    )
-```
-
-### 3. Logging Custom Events
-
-For events that don't fit the standard CRUD pattern (e.g., "User logged in", "Report generated"):
-
-```python
-await AuditService.log_event(
-    action=AuditAction.LOGIN,
-    target_model="auth.User",
-    target_object_id=str(user.id),
-    actor_id=str(user.id),
-    actor_email=user.email,
-    ip_address=request.META.get("REMOTE_ADDR")
-)
-```
-
-## Testing
-
-The `audit_app` is designed to be tested without requiring a real database for the audit logs, using `unittest.mock`.
-
-### Example Test
-
-```python
-from unittest.mock import patch, AsyncMock
-from apps.audit_app.v1.services import AuditService
-from common.enums import AuditAction
-
-@pytest.mark.asyncio
-async def test_my_service_logs_audit():
-    # Mock the DB creation call
-    with patch("apps.audit_app.v1.services.AuditLog.objects.acreate", new_callable=AsyncMock) as mock_create:
-        
-        # Call your service method that triggers the log
-        await my_service.do_something()
-
-        # Verify AuditLog was created with expected data
-        mock_create.assert_called_once()
-        call_kwargs = mock_create.call_args.kwargs
-        assert call_kwargs["action"] == AuditAction.UPDATE
-        assert call_kwargs["actor_id"] == "123"
-This approach ensures your tests are fast and don't pollute the test database with audit logs.
-
-## Automated Auditing via Patching
-
-Instead of manually calling `AuditService` in every view or service, the application uses an **automated patching mechanism** to intercept and log database changes for models that have `AUDIT_ENABLED = True`.
-
-### How it Works
-
-1. **Initialization**:
-   When the Django application starts, the `AuditAppConfig.ready()` method in `apps/audit_app/v1/apps.py` is called. This triggers the `_patch_async_methods()` function.
-
-2. **Model Discovery**:
-   The patcher iterates through all registered models in the project using `apps.get_models()`. It checks for an `AUDIT_ENABLED = True` attribute on each model class.
-
-3. **Method Interception**:
-   For every enabled model, the following asynchronous methods are monkey-patched (replaced) with wrappers from `apps/audit_app/v1/patch.py`:
-   - `model.asave()`: Captures INSERTs and UPDATEs.
-   - `model.adelete()`: Captures DELETEs.
-   - `model.objects.acreate()`: Captures Manager-level creations.
-   - `queryset.aupdate()`: Captures bulk updates.
-   - `queryset.adelete()`: Captures bulk deletes.
-
-4. **Context Capture**:
-   The `AuditContextMiddleware` (in `apps/audit_app/v1/middleware.py`) captures request-scoped information (User ID, Email, IP, Trace ID) and stores it in a `contextvars.ContextVar`. The patched methods retrieve this context to populate the `actor_id`, `actor_email`, etc., without needing to pass `request` objects through generic model methods.
-
-5. **Change Detection**:
-   - **Updates (`asave`)**: The wrapper fetches the "before" state of the object using `aget()`. It then runs the original save, compares the "before" and "after" states, and logs a diff of changed fields.
-   - **Creates (`asave`, `acreate`)**: The wrapper logs the new object's state.
-   - **Deletes**: The wrapper logs the object's representation before deletion.
-
-### Enabling Auditing for a Model
-
-To enable automated auditing for a model, simply add the `AUDIT_ENABLED` flag:
-
-```python
-class MyModel(models.Model):
+class Animal(models.Model):
     AUDIT_ENABLED = True  # <--- Enables automated audit logging
-    
+
     name = models.CharField(max_length=100)
     # ...
 ```
 
-This drastically reduces boilerplate code and ensures consistent audit trails across the entire application.
+Once enabled, the `audit_app` will automatically track:
+
+| Operation | Method(s) Intercepted | Action Logged |
+| :--- | :--- | :--- |
+| **Create** | `save()`, `asave()`, `objects.create()`, `objects.acreate()` | `CREATE` |
+| **Update** | `save()`, `asave()`, `qs.update()`, `qs.aupdate()` | `UPDATE` |
+| **Delete** | `delete()`, `adelete()`, `qs.delete()`, `qs.adelete()` | `DELETE` |
+
+### Manual Logging (Custom Events)
+
+For events that fall outside standard CRUD (e.g., "Login", "Export", "Report Generated"), you can use the `AuditService` directly.
+
+```python
+from apps.audit_app.v1.services import AuditService
+from common.enums import AuditAction
+
+async def generate_report(user):
+    # ... logic ...
+    
+    await AuditService.log_event(
+        action=AuditAction.EXPORT,
+        target_model="reports.Report",
+        target_object_id="N/A",
+        actor_id=str(user.id),
+        actor_email=user.email,
+        changes={"type": "pdf_export"}
+    )
+```
+
+## How It Works (Internals)
+
+1.  **Bootstrapping**: When Django starts, `AuditAppConfig.ready()` (in `apps.py`) scans all models.
+2.  **Patching**: If a model has `AUDIT_ENABLED = True`, its methods (`save`, `delete`, etc.) are monkey-patched with wrappers from `AuditPatcher`.
+3.  **Execution**:
+    *   When you call `animal.save()`, the wrapper runs using `AuditPatcher.save`.
+    *   It checks if it's a new record or an update.
+    *   It computes the delta (diff) of changes.
+    *   It calls `AuditService` to write the log entry.
+    *   Finally, it executes the original `save()` method.
