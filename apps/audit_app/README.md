@@ -18,14 +18,19 @@ Located in `apps/audit_app/v1/models.py`.
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
+| `trace_id` | `UUIDField` | Distributed tracing ID (e.g. OpenTelemetry trace ID). |
+| `correlation_id` | `CharField` | Request ID or transaction ID linking related logs. |
 | `actor_id` | `CharField` | ID of the user/system performing the action. |
 | `actor_email` | `CharField` | Email of the user (optional). |
 | `action` | `CharField` | Type of action (e.g., "CREATE", "UPDATE", "DELETE"). |
 | `target_model` | `CharField` | Path to the model being affected (e.g., "apps.animals_app.Animal"). |
 | `target_object_id` | `CharField` | Primary key of the affected object. |
+| `object_representation` | `TextField` | String representation of the object (e.g. `__str__` output). |
 | `changes` | `JSONField` | Dictionary containing details of the change (diff). |
 | `ip_address` | `GenericIPAddressField` | IP address of the request. |
-| `timestamp` | `DateTimeField` | Auto-generated timestamp of the event. |
+| `user_agent` | `TextField` | User agent string of the client. |
+| `session_key` | `CharField` | Django session key for forensic linking. |
+| `created_at` | `DateTimeField` | Timestamp of the event (inherited). |
 
 ### Core Logic: `AuditPatcher`
 
