@@ -4,13 +4,12 @@ without request context.
 """
 
 import asyncio
-import logging
 from typing import Optional
 
-from .logger_helper import get_logger_with_trace, log_with_trace
+from .logger_helper import get_logger_with_trace
 
 # Get logger for this module
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)  # no-check-logger
 
 
 async def process_animal_data(trace_id: str, correlation_id: Optional[str] = None, animal_data: dict = None):
@@ -106,15 +105,16 @@ def sync_background_task(trace_id: str, correlation_id: Optional[str] = None, da
         correlation_id: The correlation ID if available
         data: The data to process
     """
-    # For sync tasks, we can use log_with_trace directly
-    log_with_trace(
-        logger=logger,
-        level=logging.INFO,
-        msg="Starting sync background task",
+    # Use get_logger_with_trace for sync tasks as well
+    task_logger = get_logger_with_trace(
         trace_id=trace_id,
         correlation_id=correlation_id,
-        extra={"task_name": "sync_background_task", "data_id": data.get("id") if data else None},
+        logger_name=__name__,
+        task_name="sync_background_task",
+        data_id=data.get("id") if data else None,
     )
+
+    task_logger.info("Starting sync background task")
 
     try:
         # Simulate some processing
@@ -123,27 +123,13 @@ def sync_background_task(trace_id: str, correlation_id: Optional[str] = None, da
         time.sleep(0.1)
 
         # Log progress
-        log_with_trace(
-            logger=logger,
-            level=logging.INFO,
-            msg="Sync task processing completed",
-            trace_id=trace_id,
-            correlation_id=correlation_id,
-            extra={"task_name": "sync_background_task", "status": "completed"},
-        )
+        task_logger.info("Sync task processing completed", extra={"status": "completed"})
 
         return {"status": "success", "processed_data": data}
 
     except Exception as e:
         # Log error
-        log_with_trace(
-            logger=logger,
-            level=logging.ERROR,
-            msg="Sync background task failed",
-            trace_id=trace_id,
-            correlation_id=correlation_id,
-            extra={"task_name": "sync_background_task", "error": str(e)},
-        )
+        task_logger.error("Sync background task failed", extra={"error": str(e)})
         raise
 
 

@@ -1,129 +1,137 @@
-# Audit App
+# 🔍 Audit App
 
-The `audit_app` is a reusable, loosely coupled Django application designed to track system events such as creations, updates, and deletions of objects. It provides a generic `AuditLog` model and a service layer for easy integration with other applications.
+A powerful, robust, and framework-agnostic audit logging application for Django. It automatically tracks model changes (Create, Update, Delete) and transparently handles both synchronous and asynchronous contexts, supporting background processing via **Celery** or **Dramatiq** with a seamless fallback to inline execution.
 
-## Key Features
+## ✨ Key Features
 
-- **Loose Coupling**: Does not depend on the `auth.User` model via ForeignKeys. Instead, it stores `actor_id` and `actor_email` as strings, allowing it to be used in microservices or contexts where the user model might vary or be absent.
-- **Flexible Actions**: The `action` field is a simple string, allowing you to define and use new action types without requiring database migrations.
-- **Generic Tracking**: Can track changes for any model using `target_model` (app_label.model_name) and `target_object_id`.
-- **JSON Changes**: Stores detailed changes (before/after states) in a JSONField.
+*   **Automated Tracking**: Zero-boilerplate logging. Just add `AUDIT_ENABLED = True` to your models.
+*   **Async & Sync Support**: Fully supports Django's Async ORM (`asave`, `adelete`) alongside traditional synchronous methods.
+*   **Background Task Integration**: Out-of-the-box support for offloading logs to **Celery** or **Dramatiq** workers to maintain performance.
+*   **Smart Fallback**: Automatically runs inline if no background task runner is configured or detected.
+*   **Context Awareness**: Captures rich context (Actor ID, Email, IP Address, Trace ID) via middleware using `contextvars`, working seamlessly across views and tasks.
+*   **Detailed Diffs**: Stores strict JSON diffs of changes (`old` vs `new` values).
+*   **Loose Coupling**: References users via string IDs/Emails, avoiding strict foreign key dependencies on the `Auth` model.
 
-## Architecture
+---
 
-### Model: `AuditLog`
+## 🚀 Installation & Configuration
 
-Located in `apps/audit_app/v1/models.py`.
+### 1. Add to Installed Apps
 
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `actor_id` | `CharField` | ID of the user/system performing the action. |
-| `actor_email` | `CharField` | Email of the user (optional). |
-| `action` | `CharField` | Type of action (e.g., "CREATE", "UPDATE", "DELETE"). |
-| `target_model` | `CharField` | Path to the model being affected (e.g., "apps.animals_app.Animal"). |
-| `target_object_id` | `CharField` | Primary key of the affected object. |
-| `changes` | `JSONField` | Dictionary containing details of the change. |
-| `ip_address` | `GenericIPAddressField` | IP address of the request. |
-| `user_agent` | `TextField` | User agent string of the client. |
-| `timestamp` | `DateTimeField` | Auto-generated timestamp of the event. |
-
-### Service: `AuditService`
-
-Located in `apps/audit_app/v1/services.py`.
-
-This service provides static methods to log events. It is designed to be injected or called directly from other services.
-
-#### Methods
-
-- `log_event(...)`: The core method to create an `AuditLog` entry.
-- `log_create(instance, ...)`: Helper for logging object creation.
-- `log_update(instance, changes, ...)`: Helper for logging object updates.
-- `log_delete(instance, ...)`: Helper for logging object deletion.
-
-## Usage
-
-### 1. Defining Actions
-
-Actions are defined in `common/enums.py` to maintain a single source of truth.
+Ensure the app is registered in your `INSTALLED_APPS` setting:
 
 ```python
-# common/enums.py
-from django.db import models
-from django.utils.translation import gettext_lazy as _
-
-class AuditAction(models.TextChoices):
-    CREATE = "CREATE", _("Create")
-    UPDATE = "UPDATE", _("Update")
-    DELETE = "DELETE", _("Delete")
-    LOGIN = "LOGIN", _("Login")
-    # Add your custom actions here
-    EXPORT = "EXPORT", _("Export Data")
+INSTALLED_APPS = [
+    # ...
+    "apps.audit_app.v1",
+    # ...
+]
 ```
 
-**Note**: Since `AuditLog.action` is a simple `CharField`, adding a new value here **does not** require a migration.
+### 2. Configure Middleware
 
-### 2. Logging Events
+Add `AuditContextMiddleware` to your `MIDDLEWARE` to capture request-scoped context (User, IP, etc.):
 
-Inject or import `AuditService` in your business logic.
+```python
+MIDDLEWARE = [
+    # ...
+    "apps.audit_app.v1.middleware.AuditContextMiddleware",
+    # ...
+]
+```
+
+### 3. Async Backend Setup (Optional)
+
+By default, the `audit_app` runs **inline** (synchronously) to ensure reliability. To enable non-blocking background logging, configure one of the supported task runners in `settings.py`:
+
+**For Celery:**
+```python
+AUDIT_USE_CELERY = True
+# AUDIT_USE_DRAMATIQ should be False or omitted
+```
+
+**For Dramatiq:**
+```python
+AUDIT_USE_DRAMATIQ = True
+# AUDIT_USE_CELERY should be False or omitted
+```
+
+**Fallback Behavior:**
+If both are `False` (default), logs are written immediately to the database within the request cycle.
+
+---
+
+## 🛠 Usage
+
+### Automatic Auditing
+
+To enable auditing for a model, simply add the `AUDIT_ENABLED` flag:
+
+```python
+from django.db import models
+
+class Animal(models.Model):
+    AUDIT_ENABLED = True  # <--- That's it!
+
+    name = models.CharField(max_length=100)
+    species = models.CharField(max_length=100)
+```
+
+The app automatically monkey-patches and intercepts the following methods:
+
+| Operation | Sync Methods | Async Methods | Action Logged |
+| :--- | :--- | :--- | :--- |
+| **Create** | `save()`, `objects.create()` | `asave()`* | `CREATE` |
+| **Update** | `save()`, `qs.update()` | `asave()`, `qs.aupdate()` | `UPDATE` |
+| **Delete** | `delete()`, `qs.delete()` | `adelete()`, `qs.adelete()` | `DELETE` |
+
+*\*Note: `objects.acreate()` internally calls `asave()`, so it is automatically covered without extra patching.*
+
+### Manual Logging
+
+For custom business events (e.g., "Login", "Report Exported", "Permission Changed"), use the `AuditService` directly:
 
 ```python
 from apps.audit_app.v1.services import AuditService
 from common.enums import AuditAction
 
-async def create_animal(self, name: str, user: User):
-    # ... create logic ...
-    animal = await Animal.objects.acreate(name=name)
-
-    # Log the creation
-    await AuditService.log_create(
-        instance=animal,
-        actor_id=str(user.id),
-        actor_email=user.email,
-        changes={"name": name},
-        ip_address="127.0.0.1" # Optional
-    )
-```
-
-### 3. Logging Custom Events
-
-For events that don't fit the standard CRUD pattern (e.g., "User logged in", "Report generated"):
-
-```python
-await AuditService.log_event(
+# Sync
+AuditService.log_create_sync(
     action=AuditAction.LOGIN,
-    target_model="auth.User",
+    target_model="users.User",
     target_object_id=str(user.id),
-    actor_id=str(user.id),
     actor_email=user.email,
-    ip_address=request.META.get("REMOTE_ADDR")
+    changes={"status": "logged_in"}
+)
+
+# Async
+await AuditService.log_create(
+    action=AuditAction.EXPORT,
+    target_model="reports.Report",
+    target_object_id="N/A",
+    changes={"format": "PDF"}
 )
 ```
 
-## Testing
+---
 
-The `audit_app` is designed to be tested without requiring a real database for the audit logs, using `unittest.mock`.
+## 🧩 Architecture & Internals
 
-### Example Test
+1.  **Bootstrapping**: `AuditAppConfig.ready()` scans all models on startup.
+2.  **Patching**: Models with `AUDIT_ENABLED = True` have their data-modifying methods (`save`, `delete`, etc.) wrapped by `AuditPatcher`.
+3.  **Context Capture**: Middleware sets context variables (User, IP) at the start of the request.
+4.  **Diff Computation**: The patched methods calculate the delta (diff) between the old and new state.
+5.  **Dispatching**:
+    *   `TaskDispatcher` checks settings (`AUDIT_USE_CELERY` / `AUDIT_USE_DRAMATIQ`).
+    *   If enabled, the log payload is sent to the respective task queue (e.g., `audit_log_create_celery_task`).
+    *   If disabled, `AuditService` writes the log entry to the DB immediately.
 
-```python
-from unittest.mock import patch, AsyncMock
-from apps.audit_app.v1.services import AuditService
-from common.enums import AuditAction
+### Data Model (`AuditLog`)
 
-@pytest.mark.asyncio
-async def test_my_service_logs_audit():
-    # Mock the DB creation call
-    with patch("apps.audit_app.v1.services.AuditLog.objects.acreate", new_callable=AsyncMock) as mock_create:
-        
-        # Call your service method that triggers the log
-        await my_service.do_something()
+Located in `apps/audit_app/v1/models.py`.
 
-        # Verify AuditLog was created with expected data
-        mock_create.assert_called_once()
-        call_kwargs = mock_create.call_args.kwargs
-        
-        assert call_kwargs["action"] == AuditAction.UPDATE
-        assert call_kwargs["actor_id"] == "123"
-```
-
-This approach ensures your tests are fast and don't pollute the test database with audit logs.
+*   **`action`**: CREATE, UPDATE, DELETE, etc.
+*   **`target_model`**: String identifier of the model (e.g., `apps.animals.Animal`).
+*   **`changes`**: JSONField storing `{'field': {'old': 'A', 'new': 'B'}}`.
+*   **`actor_id` / `actor_email`**: Who performed the action.
+*   **`trace_id` / `correlation_id`**: For distributed tracing.

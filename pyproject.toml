@@ -25,6 +25,9 @@ dependencies = [
     "openpyxl==3.1.5",
     "xlrd==2.0.2",
     "email-validator==2.3.0",
+    "celery==5.3.6",
+    "dramatiq==1.10.0",
+    "gevent==24.2.1",
 ]
 
 [project.optional-dependencies]
@@ -75,6 +78,11 @@ omit = [
     "**/apps.py",
     "**/signals.py",
     "common/background_tasks.py",
+    "api_tests/*",
+    "main/celery.py",
+    "main/dramatiq.py",
+    "main/__init__.py",
+    "common/dramatiq_middleware.py",
 ]
 source = ["."]
 
@@ -152,3 +160,8 @@ ensure_newline_before_comments = true
 force_adds = true
 force_alphabetical_sort_within_sections = true
 skip = ["venv", "migrations"]
+
+[dependency-groups]
+dev = [
+    "requests>=2.32.5",
+]

@@ -4,10 +4,10 @@ from typing import Callable, Optional
 
 from django.http import HttpRequest, HttpResponse
 
-from .logger_helper import get_request_logger, logger_helper
+from .logger_helper import get_logger_with_trace, get_request_logger, logger_helper
 
 # Configure logger for this module
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)  # no-check-logger
 
 # Trace ID header constants
 TRACE_ID_HEADER = "HTTP_X_TRACE_ID"
@@ -36,7 +36,7 @@ class TraceIDMiddleware:
         """Process request and attach trace ID, correlation ID, and logger adapter."""
         # Generate or extract trace ID
         trace_id = self._get_or_generate_trace_id(request)
-        correlation_id = self._get_correlation_id(request)
+        correlation_id = self._get_correlation_id(request, trace_id)
 
         # Attach to request object
         request.trace_id = trace_id
@@ -103,27 +103,35 @@ class TraceIDMiddleware:
         # Check for existing trace ID in headers
         existing_trace_id = request.META.get(TRACE_ID_HEADER)
         if existing_trace_id:
-            logger.debug(f"Using existing trace ID from header: {existing_trace_id}")
+            # We can use get_logger_with_trace here because we have the ID
+            get_logger_with_trace(existing_trace_id, logger_name=__name__).debug(
+                f"Using existing trace ID from header: {existing_trace_id}"
+            )
             return existing_trace_id
 
         # Generate new trace ID
         new_trace_id = str(uuid.uuid4())
-        logger.debug(f"Generated new trace ID: {new_trace_id}")
+        get_logger_with_trace(new_trace_id, logger_name=__name__).debug(
+            f"Generated new trace ID: {new_trace_id}"
+        )
         return new_trace_id
 
-    def _get_correlation_id(self, request: HttpRequest) -> Optional[str]:
+    def _get_correlation_id(self, request: HttpRequest, trace_id: str) -> Optional[str]:
         """
         Retrieve correlation ID from headers if present.
 
         Args:
             request: The HTTP request object
+            trace_id: The trace ID for logging context
 
         Returns:
             Optional[str]: The correlation ID if present, None otherwise
         """
         correlation_id = request.META.get(CORRELATION_ID_HEADER)
         if correlation_id:
-            logger.debug(f"Using correlation ID from header: {correlation_id}")
+            get_logger_with_trace(trace_id, correlation_id=correlation_id, logger_name=__name__).debug(
+                f"Using correlation ID from header: {correlation_id}"
+            )
         return correlation_id
 
     def _get_client_ip(self, request: HttpRequest) -> str:

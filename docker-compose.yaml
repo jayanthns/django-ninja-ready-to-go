@@ -15,7 +15,7 @@ services:
       - .env
     environment:
       - DATABASE_HOST=django_ninja_db
-      - REDIS_HOST_AND_PORT=django_ninja_redis:6379
+      - REDIS_HOST_AND_PORT=django_ninja_redis_svc:6379
     stdin_open: true
     tty: true
     networks:
@@ -62,6 +62,7 @@ services:
     env_file:
       - .env
     environment:
+      - REDIS_USERNAME=${REDIS_USERNAME}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]

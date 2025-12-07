@@ -15,6 +15,7 @@ This guide provides naming conventions, coding standards, and best practices for
 9. [Testing Naming Conventions](#testing-naming-conventions)
 10. [FAQ](#faq)
 11. [Pydantic & Validation Guide](#pydantic--validation-guide)
+12. [Background Tasks (Celery & Dramatiq)](#background-tasks-celery--dramatiq)
 
 ---
 
@@ -639,6 +640,74 @@ Celery is used for asynchronous task processing. All Celery variables are option
 - **Description**: Name of the Celery task queue.
 - **Example**: `CELERY_QUEUE_NAME=django_ninja_queue`
 
+### Dramatiq Configuration
+
+Dramatiq is an alternative task queue. All Dramatiq variables are optional.
+
+#### `RUN_DRAMATIQ_TOGETHER`
+
+- **Type**: Boolean String
+- **Default**: Empty (disabled)
+- **Options**: `true`, `false`, or empty
+- **Description**: Whether to run Dramatiq workers alongside Django server.
+- **Example**:
+  - Enable: `RUN_DRAMATIQ_TOGETHER=true`
+  - Disable: `RUN_DRAMATIQ_TOGETHER=false`
+
+#### `DRAMATIQ_WORKERS`
+
+- **Type**: Integer
+- **Default**: Empty (uses Dramatiq default)
+- **Description**: Number of Dramatiq worker processes to spawn.
+- **Example**: `DRAMATIQ_WORKERS=4`
+
+#### `DRAMATIQ_WORKER_CONCURRENCY`
+
+- **Type**: Integer
+- **Default**: Empty (uses Dramatiq default)
+- **Description**: Number of concurrent threads/greenlets per worker.
+- **Example**: `DRAMATIQ_WORKER_CONCURRENCY=5`
+
+#### `DRAMATIQ_PREFETCH_MULTIPLIER`
+
+- **Type**: Integer
+- **Default**: Empty (uses Dramatiq default)
+- **Description**: Number of tasks to prefetch per worker.
+- **Example**: `DRAMATIQ_PREFETCH_MULTIPLIER=6`
+
+#### `DRAMATIQ_POOL`
+
+- **Type**: String
+- **Default**: Empty (uses `gevent`)
+- **Options**: `gevent`, `thread`
+- **Description**: Execution pool implementation for Dramatiq workers.
+- **Example**: `DRAMATIQ_POOL=gevent`
+
+#### `DRAMATIQ_QUEUE_NAME`
+
+- **Type**: String
+- **Default**: Empty (uses `default` queue)
+- **Description**: Name of the Dramatiq task queue.
+- **Example**: `DRAMATIQ_QUEUE_NAME=django_ninja_dramatiq_queue`
+
+### Audit Configuration
+
+Configuration for the Audit App's background processing behavior.
+
+#### `AUDIT_USE_CELERY`
+
+- **Type**: Boolean
+- **Default**: `False`
+- **Description**: Enable offloading audit logs to Celery tasks.
+- **Example**: `AUDIT_USE_CELERY=True`
+
+#### `AUDIT_USE_DRAMATIQ`
+
+- **Type**: Boolean
+- **Default**: `False`
+- **Description**: Enable offloading audit logs to Dramatiq tasks.
+- **Example**: `AUDIT_USE_DRAMATIQ=True`
+
 ### Uvicorn Configuration
 
 #### `UVICORN_WORKERS`
@@ -731,6 +800,14 @@ CELERY_PREFETCH_MULTIPLIER=
 CELERY_POOL=
 CELERY_QUEUE_NAME=
 
+# Dramatiq - Optional for local dev
+RUN_DRAMATIQ_TOGETHER=
+DRAMATIQ_WORKERS=
+DRAMATIQ_WORKER_CONCURRENCY=
+DRAMATIQ_PREFETCH_MULTIPLIER=
+DRAMATIQ_POOL=
+DRAMATIQ_QUEUE_NAME=
+
 UVICORN_WORKERS=
 
 USE_SUPERVISOR=
@@ -766,6 +843,13 @@ CELERY_PREFETCH_MULTIPLIER=4
 CELERY_POOL=prefork
 CELERY_QUEUE_NAME=django_ninja_queue
 
+RUN_DRAMATIQ_TOGETHER=true
+DRAMATIQ_WORKERS=2
+DRAMATIQ_WORKER_CONCURRENCY=4
+DRAMATIQ_PREFETCH_MULTIPLIER=4
+DRAMATIQ_POOL=gevent
+DRAMATIQ_QUEUE_NAME=django_ninja_dramatiq_queue
+
 UVICORN_WORKERS=2
 
 USE_SUPERVISOR=false
@@ -798,6 +882,12 @@ CELERY_WORKERS=8
 CELERY_WORKER_CONCURRENCY=10
 CELERY_PREFETCH_MULTIPLIER=2
 CELERY_POOL=prefork
+
+RUN_DRAMATIQ_TOGETHER=false
+DRAMATIQ_WORKERS=8
+DRAMATIQ_WORKER_CONCURRENCY=10
+DRAMATIQ_PREFETCH_MULTIPLIER=2
+DRAMATIQ_POOL=gevent
 CELERY_QUEUE_NAME=prod_queue
 
 UVICORN_WORKERS=9  # (2 × 4 cores) + 1
@@ -2342,6 +2432,102 @@ These tasks use the `make` commands defined in the `Makefile` to stream logs dir
 ## Pydantic & Validation Guide
 
 For comprehensive guidelines on writing Pydantic models, using validators (v2), and integrating with Django Ninja, please refer to the dedicated [Pydantic & Validation Guide](PYDANTIC_GUIDE.md).
+
+---
+
+---
+
+## Background Tasks (Celery & Dramatiq)
+
+This project supports both **Celery** and **Dramatiq** for asynchronous task processing. The setup is designed to be flexible, allowing you to use either or both without hard dependencies.
+
+### Flexible Configuration
+
+The configuration is handled in `main/settings/cache.py` and respects environment variables defined in your `.env` file.
+
+#### Celery
+
+To configure Celery, set the following in your `.env`:
+
+```bash
+RUN_CELERY_TOGETHER=true
+CELERY_WORKERS=2
+CELERY_WORKER_CONCURRENCY=2
+CELERY_PREFETCH_MULTIPLIER=2
+CELERY_POOL=gevent  # Recommended for I/O bound tasks
+CELERY_QUEUE_NAME="django_ninja_ready_to_go_queue"
+```
+
+#### Dramatiq
+
+To configure Dramatiq, set the following in your `.env`:
+
+```bash
+RUN_DRAMATIQ_TOGETHER=true
+DRAMATIQ_WORKERS=2
+DRAMATIQ_WORKER_CONCURRENCY=2
+DRAMATIQ_PREFETCH_MULTIPLIER=2
+DRAMATIQ_POOL=gevent
+DRAMATIQ_QUEUE_NAME="django_ninja_dramatiq_queue"
+```
+
+### Running Workers Locally
+
+We provide convenient `Makefile` commands to run workers locally. These commands automatically pick up your configuration from the `.env` file.
+
+**Run Celery Worker:**
+
+```bash
+make celery
+```
+
+**Run Dramatiq Worker:**
+
+```bash
+make dramatiq
+```
+
+### Dramatiq Implementation Details
+
+Since `django-dramatiq` is not used to avoid hard dependencies, we use a custom entry point and middleware:
+
+1. **Entry Point**: `main/dramatiq.py` handles Django setup and task discovery.
+2. **Middleware**: `common/dramatiq_middleware.py` ensures Django database connections are closed after each task to prevent connection leaks.
+3. **Broker**: The broker is configured in `main/settings/cache.py` and exposed in `main/dramatiq.py`.
+
+### Testing Background Tasks
+
+We recommend using a cache-based approach for tracking task status, rather than relying on the backend's result storage directly. This provides a consistent way to track status across different task queues (Celery/Dramatiq).
+
+**Recommended Pattern:**
+
+1. **Generate a Trace ID**: Create a unique ID (e.g., UUID) before triggering the task.
+2. **Set Initial Status**: Set the status in the cache (e.g., `QUEUED`) using the trace ID.
+3. **Pass Trace ID**: Pass the trace ID as an argument to the task.
+4. **Update Status in Task**:
+    - On start: Update cache to `RUNNING`.
+    - On success: Update cache to `SUCCESS` with result.
+    - On failure: Update cache to `FAILURE` with error.
+5. **Check Status**: Use an API endpoint to retrieve the status from the cache using the trace ID.
+
+**Example (Celery):**
+
+```python
+# View
+trace_id = str(uuid.uuid4())
+cache.set(f"task_status:{trace_id}", "QUEUED", timeout=300)
+ping_celery_task.delay(duration=5, trace_id=trace_id)
+return {"task_id": trace_id}
+
+# Task
+@shared_task(bind=True)
+def ping_celery_task(self, duration: int = 0, trace_id: str = None):
+    if trace_id:
+        cache.set(f"task_status:{trace_id}", "RUNNING", timeout=300)
+    # ... logic ...
+    if trace_id:
+        cache.set(f"task_status:{trace_id}", {"status": "SUCCESS", "result": result}, timeout=300)
+```
 
 ---
 
