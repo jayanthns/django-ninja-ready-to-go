@@ -146,3 +146,9 @@ DATABASE_PORT = os.getenv("DB_PORT", "django.db.sqlite3")
 
 # TMP Path
 PROJECT_TEMP_PATH = ROOT_DIR.joinpath("tmp")
+
+# Celery related
+AUDIT_USE_CELERY = os.getenv("AUDIT_USE_CELERY", False)
+
+# Dramatiq related
+AUDIT_USE_DRAMATIQ = os.getenv("AUDIT_USE_DRAMATIQ", False)

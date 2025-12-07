@@ -690,6 +690,24 @@ Dramatiq is an alternative task queue. All Dramatiq variables are optional.
 - **Description**: Name of the Dramatiq task queue.
 - **Example**: `DRAMATIQ_QUEUE_NAME=django_ninja_dramatiq_queue`
 
+### Audit Configuration
+
+Configuration for the Audit App's background processing behavior.
+
+#### `AUDIT_USE_CELERY`
+
+- **Type**: Boolean
+- **Default**: `False`
+- **Description**: Enable offloading audit logs to Celery tasks.
+- **Example**: `AUDIT_USE_CELERY=True`
+
+#### `AUDIT_USE_DRAMATIQ`
+
+- **Type**: Boolean
+- **Default**: `False`
+- **Description**: Enable offloading audit logs to Dramatiq tasks.
+- **Example**: `AUDIT_USE_DRAMATIQ=True`
+
 ### Uvicorn Configuration
 
 #### `UVICORN_WORKERS`
