@@ -7,8 +7,6 @@ from ninja import Router, Schema
 
 from apps.ping_app.v1.tasks import ping_celery_task, ping_dramatiq_task
 
-logger = logging.getLogger(__name__)
-
 router = Router()
 
 
@@ -28,9 +26,15 @@ def trigger_celery_ping(request, payload: TaskTriggerSchema):
     """Trigger a Celery ping task."""
     trace_id = request.trace_id
     task_id = str(trace_id)
-    logger.info(
-        f"Triggering Celery task | trace_id={trace_id} | task_id={task_id} | duration={payload.duration}"
-    )
+
+    # Use request.logger if available, otherwise get one
+    log = getattr(request, "logger", None)
+    if not log:
+        from common.logger_helper import get_request_logger
+
+        log = get_request_logger() or logging.getLogger(__name__)  # no-check-logger
+
+    log.info(f"Triggering Celery task | task_id={task_id} | duration={payload.duration}")
     cache.set(f"task_status:{task_id}", "QUEUED", timeout=300)
 
     # Pass task_id to the task
@@ -45,9 +49,14 @@ def get_celery_status(request, task_id: str):
     """Get the status of a Celery ping task."""
     trace_id = request.trace_id
     status_data = cache.get(f"task_status:{task_id}")
-    logger.info(
-        f"Checking Celery task status | trace_id={trace_id} | task_id={task_id} | status={status_data}"
-    )
+
+    log = getattr(request, "logger", None)
+    if not log:
+        from common.logger_helper import get_request_logger
+
+        log = get_request_logger() or logging.getLogger(__name__)  # no-check-logger
+
+    log.info(f"Checking Celery task status | task_id={task_id} | status={status_data}")
 
     response_data = {
         "task_id": task_id,
@@ -71,9 +80,14 @@ def trigger_dramatiq_ping(request, payload: TaskTriggerSchema):
     """Trigger a Dramatiq ping task."""
     trace_id = request.trace_id
     task_id = str(uuid.uuid4())
-    logger.info(
-        f"Triggering Dramatiq task | trace_id={trace_id} | task_id={task_id} | duration={payload.duration}"
-    )
+
+    log = getattr(request, "logger", None)
+    if not log:
+        from common.logger_helper import get_request_logger
+
+        log = get_request_logger() or logging.getLogger(__name__)  # no-check-logger
+
+    log.info(f"Triggering Dramatiq task | task_id={task_id} | duration={payload.duration}")
     cache.set(f"task_status:{task_id}", "QUEUED", timeout=300)
 
     # Pass task_id to the task
@@ -87,9 +101,14 @@ def get_dramatiq_status(request, task_id: str):
     """Get the status of a Dramatiq ping task."""
     trace_id = request.trace_id
     status_data = cache.get(f"task_status:{task_id}")
-    logger.info(
-        f"Checking Dramatiq task status | trace_id={trace_id} | task_id={task_id} | status={status_data}"
-    )
+
+    log = getattr(request, "logger", None)
+    if not log:
+        from common.logger_helper import get_request_logger
+
+        log = get_request_logger() or logging.getLogger(__name__)  # no-check-logger
+
+    log.info(f"Checking Dramatiq task status | task_id={task_id} | status={status_data}")
 
     response_data = {
         "task_id": task_id,

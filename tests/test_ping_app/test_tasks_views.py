@@ -154,3 +154,35 @@ class TestTasksViews:
         assert response["task_id"] == task_id
         assert response["status"] == "FAILURE"
         assert response["result"] == error_msg
+
+    @patch("common.logger_helper.get_request_logger")
+    def test_logger_fallback(self, mock_get_logger, mock_cache):
+        # Create a request without a logger attribute
+        req = MagicMock(spec=[])
+        req.trace_id = "test-trace-id"
+        # Ensure getattr(req, "logger", None) returns None
+
+        # Test trigger_celery_ping fallback
+        payload = TaskTriggerSchema(duration=1)
+        with patch("apps.ping_app.v1.views.tasks_views.ping_celery_task.delay"):
+            trigger_celery_ping(req, payload)
+        mock_get_logger.assert_called()
+
+        mock_get_logger.reset_mock()
+
+        # Test get_celery_status fallback
+        get_celery_status(req, "task-id")
+        mock_get_logger.assert_called()
+
+        mock_get_logger.reset_mock()
+
+        # Test trigger_dramatiq_ping fallback
+        with patch("apps.ping_app.v1.views.tasks_views.ping_dramatiq_task.send"):
+            trigger_dramatiq_ping(req, payload)
+        mock_get_logger.assert_called()
+
+        mock_get_logger.reset_mock()
+
+        # Test get_dramatiq_status fallback
+        get_dramatiq_status(req, "task-id")
+        mock_get_logger.assert_called()

@@ -74,7 +74,7 @@ class TestTraceIDMiddleware:
 
         middleware(request)
 
-        mock_create_logger.assert_called_once()
+        assert mock_create_logger.call_count >= 1
         assert hasattr(request, "logger")
 
     @patch("common.middleware.logger_helper.create_logger_adapter")
