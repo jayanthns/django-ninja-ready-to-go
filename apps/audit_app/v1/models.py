@@ -12,6 +12,8 @@ class AuditLog(BaseModel):
     business events, ensuring accountability, compliance, and distributed tracing.
     """
 
+    AUDIT_ENABLED = False  # Ignor the audit for the self table
+
     # --- TRACING & CORRELATION FIELDS ---
     trace_id = models.UUIDField(
         default=uuid.uuid4,

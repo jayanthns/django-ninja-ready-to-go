@@ -60,7 +60,7 @@ class TestAuditService:
         await AuditService.log_create(
             instance=animal,
             actor_id="999",
-            changes={"name": "AuditDog"},
+            changes={"name": {"old": None, "new": "AuditDog"}},
             trace_id="trace_id",
             correlation_id="correlation_id",
             session_key="session_key",
@@ -72,7 +72,7 @@ class TestAuditService:
             target_model="apps_animals_app_v1.animal",
             target_object_id="1",
             trace_id="trace_id",
-            changes={"name": "AuditDog"},
+            changes={"name": {"old": None, "new": "AuditDog"}},
             actor_id="999",
             actor_email=None,
             correlation_id="correlation_id",
@@ -92,7 +92,7 @@ class TestAuditService:
 
         await AuditService.log_update(
             instance=animal,
-            changes={"age": {"before": 2, "after": 3}},
+            changes={"age": {"old": 2, "new": 3}},
             trace_id="trace_id",
             correlation_id="correlation_id",
             session_key="session_key",
@@ -103,7 +103,7 @@ class TestAuditService:
             target_model="apps_animals_app_v1.animal",
             target_object_id="2",
             trace_id="trace_id",
-            changes={"age": {"before": 2, "after": 3}},
+            changes={"age": {"old": 2, "new": 3}},
             actor_id=None,
             actor_email=None,
             correlation_id="correlation_id",
