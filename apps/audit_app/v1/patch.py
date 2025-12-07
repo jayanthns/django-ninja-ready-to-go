@@ -1,4 +1,4 @@
-from .context import get_context
+from .context import get_normalized_context
 from .services import AuditService
 
 
@@ -17,7 +17,7 @@ async def audited_asave(self, *args, **kwargs):
     if not getattr(self, "AUDIT_ENABLED", False):
         return result
 
-    ctx = get_context()
+    ctx = get_normalized_context()
 
     if is_new:
         # CREATE diff
@@ -68,7 +68,7 @@ async def audited_adelete(self, *args, **kwargs):
     if not getattr(self, "AUDIT_ENABLED", False):
         return result
 
-    ctx = get_context()
+    ctx = get_normalized_context()
 
     await AuditService.log_delete(
         instance=self,
@@ -92,7 +92,7 @@ async def audited_acreate(self, **kwargs):
     if not getattr(model, "AUDIT_ENABLED", False):
         return instance
 
-    ctx = get_context()
+    ctx = get_normalized_context()
 
     changes = {f.name: {"old": None, "new": getattr(instance, f.name)} for f in model._meta.fields}
 
@@ -131,7 +131,7 @@ async def audited_aupdate(self, **kwargs):
     # after snapshot
     after = [obj async for obj in self._clone().all()]
 
-    ctx = get_context()
+    ctx = get_normalized_context()
 
     for old_obj, new_obj in zip(before, after):
         diff = {}
@@ -175,7 +175,7 @@ async def audited_adelete_queryset(self, **kwargs):
     if deleted_count == 0:
         return deleted_count, details
 
-    ctx = get_context()
+    ctx = get_normalized_context()
 
     # CREATE DELETE AUDIT ENTRY FOR EACH ROW
     for inst in before_instances:

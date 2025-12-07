@@ -16,7 +16,7 @@ class TestPatch:
 
     @pytest.fixture(autouse=True)
     def setup_mocks(self):
-        self.mock_get_context = patch("apps.audit_app.v1.patch.get_context").start()
+        self.get_normalized_context = patch("apps.audit_app.v1.patch.get_normalized_context").start()
         self.mock_audit_service = patch("apps.audit_app.v1.patch.AuditService").start()
 
         self.mock_ctx = {
@@ -28,7 +28,7 @@ class TestPatch:
             "ip_address": "127.0.0.1",
             "user_agent": "TestAgent",
         }
-        self.mock_get_context.return_value = self.mock_ctx
+        self.get_normalized_context.return_value = self.mock_ctx
 
         # Configure AuditService async mocks
         self.mock_audit_service.log_create = AsyncMock()

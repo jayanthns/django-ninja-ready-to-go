@@ -21,3 +21,25 @@ def set_request_context_from_request(request):
 
 def get_context():
     return _request_context.get() or {}
+
+
+def get_normalized_context():
+    """
+    Returns safe audit context.
+    If called outside a request (shell, Celery worker), provides system defaults.
+    """
+    ctx = get_context() or {}
+
+    # No request context? → System-level operation
+    if not ctx.get("trace_id") and not ctx.get("actor_id"):
+        return {
+            "actor_id": "system",
+            "actor_email": None,
+            "trace_id": "system-trace",
+            "correlation_id": None,
+            "session_key": None,
+            "ip_address": None,
+            "user_agent": "shell",
+        }
+
+    return ctx

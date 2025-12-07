@@ -1,6 +1,8 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-from apps.audit_app.v1.context import get_context, set_request_context_from_request
+import pytest
+
+from apps.audit_app.v1.context import get_context, get_normalized_context, set_request_context_from_request
 
 
 def test_set_request_context_from_request_populates_context():
@@ -55,3 +57,33 @@ def test_context_is_empty_when_no_data_set():
     """
     ctx = get_context()
     assert isinstance(ctx, dict)
+
+
+@pytest.mark.parametrize(
+    "name,context_input,expected_system",
+    [
+        ("both_missing", {}, True),
+        ("only_trace_id_missing", {"actor_id": "123", "trace_id": None}, False),
+        ("only_actor_id_missing", {"actor_id": None, "trace_id": "trace-1"}, False),
+        ("both_present", {"actor_id": "123", "trace_id": "trace-1"}, False),
+    ],
+)
+@patch("apps.audit_app.v1.context.get_context")
+def test_get_normalized_context(mock_get_context, name, context_input, expected_system):
+    mock_get_context.return_value = context_input
+
+    ctx = get_normalized_context()
+
+    if expected_system:
+        # system defaults MUST be used
+        assert ctx["actor_id"] == "system"
+        assert ctx["actor_email"] is None
+        assert ctx["trace_id"] == "system-trace"
+        assert ctx["correlation_id"] is None
+        assert ctx["session_key"] is None
+        assert ctx["ip_address"] is None
+        assert ctx["user_agent"] == "shell"
+    else:
+        # real context must be returned untouched
+        assert ctx["actor_id"] == context_input.get("actor_id")
+        assert ctx["trace_id"] == context_input.get("trace_id")
