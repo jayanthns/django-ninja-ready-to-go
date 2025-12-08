@@ -56,7 +56,7 @@ class TraceIDMiddleware:
 
         # Log request with trace ID using the request logger
         request.logger.info(
-            f"Request started - {request.method} {request.path}",
+            f"[1] Request started - {request.method} {request.path}",
             extra={
                 "user_agent": request.META.get("HTTP_USER_AGENT", ""),
                 "remote_addr": self._get_client_ip(request),
@@ -74,7 +74,7 @@ class TraceIDMiddleware:
 
             # Log response with trace ID
             request.logger.info(
-                f"Request completed - {request.method} {request.path} - Status: {response.status_code}",
+                f"[2] Request completed - {request.method} {request.path} - Status: {response.status_code}",
                 extra={"status_code": response.status_code},
             )
 
@@ -83,7 +83,7 @@ class TraceIDMiddleware:
         except Exception as e:
             # Log error with trace ID
             request.logger.exception(
-                f"Request failed - {request.method} {request.path}", extra={"error": str(e)}
+                f"[3] Request failed - {request.method} {request.path}", extra={"error": str(e)}
             )
             raise
         finally:

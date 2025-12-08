@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock
 
-import pytest
-
 from apps.audit_app.v1.utils import compute_create_diff, compute_delete_diff, compute_update_diff
 
 

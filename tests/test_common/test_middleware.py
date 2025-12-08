@@ -45,6 +45,24 @@ class TestTraceIDMiddleware:
         # Logger cleanup called
         mock_clear_logger.assert_called_once()
 
+        # Verify call arguments to ensure correct log message
+        # We need to access the request.logger mock which was created by mocked_create_logger
+        # But wait, create_logger_adapter returns the adapter.
+        # The code does request.logger = logger_helper.create_logger_adapter(...)
+        # So mocks are:
+        # mock_create_logger -> returns Adapter Mock
+        # request.logger -> Adapter Mock
+
+        mock_adapter = mock_create_logger.return_value
+
+        # [1] Request started
+        args, _ = mock_adapter.info.call_args_list[0]
+        assert "[1] Request started" in args[0]
+
+        # [2] Request completed
+        args, _ = mock_adapter.info.call_args_list[1]
+        assert "[2] Request completed" in args[0]
+
     @patch("common.middleware.logger_helper.create_logger_adapter")
     def test_uses_existing_trace_id(self, mock_create_logger):
         existing_trace_id = "existing-trace-id"
@@ -90,6 +108,16 @@ class TestTraceIDMiddleware:
             middleware(request)
 
         mock_clear_logger.assert_called_once()
+
+        mock_adapter = mock_create_logger.return_value
+        # [1] Request started
+        args, _ = mock_adapter.info.call_args_list[0]
+        assert "[1] Request started" in args[0]
+
+        # [3] Request failed
+        mock_adapter.exception.assert_called_once()
+        args, _ = mock_adapter.exception.call_args
+        assert "[3] Request failed" in args[0]
 
     def test_client_ip_forwarded(self):
         request = self._build_request(meta={"HTTP_X_FORWARDED_FOR": "10.1.2.3, 8.8.8.8"})

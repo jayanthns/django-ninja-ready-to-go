@@ -9,11 +9,14 @@ from common.enums import AuditAction
 
 @pytest.mark.asyncio
 class TestAuditService:
+    @patch("apps.audit_app.v1.services.get_request_logger")
     @patch("apps.audit_app.v1.services.normalize_value")
     @patch("apps.audit_app.v1.services.AuditLog.objects.acreate", new_callable=AsyncMock)
-    async def test_log_event_generic(self, mock_acreate, mock_normalize):
+    async def test_log_event_generic(self, mock_acreate, mock_normalize, mock_get_logger):
         """Test generic event logging with mock."""
         mock_normalize.side_effect = lambda x: x
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
         mock_log = MagicMock()
         mock_log.action = AuditAction.LOGIN
         mock_log.ip_address = "127.0.0.1"
@@ -39,6 +42,15 @@ class TestAuditService:
         # normalize_value is called for each field
         assert mock_normalize.call_count >= 1
 
+        # Verify Logs
+        assert mock_logger.info.call_count >= 1
+        # log_event calls log_async, which has Entry [1], Instance Resolved [2], Payload Built [3], Written [4], Exiting [5]
+        # Since logic calls log_event(alias to log_async), we expect these logs.
+        mock_logger.info.assert_any_call(
+            f"[1] Entering AuditService.log_async for action: {AuditAction.LOGIN}"
+        )
+        mock_logger.info.assert_any_call("[5] Exiting AuditService.log_async")
+
         mock_acreate.assert_called_once_with(
             action=AuditAction.LOGIN,
             target_model="auth.User",
@@ -54,9 +66,12 @@ class TestAuditService:
             user_agent=None,
         )
 
+    @patch("apps.audit_app.v1.services.get_request_logger")
     @patch("apps.audit_app.v1.services.normalize_value")
     @patch("apps.audit_app.v1.services.AuditLog.objects.acreate", new_callable=AsyncMock)
-    async def test_log_create_helper(self, mock_acreate, mock_normalize):
+    async def test_log_create_helper(self, mock_acreate, mock_normalize, mock_get_logger):
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
         mock_normalize.side_effect = lambda x: x
         animal = Animal(name="AuditDog", species="Dog", age=3)
         animal.id = 1
@@ -73,6 +88,16 @@ class TestAuditService:
             session_key="session_key",
             object_representation="AuditDog",
         )
+
+        # Verify Logs
+        # log_create: [1] Entering...
+        # log_async: [1]... [5]...
+        # log_create: [2] Exiting...
+        mock_logger.info.assert_any_call("[1] Entering AuditService.log_create")
+        mock_logger.info.assert_any_call(
+            f"[1] Entering AuditService.log_async for action: {AuditAction.CREATE}"
+        )
+        mock_logger.info.assert_any_call("[2] Exiting AuditService.log_create")
 
         mock_acreate.assert_called_once_with(
             action=AuditAction.CREATE,
@@ -114,9 +139,12 @@ class TestAuditService:
         # Should still default object_representation if not override
         assert kwargs["object_representation"] == str(animal)
 
+    @patch("apps.audit_app.v1.services.get_request_logger")
     @patch("apps.audit_app.v1.services.normalize_value")
     @patch("apps.audit_app.v1.services.AuditLog.objects.acreate", new_callable=AsyncMock)
-    async def test_log_update_helper(self, mock_acreate, mock_normalize):
+    async def test_log_update_helper(self, mock_acreate, mock_normalize, mock_get_logger):
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
         mock_normalize.side_effect = lambda x: x
         animal = Animal(name="AuditCat", species="Cat", age=2)
         animal.id = 2
@@ -131,6 +159,12 @@ class TestAuditService:
             correlation_id="correlation_id",
             session_key="session_key",
         )
+
+        mock_logger.info.assert_any_call("[1] Entering AuditService.log_update")
+        mock_logger.info.assert_any_call(
+            f"[1] Entering AuditService.log_async for action: {AuditAction.UPDATE}"
+        )
+        mock_logger.info.assert_any_call("[2] Exiting AuditService.log_update")
 
         mock_acreate.assert_called_once_with(
             action=AuditAction.UPDATE,
@@ -147,9 +181,12 @@ class TestAuditService:
             user_agent=None,
         )
 
+    @patch("apps.audit_app.v1.services.get_request_logger")
     @patch("apps.audit_app.v1.services.normalize_value")
     @patch("apps.audit_app.v1.services.AuditLog.objects.acreate", new_callable=AsyncMock)
-    async def test_log_delete_helper(self, mock_acreate, mock_normalize):
+    async def test_log_delete_helper(self, mock_acreate, mock_normalize, mock_get_logger):
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
         mock_normalize.side_effect = lambda x: x
         animal = Animal(name="AuditBird", species="Bird", age=1)
         animal.id = 3
@@ -163,6 +200,12 @@ class TestAuditService:
             correlation_id="correlation_id",
             session_key="session_key",
         )
+
+        mock_logger.info.assert_any_call("[1] Entering AuditService.log_delete")
+        mock_logger.info.assert_any_call(
+            f"[1] Entering AuditService.log_async for action: {AuditAction.DELETE}"
+        )
+        mock_logger.info.assert_any_call("[2] Exiting AuditService.log_delete")
 
         mock_acreate.assert_called_once_with(
             action=AuditAction.DELETE,
@@ -179,9 +222,12 @@ class TestAuditService:
             user_agent=None,
         )
 
+    @patch("apps.audit_app.v1.services.get_request_logger")
     @patch("apps.audit_app.v1.services.normalize_value")
     @patch("apps.audit_app.v1.services.AuditLog.objects.create")
-    def test_log_create_sync(self, mock_create, mock_normalize):
+    def test_log_create_sync(self, mock_create, mock_normalize, mock_get_logger):
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
         mock_normalize.side_effect = lambda x: x
         animal = Animal(name="SyncDog", species="Dog", age=4)
         animal.id = 4
@@ -194,6 +240,12 @@ class TestAuditService:
             trace_id="trace_id",
             object_representation="SyncDog",
         )
+
+        mock_logger.info.assert_any_call("[1] Entering AuditService.log_create_sync")
+        mock_logger.info.assert_any_call(
+            f"[1] Entering AuditService.log_sync for action: {AuditAction.CREATE}"
+        )
+        mock_logger.info.assert_any_call("[2] Exiting AuditService.log_create_sync")
 
         mock_create.assert_called_once_with(
             action=AuditAction.CREATE,
@@ -210,9 +262,12 @@ class TestAuditService:
             user_agent=None,
         )
 
+    @patch("apps.audit_app.v1.services.get_request_logger")
     @patch("apps.audit_app.v1.services.normalize_value")
     @patch("apps.audit_app.v1.services.AuditLog.objects.create")
-    def test_log_update_sync(self, mock_create, mock_normalize):
+    def test_log_update_sync(self, mock_create, mock_normalize, mock_get_logger):
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
         mock_normalize.side_effect = lambda x: x
         animal = Animal(name="SyncCat", species="Cat", age=5)
         animal.id = 5
@@ -224,6 +279,12 @@ class TestAuditService:
             trace_id="trace_id",
             object_representation="SyncCat",
         )
+
+        mock_logger.info.assert_any_call("[1] Entering AuditService.log_update_sync")
+        mock_logger.info.assert_any_call(
+            f"[1] Entering AuditService.log_sync for action: {AuditAction.UPDATE}"
+        )
+        mock_logger.info.assert_any_call("[2] Exiting AuditService.log_update_sync")
 
         mock_create.assert_called_once_with(
             action=AuditAction.UPDATE,
@@ -240,9 +301,12 @@ class TestAuditService:
             user_agent=None,
         )
 
+    @patch("apps.audit_app.v1.services.get_request_logger")
     @patch("apps.audit_app.v1.services.normalize_value")
     @patch("apps.audit_app.v1.services.AuditLog.objects.create")
-    def test_log_delete_sync(self, mock_create, mock_normalize):
+    def test_log_delete_sync(self, mock_create, mock_normalize, mock_get_logger):
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
         mock_normalize.side_effect = lambda x: x
         animal = Animal(name="SyncBird", species="Bird", age=6)
         animal.id = 6
@@ -253,6 +317,12 @@ class TestAuditService:
             trace_id="trace_id",
             object_representation="SyncBird",
         )
+
+        mock_logger.info.assert_any_call("[1] Entering AuditService.log_delete_sync")
+        mock_logger.info.assert_any_call(
+            f"[1] Entering AuditService.log_sync for action: {AuditAction.DELETE}"
+        )
+        mock_logger.info.assert_any_call("[2] Exiting AuditService.log_delete_sync")
 
         mock_create.assert_called_once_with(
             action=AuditAction.DELETE,
@@ -268,3 +338,20 @@ class TestAuditService:
             ip_address=None,
             user_agent=None,
         )
+
+
+class TestAuditServiceNoLogger:
+    @pytest.mark.asyncio
+    async def test_all_async_methods_no_logger(self):
+        with patch("apps.audit_app.v1.services.get_request_logger", return_value=None):
+            with patch("apps.audit_app.v1.services.AuditLog.objects.acreate", new_callable=AsyncMock):
+                await AuditService.log_create(target_model="m", target_object_id="1")
+                await AuditService.log_update(target_model="m", target_object_id="1")
+                await AuditService.log_delete(target_model="m", target_object_id="1")
+
+    def test_all_sync_methods_no_logger(self):
+        with patch("apps.audit_app.v1.services.get_request_logger", return_value=None):
+            with patch("apps.audit_app.v1.services.AuditLog.objects.create"):
+                AuditService.log_create_sync(target_model="m", target_object_id="1")
+                AuditService.log_update_sync(target_model="m", target_object_id="1")
+                AuditService.log_delete_sync(target_model="m", target_object_id="1")

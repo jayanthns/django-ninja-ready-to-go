@@ -32,7 +32,7 @@ async def process_animal_data(trace_id: str, correlation_id: Optional[str] = Non
     )
 
     # Log task start
-    task_logger.info("Starting animal data processing")
+    task_logger.info("[1] Starting animal data processing")
 
     try:
         # Simulate some processing
@@ -40,24 +40,24 @@ async def process_animal_data(trace_id: str, correlation_id: Optional[str] = Non
 
         # Update context during processing
         task_logger.update_context(processing_step="validation")
-        task_logger.info("Validating animal data")
+        task_logger.info("[2] Validating animal data")
 
         await asyncio.sleep(0.1)
 
         # Update context again
         task_logger.update_context(processing_step="saving")
-        task_logger.info("Saving animal data to database")
+        task_logger.info("[3] Saving animal data to database")
 
         await asyncio.sleep(0.1)
 
         # Log completion
-        task_logger.info("Animal data processing completed successfully")
+        task_logger.info("[4] Animal data processing completed successfully")
 
         return {"status": "success", "processed_data": animal_data}
 
     except Exception as e:
         # Log error with trace context
-        task_logger.exception(f"Failed to process animal data with error: {str(e)}")
+        task_logger.exception(f"[E] Failed to process animal data with error: {str(e)}")
         raise
 
 
@@ -79,20 +79,20 @@ async def send_notification(trace_id: str, correlation_id: Optional[str] = None,
     )
 
     # Log task start
-    task_logger.info(f"Sending notification: {message}")
+    task_logger.info(f"[1] Sending notification: {message}")
 
     try:
         # Simulate sending notification
         await asyncio.sleep(0.05)
 
         # Log success
-        task_logger.info("Notification sent successfully")
+        task_logger.info("[2] Notification sent successfully")
 
         return {"status": "sent", "message": message}
 
     except Exception as e:
         # Log error with trace context
-        task_logger.exception(f"Failed to send notification with error: {str(e)}")
+        task_logger.exception(f"[E] Failed to send notification with error: {str(e)}")
         raise
 
 
@@ -114,7 +114,7 @@ def sync_background_task(trace_id: str, correlation_id: Optional[str] = None, da
         data_id=data.get("id") if data else None,
     )
 
-    task_logger.info("Starting sync background task")
+    task_logger.info("[1] Starting sync background task")
 
     try:
         # Simulate some processing
@@ -123,13 +123,13 @@ def sync_background_task(trace_id: str, correlation_id: Optional[str] = None, da
         time.sleep(0.1)
 
         # Log progress
-        task_logger.info("Sync task processing completed", extra={"status": "completed"})
+        task_logger.info("[2] Sync task processing completed", extra={"status": "completed"})
 
         return {"status": "success", "processed_data": data}
 
     except Exception as e:
         # Log error
-        task_logger.error("Sync background task failed", extra={"error": str(e)})
+        task_logger.error("[E] Sync background task failed", extra={"error": str(e)})
         raise
 
 
