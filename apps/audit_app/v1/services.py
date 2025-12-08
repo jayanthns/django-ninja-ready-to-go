@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 
 from common.enums import AuditAction
+from common.logger_helper import get_request_logger
 from common.utils import normalize_value
 
 from .models import AuditLog
@@ -92,21 +93,54 @@ class AuditService:
 
     @classmethod
     async def log_async(cls, *, action: str, **payload_fields):
+        logger = get_request_logger()
+        if logger:
+            logger.info(f"[1] Entering AuditService.log_async for action: {action}")
+
         payload_fields = cls._resolve_instance(payload_fields)
+        if logger:
+            logger.info("[2] Instance resolved")
+
         payload = build_payload(action=action, **payload_fields)
-        return await cls.write_async(payload)
+        if logger:
+            logger.info("[3] Payload built")
+
+        res = await cls.write_async(payload)
+
+        if logger:
+            logger.info("[4] Audit log written successfully")
+            logger.info("[5] Exiting AuditService.log_async")
+        return res
 
     @classmethod
     async def log_create(cls, **payload_fields):
-        return await cls.log_async(action=AuditAction.CREATE, **payload_fields)
+        logger = get_request_logger()
+        if logger:
+            logger.info("[1] Entering AuditService.log_create")
+        res = await cls.log_async(action=AuditAction.CREATE, **payload_fields)
+        if logger:
+            logger.info("[2] Exiting AuditService.log_create")
+        return res
 
     @classmethod
     async def log_update(cls, **payload_fields):
-        return await cls.log_async(action=AuditAction.UPDATE, **payload_fields)
+        logger = get_request_logger()
+        if logger:
+            logger.info("[1] Entering AuditService.log_update")
+        res = await cls.log_async(action=AuditAction.UPDATE, **payload_fields)
+        if logger:
+            logger.info("[2] Exiting AuditService.log_update")
+        return res
 
     @classmethod
     async def log_delete(cls, **payload_fields):
-        return await cls.log_async(action=AuditAction.DELETE, **payload_fields)
+        logger = get_request_logger()
+        if logger:
+            logger.info("[1] Entering AuditService.log_delete")
+        res = await cls.log_async(action=AuditAction.DELETE, **payload_fields)
+        if logger:
+            logger.info("[2] Exiting AuditService.log_delete")
+        return res
 
     # ------------------------------
     # PUBLIC METHODS (Sync)
@@ -114,21 +148,54 @@ class AuditService:
 
     @classmethod
     def log_sync(cls, *, action: str, **payload_fields):
+        logger = get_request_logger()
+        if logger:
+            logger.info(f"[1] Entering AuditService.log_sync for action: {action}")
+
         payload_fields = cls._resolve_instance(payload_fields)
+        if logger:
+            logger.info("[2] Instance resolved")
+
         payload = build_payload(action=action, **payload_fields)
-        return cls.write_sync(payload)
+        if logger:
+            logger.info("[3] Payload built")
+
+        res = cls.write_sync(payload)
+
+        if logger:
+            logger.info("[4] Audit log written successfully")
+            logger.info("[5] Exiting AuditService.log_sync")
+        return res
 
     @classmethod
     def log_create_sync(cls, **payload_fields):
-        return cls.log_sync(action=AuditAction.CREATE, **payload_fields)
+        logger = get_request_logger()
+        if logger:
+            logger.info("[1] Entering AuditService.log_create_sync")
+        res = cls.log_sync(action=AuditAction.CREATE, **payload_fields)
+        if logger:
+            logger.info("[2] Exiting AuditService.log_create_sync")
+        return res
 
     @classmethod
     def log_update_sync(cls, **payload_fields):
-        return cls.log_sync(action=AuditAction.UPDATE, **payload_fields)
+        logger = get_request_logger()
+        if logger:
+            logger.info("[1] Entering AuditService.log_update_sync")
+        res = cls.log_sync(action=AuditAction.UPDATE, **payload_fields)
+        if logger:
+            logger.info("[2] Exiting AuditService.log_update_sync")
+        return res
 
     @classmethod
     def log_delete_sync(cls, **payload_fields):
-        return cls.log_sync(action=AuditAction.DELETE, **payload_fields)
+        logger = get_request_logger()
+        if logger:
+            logger.info("[1] Entering AuditService.log_delete_sync")
+        res = cls.log_sync(action=AuditAction.DELETE, **payload_fields)
+        if logger:
+            logger.info("[2] Exiting AuditService.log_delete_sync")
+        return res
 
     # Alias for backward compatibility
     log_event = log_async

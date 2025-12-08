@@ -30,120 +30,147 @@ class TestAuditPatcherInternals:
 
     @pytest.mark.asyncio
     async def test_audit_create_async_internals(self):
-        with patch(
-            "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test"}
-        ) as mock_ctx:
-            with patch(
-                "apps.audit_app.v1.patcher.TaskDispatcher.dispatch_create", new=AsyncMock()
-            ) as mock_dispatch:
-                inst = MagicMock()
-                inst._meta.app_label = "app"
-                inst._meta.model_name = "model"
-                inst.pk = "1"
-                changes = {"a": 1}
-                await AuditPatcher.audit_create_async(inst, changes)
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
 
-                mock_ctx.assert_called_once()
-                mock_dispatch.assert_awaited_once()
-                args, kwargs = mock_dispatch.call_args
-                assert kwargs["payload"]["changes"] == changes
+            with patch(
+                "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test"}
+            ) as mock_ctx:
+                with patch(
+                    "apps.audit_app.v1.patcher.TaskDispatcher.dispatch_create", new=AsyncMock()
+                ) as mock_dispatch:
+                    inst = MagicMock()
+                    inst._meta.app_label = "app"
+                    inst._meta.model_name = "model"
+                    inst.pk = "1"
+                    changes = {"a": 1}
+                    await AuditPatcher.audit_create_async(inst, changes)
+
+                    mock_ctx.assert_called_once()
+                    mock_dispatch.assert_awaited_once()
+                    args, kwargs = mock_dispatch.call_args
+                    assert kwargs["payload"]["changes"] == changes
+
+                    mock_logger.info.assert_any_call("[1] Entering AuditPatcher.audit_create_async")
+                    mock_logger.info.assert_any_call("[2] Exiting AuditPatcher.audit_create_async")
 
     @pytest.mark.asyncio
     async def test_audit_update_async_internals(self):
-        with patch(
-            "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test1"}
-        ) as mock_ctx:
-            with patch(
-                "apps.audit_app.v1.patcher.TaskDispatcher.dispatch_update", new=AsyncMock()
-            ) as mock_dispatch:
-                inst = MagicMock()
-                inst._meta.app_label = "app"
-                inst._meta.model_name = "model"
-                inst.pk = "2"
-                changes = {"b": 2}
-                await AuditPatcher.audit_update_async(inst, changes)
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
 
-                mock_ctx.assert_called_once()
-                mock_dispatch.assert_awaited_once()
+            with patch(
+                "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test1"}
+            ) as mock_ctx:
+                with patch(
+                    "apps.audit_app.v1.patcher.TaskDispatcher.dispatch_update", new=AsyncMock()
+                ) as mock_dispatch:
+                    inst = MagicMock()
+                    inst._meta.app_label = "app"
+                    inst._meta.model_name = "model"
+                    inst.pk = "2"
+                    changes = {"b": 2}
+                    await AuditPatcher.audit_update_async(inst, changes)
+
+                    mock_ctx.assert_called_once()
+                    mock_dispatch.assert_awaited_once()
+                    args, kwargs = mock_dispatch.call_args
+                    assert kwargs["payload"]["changes"] == changes
+
+                    mock_logger.info.assert_any_call("[1] Entering AuditPatcher.audit_update_async")
+                    mock_logger.info.assert_any_call("[2] Exiting AuditPatcher.audit_update_async")
 
     @pytest.mark.asyncio
     async def test_audit_delete_async_internals(self):
-        with patch(
-            "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test2"}
-        ) as mock_ctx:
-            with patch(
-                "apps.audit_app.v1.patcher.TaskDispatcher.dispatch_delete", new=AsyncMock()
-            ) as mock_dispatch:
-                inst = MagicMock()
-                inst._meta.app_label = "app"
-                inst._meta.model_name = "model"
-                inst.pk = "3"
-                changes = {"c": 3}
-                await AuditPatcher.audit_delete_async(inst, changes)
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
 
-                mock_ctx.assert_called_once()
-                mock_dispatch.assert_awaited_once()
+            with patch(
+                "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test2"}
+            ) as mock_ctx:
+                with patch(
+                    "apps.audit_app.v1.patcher.TaskDispatcher.dispatch_delete", new=AsyncMock()
+                ) as mock_dispatch:
+                    inst = MagicMock()
+                    inst._meta.app_label = "app"
+                    inst._meta.model_name = "model"
+                    inst.pk = "3"
+                    changes = {"c": 3}
+                    await AuditPatcher.audit_delete_async(inst, changes)
+
+                    mock_ctx.assert_called_once()
+                    mock_dispatch.assert_awaited_once()
+
+                    mock_logger.info.assert_any_call("[1] Entering AuditPatcher.audit_delete_async")
+                    mock_logger.info.assert_any_call("[2] Exiting AuditPatcher.audit_delete_async")
 
     def test_audit_create_sync_internals(self):
-        with patch("apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test3"}):
-            with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_create") as mock_dispatch:
-                # async_to_sync wrapper returns a callable, which calls dispatch_create
-                # Wait, async_to_sync(func)(args). Mocking dispatch_create might be tricky if async_to_sync wraps it.
-                # However, usually async_to_sync works on coroutines.
-                # Actually, patcher uses async_to_sync(TaskDispatcher.dispatch_create)(payload=payload)
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
 
-                # We need to mock async_to_sync to just call the function or return a wrapper?
-                # Or just mock dispatch_create if async_to_sync executes it.
-                # async_to_sync expects an awaitable. AsyncMock is awaitable.
+            with patch("apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test3"}):
+                with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_create") as mock_dispatch:
+                    with patch("apps.audit_app.v1.patcher.async_to_sync", side_effect=lambda f: f):
+                        mock_dispatch = MagicMock()
+                        with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_create", mock_dispatch):
+                            inst = MagicMock()
+                            inst._meta.app_label = "app"
+                            inst._meta.model_name = "model"
+                            inst.pk = "4"
+                            changes = {"a": 1}
 
-                # Let's mock async_to_sync to execute immediately for sync tests
-                with patch("apps.audit_app.v1.patcher.async_to_sync", side_effect=lambda f: f):
-                    # But dispatch_create is async. Lambda returns it. Calling it returns coroutine.
-                    # We need side_effect to return a function that 'awaits' it? No, sync test.
+                            AuditPatcher.audit_create_sync(inst, changes)
 
-                    # Better: mock TaskDispatcher.dispatch_create as a regular Mock,
-                    # AND mock async_to_sync to return a function that calls the inner function?
-                    # Since dispatch_create is async, calling it returns a coroutine.
-                    # We probably want to check if dispatch_create was called.
+                            mock_dispatch.assert_called_once()
 
-                    mock_dispatch = MagicMock()
-                    with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_create", mock_dispatch):
+                            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.audit_create_sync")
+                            mock_logger.info.assert_any_call("[2] Exiting AuditPatcher.audit_create_sync")
+
+    def test_audit_update_sync_internals(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+
+            with patch("apps.audit_app.v1.patcher.async_to_sync", side_effect=lambda f: f):
+                with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_update") as mock_dispatch:
+                    with patch(
+                        "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test1"}
+                    ):
                         inst = MagicMock()
                         inst._meta.app_label = "app"
                         inst._meta.model_name = "model"
-                        inst.pk = "4"
-                        changes = {"a": 1}
+                        inst.pk = "5"
+                        changes = {"b": 2}
+                        AuditPatcher.audit_update_sync(inst, changes)
 
-                        AuditPatcher.audit_create_sync(inst, changes)
-
-                        # Since we mocked async_to_sync to (lambda f: f),
-                        # it executes dispatch_create(payload=payload).
-                        # So mock_dispatch should be called.
                         mock_dispatch.assert_called_once()
-
-    def test_audit_update_sync_internals(self):
-        with patch("apps.audit_app.v1.patcher.async_to_sync", side_effect=lambda f: f):
-            with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_update") as mock_dispatch:
-                inst = MagicMock()
-                inst._meta.app_label = "app"
-                inst._meta.model_name = "model"
-                inst.pk = "5"
-                changes = {"b": 2}
-                AuditPatcher.audit_update_sync(inst, changes)
-
-                mock_dispatch.assert_called_once()
+                        mock_logger.info.assert_any_call("[1] Entering AuditPatcher.audit_update_sync")
+                        mock_logger.info.assert_any_call("[2] Exiting AuditPatcher.audit_update_sync")
 
     def test_audit_delete_sync_internals(self):
-        with patch("apps.audit_app.v1.patcher.async_to_sync", side_effect=lambda f: f):
-            with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_delete") as mock_dispatch:
-                inst = MagicMock()
-                inst._meta.app_label = "app"
-                inst._meta.model_name = "model"
-                inst.pk = "6"
-                changes = {"c": 3}
-                AuditPatcher.audit_delete_sync(inst, changes)
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
 
-                mock_dispatch.assert_called_once()
+            with patch("apps.audit_app.v1.patcher.async_to_sync", side_effect=lambda f: f):
+                with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_delete") as mock_dispatch:
+                    with patch(
+                        "apps.audit_app.v1.patcher.get_normalized_context", return_value={"user": "test2"}
+                    ):
+                        inst = MagicMock()
+                        inst._meta.app_label = "app"
+                        inst._meta.model_name = "model"
+                        inst.pk = "6"
+                        changes = {"c": 3}
+                        AuditPatcher.audit_delete_sync(inst, changes)
+
+                        mock_dispatch.assert_called_once()
+                        mock_logger.info.assert_any_call("[1] Entering AuditPatcher.audit_delete_sync")
+                        mock_logger.info.assert_any_call("[2] Exiting AuditPatcher.audit_delete_sync")
 
 
 def make_qs(model):
@@ -162,62 +189,88 @@ def make_qs(model):
 @pytest.mark.asyncio
 class TestAuditPatcherASave:
 
+    @pytest.mark.asyncio
     async def test_asave_create_calls_log_create(self):
-        inst = make_instance(audit_enabled=True)
-        inst.pk = None  # New object
-        inst.__original_asave__ = AsyncMock(return_value="saved")
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=True)
+            inst.pk = None  # New object
+            inst.__original_asave__ = AsyncMock(return_value="saved")
 
-        with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={"x": 1}):
+            with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={"x": 1}):
+                with patch(
+                    "apps.audit_app.v1.patcher.AuditPatcher.audit_create_async", new=AsyncMock()
+                ) as mocked:
+                    result = await AuditPatcher.asave(inst)
+
+            mocked.assert_awaited_once_with(inst, {"x": 1})
+            assert result == "saved"
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.asave")
+            mock_logger.info.assert_any_call("[2] Checking existing instance for asave")
+            mock_logger.info.assert_any_call("[3] Auditing creation in asave")
+            mock_logger.info.assert_any_call("[4] Exiting AuditPatcher.asave")
+
+    async def test_asave_update_calls_log_update(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=True)
+            old_obj = MagicMock()
+            inst.__original_asave__ = AsyncMock(return_value="saved")
+
+            inst.__class__.objects.aget = AsyncMock(return_value=old_obj)
+
+            with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"x": 2}):
+                with patch(
+                    "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
+                ) as mocked:
+                    await AuditPatcher.asave(inst)
+
+            mocked.assert_awaited_once_with(inst, {"x": 2})
+            mock_logger.info.assert_any_call("[3] Auditing update in asave")
+            mock_logger.info.assert_any_call("[4] Exiting AuditPatcher.asave")
+
+    async def test_asave_respects_audit_disabled(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=False)
+            inst.__original_asave__ = AsyncMock(return_value="saved")
+
+            with patch(
+                "apps.audit_app.v1.patcher.AuditPatcher.audit_create_async", new=AsyncMock()
+            ) as mocked_create:
+                with patch(
+                    "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
+                ) as mocked_update:
+                    await AuditPatcher.asave(inst)
+
+            mocked_create.assert_not_called()
+            mocked_update.assert_not_called()
+            mock_logger.info.assert_any_call("[3] Audit disabled for model, exiting asave")
+
+    async def test_asave_recursion_guard(self):
+        """Test that recursion guard works when _audit_in_progress is True."""
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=True)
+            inst._audit_in_progress = True
+            inst.__original_asave__ = AsyncMock(return_value="recurse_saved")
+
             with patch(
                 "apps.audit_app.v1.patcher.AuditPatcher.audit_create_async", new=AsyncMock()
             ) as mocked:
                 result = await AuditPatcher.asave(inst)
 
-        mocked.assert_awaited_once_with(inst, {"x": 1})
-        assert result == "saved"
+            # Should skip audit logic and just call original
+            mocked.assert_not_called()
+            assert result == "recurse_saved"
 
-    async def test_asave_update_calls_log_update(self):
-        inst = make_instance(audit_enabled=True)
-        old_obj = MagicMock()
-        inst.__original_asave__ = AsyncMock(return_value="saved")
-
-        inst.__class__.objects.aget = AsyncMock(return_value=old_obj)
-
-        with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"x": 2}):
-            with patch(
-                "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
-            ) as mocked:
-                await AuditPatcher.asave(inst)
-
-        mocked.assert_awaited_once_with(inst, {"x": 2})
-
-    async def test_asave_respects_audit_disabled(self):
-        inst = make_instance(audit_enabled=False)
-        inst.__original_asave__ = AsyncMock(return_value="saved")
-
-        with patch(
-            "apps.audit_app.v1.patcher.AuditPatcher.audit_create_async", new=AsyncMock()
-        ) as mocked_create:
-            with patch(
-                "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
-            ) as mocked_update:
-                await AuditPatcher.asave(inst)
-
-        mocked_create.assert_not_called()
-        mocked_update.assert_not_called()
-
-    async def test_asave_recursion_guard(self):
-        """Test that recursion guard works when _audit_in_progress is True."""
-        inst = make_instance(audit_enabled=True)
-        inst._audit_in_progress = True
-        inst.__original_asave__ = AsyncMock(return_value="recurse_saved")
-
-        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_async", new=AsyncMock()) as mocked:
-            result = await AuditPatcher.asave(inst)
-
-        # Should skip audit logic and just call original
-        mocked.assert_not_called()
-        assert result == "recurse_saved"
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.asave")
+            mock_logger.info.assert_any_call("[2] Recursion detected in asave, skipping audit")
 
 
 # ============================================================
@@ -229,17 +282,24 @@ class TestAuditPatcherASave:
 class TestAuditPatcherADelete:
 
     async def test_adelete_calls_log_delete(self):
-        inst = make_instance(audit_enabled=True)
-        inst.__original_adelete__ = AsyncMock(return_value="deleted")
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=True)
+            inst.__original_adelete__ = AsyncMock(return_value="deleted")
 
-        with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"y": 9}):
-            with patch(
-                "apps.audit_app.v1.patcher.AuditPatcher.audit_delete_async", new=AsyncMock()
-            ) as mocked:
-                result = await AuditPatcher.adelete(inst)
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"y": 9}):
+                with patch(
+                    "apps.audit_app.v1.patcher.AuditPatcher.audit_delete_async", new=AsyncMock()
+                ) as mocked:
+                    result = await AuditPatcher.adelete(inst)
 
-        mocked.assert_awaited_once_with(inst, {"y": 9})
-        assert result == "deleted"
+            mocked.assert_awaited_once_with(inst, {"y": 9})
+            assert result == "deleted"
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.adelete")
+            mock_logger.info.assert_any_call("[2] Auditing deletion in adelete")
+            mock_logger.info.assert_any_call("[3] Exiting AuditPatcher.adelete")
 
     async def test_adelete_skips_when_audit_disabled(self):
         inst = make_instance(audit_enabled=False)
@@ -265,32 +325,40 @@ class TestAuditPatcherADelete:
 class TestAuditPatcherAUpdate:
 
     async def test_aupdate_calls_log_update(self):
-        fake_model = MagicMock(AUDIT_ENABLED=True)
-        qs = make_qs(fake_model)
-        old_obj = MagicMock()
-        new_obj = MagicMock()
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            fake_model = MagicMock(AUDIT_ENABLED=True)
+            qs = make_qs(fake_model)
+            old_obj = MagicMock()
+            new_obj = MagicMock()
+            new_obj.pk = "22"
 
-        qs.__original_aupdate__ = AsyncMock(return_value=1)
+            qs.__original_aupdate__ = AsyncMock(return_value=1)
 
-        # before + after snapshots
-        async def async_before():
-            yield old_obj
+            # before + after snapshots
+            async def async_before():
+                yield old_obj
 
-        async def async_after():
-            yield new_obj
+            async def async_after():
+                yield new_obj
 
-        qs._clone.side_effect = [qs, qs]
-        qs.all.return_value = qs
-        qs.__aiter__ = lambda *_: async_before()
-        qs.__aiter__ = lambda *_: async_after()
+            qs._clone.side_effect = [qs, qs]
+            qs.all.return_value = qs
+            qs.__aiter__ = lambda *_: async_before()
+            qs.__aiter__ = lambda *_: async_after()
 
-        with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"a": 99}):
-            with patch(
-                "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
-            ) as mocked:
-                await AuditPatcher.aupdate(qs)
+            with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"a": 99}):
+                with patch(
+                    "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
+                ) as mocked:
+                    await AuditPatcher.aupdate(qs)
 
-        mocked.assert_awaited_once_with(new_obj, {"a": 99})
+            mocked.assert_awaited_once_with(new_obj, {"a": 99})
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.aupdate")
+            mock_logger.info.assert_any_call(f"[3] Auditing update for object: {new_obj.pk}")
+            mock_logger.info.assert_any_call("[4] Exiting AuditPatcher.aupdate")
 
     async def test_aupdate_skips_when_audit_disabled(self):
         fake_model = MagicMock(AUDIT_ENABLED=False)
@@ -312,36 +380,46 @@ class TestAuditPatcherAUpdate:
 class TestAuditPatcherADeleteQueryset:
 
     async def test_adelete_queryset_calls_log_delete(self):
-        fake_model = MagicMock(AUDIT_ENABLED=True)
-        qs = make_qs(fake_model)
-        obj = MagicMock()
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            fake_model = MagicMock(AUDIT_ENABLED=True)
+            qs = make_qs(fake_model)
+            obj = MagicMock()
 
-        qs.__original_adelete__ = AsyncMock(return_value=(1, {}))
+            qs.__original_adelete__ = AsyncMock(return_value=(1, {}))
 
-        async def async_iter():
-            yield obj
+            async def async_iter():
+                yield obj
 
-        qs._clone.return_value = qs
-        qs.all.return_value = qs
-        qs.__aiter__ = lambda *_: async_iter()
+            qs._clone.return_value = qs
+            qs.all.return_value = qs
+            qs.__aiter__ = lambda *_: async_iter()
 
-        with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"gone": True}):
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"gone": True}):
+                with patch(
+                    "apps.audit_app.v1.patcher.TaskDispatcher.dispatch_delete", new=AsyncMock()
+                ) as mocked:
+                    await AuditPatcher.adelete_queryset(qs)
+
+            mocked.assert_awaited_once()
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.adelete_queryset")
+            mock_logger.info.assert_any_call("[2] Auditing queryset deletion")
+            mock_logger.info.assert_any_call("[3] Exiting AuditPatcher.adelete_queryset")
+
+    async def test_adelete_queryset_skips_when_audit_disabled(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            fake_model = MagicMock(AUDIT_ENABLED=False)
+            qs = make_qs(fake_model)
+            qs.__original_adelete__ = AsyncMock(return_value=(1, {}))
+
             with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_delete", new=AsyncMock()) as mocked:
                 await AuditPatcher.adelete_queryset(qs)
 
-        # args, kwargs = mocked.call_args
-        # assert kwargs["payload"]["changes"] == {"gone": True}
-        mocked.assert_awaited_once()
-
-    async def test_adelete_queryset_skips_when_audit_disabled(self):
-        fake_model = MagicMock(AUDIT_ENABLED=False)
-        qs = make_qs(fake_model)
-        qs.__original_adelete__ = AsyncMock(return_value=(1, {}))
-
-        with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_delete", new=AsyncMock()) as mocked:
-            await AuditPatcher.adelete_queryset(qs)
-
-        mocked.assert_not_called()
+            mocked.assert_not_called()
 
 
 # ============================================================
@@ -352,148 +430,205 @@ class TestAuditPatcherADeleteQueryset:
 class TestAuditPatcherSyncSave:
 
     def test_sync_save_create(self):
-        inst = make_instance(audit_enabled=True)
-        inst.pk = None  # New object
-        inst.__original_save__ = MagicMock(return_value="saved")
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=True)
+            inst.pk = None  # New object
+            inst.__original_save__ = MagicMock(return_value="saved")
 
-        with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={"x": 1}):
-            with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync") as mocked:
-                result = AuditPatcher.save(inst)
+            with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={"x": 1}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync") as mocked:
+                    result = AuditPatcher.save(inst)
 
-        mocked.assert_called_once_with(inst, {"x": 1})
-        assert result == "saved"
+            mocked.assert_called_once_with(inst, {"x": 1})
+            assert result == "saved"
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.save")
+            mock_logger.info.assert_any_call("[2] Checking existing instance for save")
+            mock_logger.info.assert_any_call("[3] Auditing creation in save")
+            mock_logger.info.assert_any_call("[4] Exiting AuditPatcher.save")
 
     def test_sync_save_update(self):
-        inst = make_instance(audit_enabled=True)
-        old_obj = MagicMock()
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=True)
+            old_obj = MagicMock()
 
-        inst.__original_save__ = MagicMock(return_value="saved")
-        inst.__class__.objects.get = MagicMock(return_value=old_obj)
+            inst.__original_save__ = MagicMock(return_value="saved")
+            inst.__class__.objects.get = MagicMock(return_value=old_obj)
 
-        with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"u": 44}):
-            with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync") as mocked:
-                AuditPatcher.save(inst)
+            with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"u": 44}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync") as mocked:
+                    AuditPatcher.save(inst)
 
-        mocked.assert_called_once_with(inst, {"u": 44})
+            mocked.assert_called_once_with(inst, {"u": 44})
+            mock_logger.info.assert_any_call("[3] Auditing update in save")
+            mock_logger.info.assert_any_call("[4] Exiting AuditPatcher.save")
 
     def test_sync_save_skips_when_disabled(self):
-        inst = make_instance(audit_enabled=False)
-        inst.__original_save__ = MagicMock()
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=False)
+            inst.__original_save__ = MagicMock()
 
-        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync") as mocked:
-            AuditPatcher.save(inst)
+            with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync") as mocked:
+                AuditPatcher.save(inst)
 
-        mocked.assert_not_called()
+            mocked.assert_not_called()
+            mock_logger.info.assert_any_call("[3] Audit disabled for model, exiting save")
 
     def test_sync_save_does_not_exist(self):
         # Case where pk exists but object is not found in DB (treated as new)
-        inst = make_instance(audit_enabled=True)
-        # inst.pk is "123" by default from make_instance
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=True)
+            # inst.pk is "123" by default from make_instance
 
-        inst.__original_save__ = MagicMock(return_value="saved")
-        # Mock DoesNotExist exception
-        inst.__class__.DoesNotExist = Exception
-        inst.__class__.objects.get.side_effect = inst.__class__.DoesNotExist
+            inst.__original_save__ = MagicMock(return_value="saved")
+            # Mock DoesNotExist exception
+            inst.__class__.DoesNotExist = Exception
+            inst.__class__.objects.get.side_effect = inst.__class__.DoesNotExist
 
-        with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={"x": 1}):
+            with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={"x": 1}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync") as mocked:
+                    result = AuditPatcher.save(inst)
+
+            # Should be treated as create
+            mocked.assert_called_once_with(inst, {"x": 1})
+            assert result == "saved"
+
+            mock_logger.info.assert_any_call("[3] Auditing creation in save")
+
+    def test_sync_save_recursion_guard(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(audit_enabled=True)
+            inst._audit_in_progress = True
+            inst.__original_save__ = MagicMock(return_value="recurse_saved_sync")
+
             with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync") as mocked:
                 result = AuditPatcher.save(inst)
 
-        # Should be treated as create
-        mocked.assert_called_once_with(inst, {"x": 1})
-        assert result == "saved"
-
-    def test_sync_save_recursion_guard(self):
-        inst = make_instance(audit_enabled=True)
-        inst._audit_in_progress = True
-        inst.__original_save__ = MagicMock(return_value="recurse_saved_sync")
-
-        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync") as mocked:
-            result = AuditPatcher.save(inst)
-
-        mocked.assert_not_called()
-        assert result == "recurse_saved_sync"
+            mocked.assert_not_called()
+            assert result == "recurse_saved_sync"
+            mock_logger.info.assert_any_call("[2] Recursion detected in save, skipping audit")
 
 
 class TestAuditPatcherSyncDelete:
 
     def test_sync_delete(self):
-        inst = make_instance(True)
-        inst.__original_delete__ = MagicMock(return_value="deleted")
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(True)
+            inst.__original_delete__ = MagicMock(return_value="deleted")
 
-        with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"gone": 1}):
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"gone": 1}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync") as mocked:
+                    AuditPatcher.delete(inst)
+
+            mocked.assert_called_once_with(inst, {"gone": 1})
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.delete")
+            mock_logger.info.assert_any_call("[2] Auditing deletion in delete")
+            mock_logger.info.assert_any_call("[3] Exiting AuditPatcher.delete")
+
+    def test_sync_delete_skips_when_disabled(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            inst = make_instance(False)
+            inst.__original_delete__ = MagicMock()
+
             with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync") as mocked:
                 AuditPatcher.delete(inst)
 
-        mocked.assert_called_once_with(inst, {"gone": 1})
-
-    def test_sync_delete_skips_when_disabled(self):
-        inst = make_instance(False)
-        inst.__original_delete__ = MagicMock()
-
-        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync") as mocked:
-            AuditPatcher.delete(inst)
-
-        mocked.assert_not_called()
+            mocked.assert_not_called()
 
 
 class TestAuditPatcherSyncUpdate:
 
     def test_sync_update(self):
-        model = MagicMock(AUDIT_ENABLED=True)
-        qs = make_qs(model)
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            model = MagicMock(AUDIT_ENABLED=True)
+            qs = make_qs(model)
 
-        old_obj = MagicMock()
-        new_obj = MagicMock()
-        qs._clone().all.return_value = [old_obj]
-        qs.__original_update__ = MagicMock(return_value=1)
+            old_obj = MagicMock()
+            new_obj = MagicMock()
+            new_obj.pk = "33"
+            qs._clone().all.return_value = [old_obj]
+            qs.__original_update__ = MagicMock(return_value=1)
 
-        qs._clone.side_effect = [qs, qs]  # before, after
-        qs.all.side_effect = [[old_obj], [new_obj]]
+            qs._clone.side_effect = [qs, qs]  # before, after
+            qs.all.side_effect = [[old_obj], [new_obj]]
 
-        with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"k": 7}):
+            with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"k": 7}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync") as mocked:
+                    AuditPatcher.update(qs)
+
+            mocked.assert_called_once_with(new_obj, {"k": 7})
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.update")
+            mock_logger.info.assert_any_call(f"[3] Auditing update for object: {new_obj.pk}")
+            mock_logger.info.assert_any_call("[4] Exiting AuditPatcher.update")
+
+    def test_sync_update_skips_when_disabled(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            model = MagicMock(AUDIT_ENABLED=False)
+            qs = make_qs(model)
+            qs.__original_update__ = MagicMock(return_value=1)
+
             with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync") as mocked:
                 AuditPatcher.update(qs)
 
-        mocked.assert_called_once_with(new_obj, {"k": 7})
-
-    def test_sync_update_skips_when_disabled(self):
-        model = MagicMock(AUDIT_ENABLED=False)
-        qs = make_qs(model)
-        qs.__original_update__ = MagicMock(return_value=1)
-
-        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync") as mocked:
-            AuditPatcher.update(qs)
-
-        mocked.assert_not_called()
+            mocked.assert_not_called()
 
 
 class TestAuditPatcherSyncDeleteQueryset:
 
     def test_sync_delete_queryset(self):
-        model = MagicMock(AUDIT_ENABLED=True)
-        qs = make_qs(model)
-        inst = MagicMock()
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            model = MagicMock(AUDIT_ENABLED=True)
+            qs = make_qs(model)
+            inst = MagicMock()
 
-        qs._clone().all.return_value = [inst]
-        qs.__original_delete__ = MagicMock(return_value=(1, {}))
+            qs._clone().all.return_value = [inst]
+            qs.__original_delete__ = MagicMock(return_value=(1, {}))
 
-        with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"gone": True}):
-            with patch("apps.audit_app.v1.patcher.async_to_sync", side_effect=lambda f: f):
-                with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_delete") as mocked:
-                    AuditPatcher.delete_queryset(qs)
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"gone": True}):
+                with patch("apps.audit_app.v1.patcher.async_to_sync", side_effect=lambda f: f):
+                    with patch("apps.audit_app.v1.patcher.TaskDispatcher.dispatch_delete") as mocked:
+                        AuditPatcher.delete_queryset(qs)
 
-        mocked.assert_called_once()
+            mocked.assert_called_once()
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.delete_queryset")
+            mock_logger.info.assert_any_call("[2] Auditing queryset deletion")
+            mock_logger.info.assert_any_call("[3] Exiting AuditPatcher.delete_queryset")
 
     def test_sync_delete_queryset_skips_when_disabled(self):
-        model = MagicMock(AUDIT_ENABLED=False)
-        qs = make_qs(model)
-        qs.__original_delete__ = MagicMock(return_value=(1, {}))
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            model = MagicMock(AUDIT_ENABLED=False)
+            qs = make_qs(model)
+            qs.__original_delete__ = MagicMock(return_value=(1, {}))
 
-        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync") as mocked:
-            AuditPatcher.delete_queryset(qs)
+            with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync") as mocked:
+                AuditPatcher.delete_queryset(qs)
 
-        mocked.assert_not_called()
+            mocked.assert_not_called()
 
 
 # ============================================================
@@ -523,55 +658,263 @@ class TestAuditPatcherDispatchers:
 class TestAuditPatcherZeroImpacts:
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_aupdate_zero_impact(self):
-        qs = make_qs(MagicMock(AUDIT_ENABLED=True))
-        qs.__original_aupdate__ = AsyncMock(return_value=0)
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            qs = make_qs(MagicMock(AUDIT_ENABLED=True))
+            qs.__original_aupdate__ = AsyncMock(return_value=0)
 
-        # Setup iterator for "before" snapshot
-        async def async_iter():
-            yield MagicMock()
+            # Setup iterator for "before" snapshot
+            async def async_iter():
+                yield MagicMock()
 
-        qs.all.return_value = qs
-        qs.__aiter__ = lambda *args: async_iter()
+            qs.all.return_value = qs
+            qs.__aiter__ = lambda *args: async_iter()
 
-        with patch(
-            "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
-        ) as mock_audit:
-            await AuditPatcher.aupdate(qs)
-            mock_audit.assert_not_called()
+            with patch(
+                "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
+            ) as mock_audit:
+                await AuditPatcher.aupdate(qs)
+                mock_audit.assert_not_called()
+
+            mock_logger.info.assert_any_call("[2] No records updated in aupdate")
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_adelete_queryset_zero_impact(self):
-        qs = make_qs(MagicMock(AUDIT_ENABLED=True))
-        qs.__original_adelete__ = AsyncMock(return_value=(0, {}))
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            qs = make_qs(MagicMock(AUDIT_ENABLED=True))
+            qs.__original_adelete__ = AsyncMock(return_value=(0, {}))
 
-        async def async_iter():
-            yield MagicMock()
+            async def async_iter():
+                yield MagicMock()
 
-        qs.all.return_value = qs
-        qs.__aiter__ = lambda *args: async_iter()
+            qs.all.return_value = qs
+            qs.__aiter__ = lambda *args: async_iter()
 
-        with patch(
-            "apps.audit_app.v1.patcher.AuditPatcher.audit_delete_async", new=AsyncMock()
-        ) as mock_audit:
-            await AuditPatcher.adelete_queryset(qs)
-            mock_audit.assert_not_called()
+            with patch(
+                "apps.audit_app.v1.patcher.AuditPatcher.audit_delete_async", new=AsyncMock()
+            ) as mock_audit:
+                await AuditPatcher.adelete_queryset(qs)
+                mock_audit.assert_not_called()
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.adelete_queryset")
+            mock_logger.info.assert_any_call("[3] Exiting AuditPatcher.adelete_queryset")
 
     def test_sync_update_zero_impact(self):
-        qs = make_qs(MagicMock(AUDIT_ENABLED=True))
-        qs.__original_update__ = MagicMock(return_value=0)
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            qs = make_qs(MagicMock(AUDIT_ENABLED=True))
+            qs.__original_update__ = MagicMock(return_value=0)
 
-        qs._clone().all.return_value = [MagicMock()]
+            qs._clone().all.return_value = [MagicMock()]
 
-        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync") as mock_audit:
-            AuditPatcher.update(qs)
-            mock_audit.assert_not_called()
+            with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync") as mock_audit:
+                AuditPatcher.update(qs)
+                mock_audit.assert_not_called()
+
+            mock_logger.info.assert_any_call("[2] No records updated in update")
 
     def test_sync_delete_queryset_zero_impact(self):
-        qs = make_qs(MagicMock(AUDIT_ENABLED=True))
-        qs.__original_delete__ = MagicMock(return_value=(0, {}))
-        qs._clone().all.return_value = [MagicMock()]
+        with patch("apps.audit_app.v1.patcher.get_request_logger") as mock_get_logger:
+            mock_logger = MagicMock()
+            mock_get_logger.return_value = mock_logger
+            qs = make_qs(MagicMock(AUDIT_ENABLED=True))
+            qs.__original_delete__ = MagicMock(return_value=(0, {}))
+            qs._clone().all.return_value = [MagicMock()]
 
-        with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync") as mock_audit:
-            AuditPatcher.delete_queryset(qs)
-            mock_audit.assert_not_called()
+            with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync") as mock_audit:
+                AuditPatcher.delete_queryset(qs)
+                mock_audit.assert_not_called()
+
+            mock_logger.info.assert_any_call("[1] Entering AuditPatcher.delete_queryset")
+            mock_logger.info.assert_any_call("[3] Exiting AuditPatcher.delete_queryset")
+
+
+# ============================================================
+#  NO LOGGER SCENARIOS (Coverage for None logger)
+# ============================================================
+
+
+class TestAuditPatcherNoLogger:
+
+    @pytest.mark.asyncio
+    async def test_async_internals_no_logger(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=None):
+            with patch("apps.audit_app.v1.patcher.get_normalized_context", return_value={}):
+                with patch("apps.audit_app.v1.patcher.TaskDispatcher") as mock_disp:
+                    mock_disp.dispatch_create = AsyncMock()
+                    mock_disp.dispatch_update = AsyncMock()
+                    mock_disp.dispatch_delete = AsyncMock()
+
+                    # Async internals
+                    inst = MagicMock()
+                    await AuditPatcher.audit_create_async(inst, {"a": 1})
+                    await AuditPatcher.audit_update_async(inst, {"b": 2})
+                    await AuditPatcher.audit_delete_async(inst, {"c": 3})
+
+    def test_sync_internals_no_logger(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=None):
+            with patch("apps.audit_app.v1.patcher.get_normalized_context", return_value={}):
+                with patch("apps.audit_app.v1.patcher.async_to_sync", side_effect=lambda f: f):
+                    with patch("apps.audit_app.v1.patcher.TaskDispatcher"):
+                        inst = MagicMock()
+                        AuditPatcher.audit_create_sync(inst, {"a": 1})
+                        AuditPatcher.audit_update_sync(inst, {"b": 2})
+                        AuditPatcher.audit_delete_sync(inst, {"c": 3})
+
+    @pytest.mark.asyncio
+    async def test_edge_cases_no_logger(self):
+        """Cover recursion guard and audit disabled checks when logger is None."""
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=None):
+            # 1. Recursion guard
+            inst_recurse = make_instance(audit_enabled=True)
+            inst_recurse._audit_in_progress = True
+            inst_recurse.__original_asave__ = AsyncMock(return_value="recurse")
+            inst_recurse.__original_save__ = MagicMock(return_value="recurse")
+
+            await AuditPatcher.asave(inst_recurse)
+            AuditPatcher.save(inst_recurse)
+            # Assertions: should not crash, should return result
+
+            # 2. Audit Disabled
+            inst_disabled = make_instance(audit_enabled=False)
+            inst_disabled.__original_asave__ = AsyncMock(return_value="disabled")
+            inst_disabled.__original_save__ = MagicMock(return_value="disabled")
+            inst_disabled.__original_adelete__ = AsyncMock(return_value="disabled")
+            inst_disabled.__original_delete__ = MagicMock(return_value="disabled")
+
+            await AuditPatcher.asave(inst_disabled)
+            await AuditPatcher.adelete(inst_disabled)
+            AuditPatcher.save(inst_disabled)
+            AuditPatcher.delete(inst_disabled)
+
+            # 3. Disabled QuerySet
+            fake_model = MagicMock(AUDIT_ENABLED=False)
+            qs = make_qs(fake_model)
+            qs.__original_aupdate__ = AsyncMock(return_value=1)
+            qs.__original_adelete__ = AsyncMock(return_value=(1, {}))
+
+            await AuditPatcher.aupdate(qs)
+            await AuditPatcher.adelete_queryset(qs)
+
+    @pytest.mark.asyncio
+    async def test_model_patches_no_logger(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=None):
+            inst = make_instance(audit_enabled=True)
+            inst.__original_asave__ = AsyncMock(return_value="saved")
+            inst.__original_adelete__ = AsyncMock(return_value="deleted")
+
+            # Use AsyncMock for aget to support Update path
+            inst.__class__.objects.aget = AsyncMock(return_value=MagicMock())
+
+            with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={}):
+                with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={}):
+                    with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_async", new=AsyncMock()):
+                        with patch(
+                            "apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()
+                        ):
+                            await AuditPatcher.asave(inst)
+
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_async", new=AsyncMock()):
+                    await AuditPatcher.adelete(inst)
+
+            # Sync patches
+            inst.__original_save__ = MagicMock(return_value="saved")
+            inst.__original_delete__ = MagicMock(return_value="deleted")
+
+            with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync"):
+                    AuditPatcher.save(inst)
+
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync"):
+                    AuditPatcher.delete(inst)
+
+    @pytest.mark.asyncio
+    async def test_create_and_zero_impact_no_logger(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=None):
+            # 1. Create (pk=None) - Async
+            inst_new = make_instance(audit_enabled=True)
+            inst_new.pk = None
+            inst_new.__original_asave__ = AsyncMock(return_value="saved")
+
+            with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_async", new=AsyncMock()):
+                    await AuditPatcher.asave(inst_new)
+
+            # 2. Create (pk=None) - Sync
+            inst_new_sync = make_instance(audit_enabled=True)
+            inst_new_sync.pk = None
+            inst_new_sync.__original_save__ = MagicMock(return_value="saved")
+
+            with patch("apps.audit_app.v1.patcher.compute_create_diff", return_value={}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_create_sync"):
+                    AuditPatcher.save(inst_new_sync)
+
+            # 3. Zero Impact Update - Async
+            qs = make_qs(MagicMock(AUDIT_ENABLED=True))
+            qs.__original_aupdate__ = AsyncMock(return_value=0)
+            # aiter needs to yield objects, but if update returns 0, it calls _clone().all() (which we mocked)?
+            # Logic: if updated == 0: logger... return updated.
+            # So it does NOT iterate. It calls `await self.__original_aupdate__(**kwargs)`.
+            # If 0, it enters zero impact block.
+
+            async def async_iter():
+                yield MagicMock()
+
+            qs.all.return_value = qs
+            qs.__aiter__ = lambda *_: async_iter()
+
+            await AuditPatcher.aupdate(qs)
+
+            # 4. Zero Impact Update - Sync
+            qs_sync = make_qs(MagicMock(AUDIT_ENABLED=True))
+            qs_sync.__original_update__ = MagicMock(return_value=0)
+            qs_sync.all.return_value = qs_sync
+            qs_sync.__iter__ = lambda *_: iter([MagicMock()])
+
+            AuditPatcher.update(qs_sync)
+
+    @pytest.mark.asyncio
+    async def test_queryset_patches_no_logger(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=None):
+            fake_model = MagicMock(AUDIT_ENABLED=True)
+            qs = make_qs(fake_model)
+            qs.__original_aupdate__ = AsyncMock(return_value=1)
+            qs.__original_adelete__ = AsyncMock(return_value=(1, {}))
+            qs.__original_update__ = MagicMock(return_value=1)
+            qs.__original_delete__ = MagicMock(return_value=(1, {}))
+
+            async def async_iter():
+                yield MagicMock()
+
+            qs.all.return_value = qs
+            qs.__aiter__ = lambda *_: async_iter()
+            qs._clone.return_value = qs
+
+            # For sync update/delete_queryset, we need list() support
+            qs.__iter__ = lambda *_: iter([MagicMock()])
+
+            with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"change": 1}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_async", new=AsyncMock()):
+                    await AuditPatcher.aupdate(qs)
+
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"change": 1}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_async", new=AsyncMock()):
+                    await AuditPatcher.adelete_queryset(qs)
+
+            # Sync QS
+            with patch("apps.audit_app.v1.patcher.compute_update_diff", return_value={"change": 1}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_update_sync"):
+                    AuditPatcher.update(qs)
+
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"change": 1}):
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync"):
+                    AuditPatcher.delete_queryset(qs)

@@ -20,6 +20,7 @@ class TestFilesAppViews:
         """Mock a minimal Django-Ninja style request."""
         mock = MagicMock()
         mock.trace_id = uuid.uuid4()
+        mock.logger = MagicMock()
         return mock
 
     def test_upload_linear_csv_success(self, mock_request):
@@ -33,6 +34,11 @@ class TestFilesAppViews:
         assert response["trace_id"] == str(mock_request.trace_id)
         assert response["error"] == {}
 
+        mock_request.logger.info.assert_any_call("[1] Entering upload_linear_file")
+        mock_request.logger.info.assert_any_call("[2] Validating file size")
+        mock_request.logger.info.assert_any_call("[3] Parsing file")
+        mock_request.logger.info.assert_any_call("[4] Exiting upload_linear_file")
+
     def test_upload_linear_json_success(self, mock_request):
         content = json.dumps([{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]).encode("utf-8")
         file = SimpleUploadedFile("test.json", content, content_type="application/json")
@@ -42,6 +48,11 @@ class TestFilesAppViews:
         assert response["data"]["total_rows"] == 2
         assert response["trace_id"] == str(mock_request.trace_id)
         assert response["error"] == {}
+
+        mock_request.logger.info.assert_any_call("[1] Entering upload_linear_file")
+        mock_request.logger.info.assert_any_call("[2] Validating file size")
+        mock_request.logger.info.assert_any_call("[3] Parsing file")
+        mock_request.logger.info.assert_any_call("[4] Exiting upload_linear_file")
 
     def test_upload_linear_file_too_large(self, mock_request):
         # 26KB file (limit is 25KB)
@@ -55,6 +66,16 @@ class TestFilesAppViews:
         assert "File size exceeds the limit" in response["error"]["message"]
         assert response["trace_id"] == str(mock_request.trace_id)
 
+        mock_request.logger.info.assert_any_call("[1] Entering upload_linear_file")
+        mock_request.logger.info.assert_any_call("[2] Validating file size")
+        # Ensure error log contains the message
+        # The specific message depends on exception str(e) which includes status code sometimes or just valid/invalid
+        # We'll assert partial match if needed, or exact if predictable
+        # HttpError str() is usually something like "File size exceeds..."
+        mock_request.logger.info.assert_any_call(
+            "[5] Error in upload_linear_file: File size exceeds the limit of 25KB. Current size: 26.00KB"
+        )
+
     def test_upload_generic_file_success(self, mock_request):
         content = b"some generic content"
         file = SimpleUploadedFile("test.txt", content, content_type="text/plain")
@@ -66,6 +87,10 @@ class TestFilesAppViews:
         assert response["data"]["human_readable_size"] == "20.0 B"
         assert response["trace_id"] == str(mock_request.trace_id)
         assert response["error"] == {}
+
+        mock_request.logger.info.assert_any_call("[1] Entering upload_generic_file")
+        mock_request.logger.info.assert_any_call("[2] Validating file size")
+        mock_request.logger.info.assert_any_call("[3] Exiting upload_generic_file")
 
     def test_upload_generic_file_too_large(self, mock_request):
         # 26KB file (limit is 25KB)
@@ -79,6 +104,11 @@ class TestFilesAppViews:
         assert "File size exceeds the limit" in response["error"]["message"]
         assert response["trace_id"] == str(mock_request.trace_id)
 
+        mock_request.logger.info.assert_any_call("[1] Entering upload_generic_file")
+        mock_request.logger.info.assert_any_call(
+            "[4] Error in upload_generic_file: File size exceeds the limit of 25KB. Current size: 26.00KB"
+        )
+
     def test_download_file(self, mock_request):
         filename = "test.txt"
         response = download_file(mock_request, filename=filename)
@@ -86,6 +116,9 @@ class TestFilesAppViews:
         assert response.status_code == 200
         assert response["Content-Disposition"] == f'attachment; filename="{filename}"'
         assert response.content  # Verify content exists
+
+        mock_request.logger.info.assert_any_call(f"[1] Entering download_file: {filename}")
+        mock_request.logger.info.assert_any_call("[2] Exiting download_file")
 
     def test_stream_file(self, mock_request):
         filename = "test.txt"
@@ -95,9 +128,15 @@ class TestFilesAppViews:
         assert response.streaming is True
         assert response["Content-Disposition"] == f'attachment; filename="{filename}"'
 
+        mock_request.logger.info.assert_any_call(f"[1] Entering stream_file: {filename}")
+        mock_request.logger.info.assert_any_call("[2] Exiting stream_file")
+
     def test_preview_file(self, mock_request):
         filename = "test.txt"
         response = preview_file(mock_request, filename=filename)
 
         assert response.status_code == 200
         assert response.content  # Verify content exists
+
+        mock_request.logger.info.assert_any_call(f"[1] Entering preview_file: {filename}")
+        mock_request.logger.info.assert_any_call("[2] Exiting preview_file")

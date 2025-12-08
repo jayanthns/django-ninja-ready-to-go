@@ -14,6 +14,7 @@ class TestUserViews:
         """Mock a minimal Django request."""
         mock = MagicMock(spec=HttpRequest)
         mock.trace_id = uuid.uuid4()
+        mock.logger = MagicMock()
         return mock
 
     @patch("apps.users_app.v1.views.UserService")
@@ -33,6 +34,14 @@ class TestUserViews:
         assert resp["error"] == {}
         mock_user_service.create_user.assert_awaited_with(payload)
 
+        # Verify Logs
+        assert req.logger.info.call_count == 5
+        req.logger.info.assert_any_call("[1] Entering register_user endpoint")
+        req.logger.info.assert_any_call(f"[2] Creating new user: {payload.email}")
+        req.logger.info.assert_any_call("[3] Calling UserService.create_user")
+        req.logger.info.assert_any_call(f"[4] User created successfully: {user_id}")
+        req.logger.info.assert_any_call("[5] Exiting register_user endpoint")
+
     @patch("apps.users_app.v1.views.UserService")
     async def test_register_user_exception(self, mock_user_service):
         req = await self._make_request()
@@ -44,6 +53,16 @@ class TestUserViews:
             await register_user(req, payload)
 
         assert "Registration failed" in str(exc.value)
+
+        # Verify Logs
+        assert req.logger.info.call_count == 3
+        req.logger.info.assert_any_call("[1] Entering register_user endpoint")
+        req.logger.info.assert_any_call(f"[2] Creating new user: {payload.email}")
+        req.logger.info.assert_any_call("[3] Calling UserService.create_user")
+
+        req.logger.exception.assert_called_once()
+        args, _ = req.logger.exception.call_args
+        assert "[Error] Failed to register user" in args[0]
 
     @patch("apps.users_app.v1.views.UserService")
     async def test_get_user_success(self, mock_user_service):
@@ -59,6 +78,13 @@ class TestUserViews:
         assert resp.data == user_data
         mock_user_service.get_user_by_id.assert_awaited_with(user_id)
 
+        # Verify Logs
+        assert req.logger.info.call_count == 4
+        req.logger.info.assert_any_call(f"[1] Entering get_user endpoint for ID: {user_id}")
+        req.logger.info.assert_any_call("[2] Calling UserService.get_user_by_id")
+        req.logger.info.assert_any_call("[3] User found")
+        req.logger.info.assert_any_call("[4] Exiting get_user endpoint")
+
     @patch("apps.users_app.v1.views.UserService")
     async def test_get_user_not_found(self, mock_user_service):
         req = await self._make_request()
@@ -71,6 +97,16 @@ class TestUserViews:
         assert resp.error == {"message": "User not found"}
         mock_user_service.get_user_by_id.assert_awaited_with(user_id)
 
+        # Verify Logs
+        # Info calls: [1], [2], [4] Exiting (Not Found) -> 3 calls
+        # Warning calls: [3] User not found -> 1 call
+        assert req.logger.info.call_count == 3
+        req.logger.info.assert_any_call(f"[1] Entering get_user endpoint for ID: {user_id}")
+        req.logger.info.assert_any_call("[2] Calling UserService.get_user_by_id")
+        req.logger.info.assert_any_call("[4] Exiting get_user endpoint (Not Found)")
+
+        req.logger.warning.assert_called_once_with(f"[3] User not found: {user_id}")
+
     @patch("apps.users_app.v1.views.UserService")
     async def test_get_user_exception(self, mock_user_service):
         req = await self._make_request()
@@ -82,3 +118,9 @@ class TestUserViews:
             await get_user(req, user_id)
 
         assert "Database error" in str(exc.value)
+
+        # Verify Logs (Before exception bubbling up)
+        # [1], [2]
+        assert req.logger.info.call_count == 2
+        req.logger.info.assert_any_call(f"[1] Entering get_user endpoint for ID: {user_id}")
+        req.logger.info.assert_any_call("[2] Calling UserService.get_user_by_id")

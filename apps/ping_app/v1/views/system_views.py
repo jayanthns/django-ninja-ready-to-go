@@ -17,10 +17,13 @@ router = Router()
 @router.get("/", response=create_api_response_schema(Dict[str, str]))
 async def ping(request):
     """Basic ping endpoint to test API connectivity."""
-    request.logger.info("Basic ping endpoint accessed")
+    request.logger.info("[1] Entering ping endpoint")
 
+    response_data = {"message": "pong", "status": "healthy"}
+
+    request.logger.info("[2] Exiting ping endpoint")
     return {
-        "data": {"message": "pong", "status": "healthy"},
+        "data": response_data,
         "trace_id": str(request.trace_id),
         "error": {},
     }
@@ -29,12 +32,13 @@ async def ping(request):
 @router.get("/health/", response=create_api_response_schema(SystemStatusSchema))
 async def get_system_health(request):
     """Get overall system health status."""
-    request.logger.info("Performing system health check")
+    request.logger.info("[1] Entering get_system_health endpoint")
 
     try:
+        request.logger.info("[2] Calling SystemHealthService.check_system_health")
         health_status = await SystemHealthService.check_system_health()
 
-        # Log the health check
+        request.logger.info("[3] Logging health checks for services")
         for service in health_status.services:
             await SystemHealthService.log_health_check(
                 service_name=service.service_name,
@@ -45,8 +49,9 @@ async def get_system_health(request):
                 metadata=service.metadata,
             )
 
-        request.logger.info(f"System health check completed - Status: {health_status.overall_status}")
+        request.logger.info(f"[4] System health check completed - Status: {health_status.overall_status}")
 
+        request.logger.info("[5] Exiting get_system_health endpoint")
         return {
             "data": health_status,
             "trace_id": str(request.trace_id),
@@ -54,7 +59,8 @@ async def get_system_health(request):
         }
 
     except Exception as e:
-        request.logger.exception(f"Error performing system health check: {e}")
+        request.logger.exception(f"[Error] Error performing system health check: {e}")
+        request.logger.info(f"[Exit-Error] Exiting get_system_health endpoint with error: {e}")
 
         return {
             "data": {},

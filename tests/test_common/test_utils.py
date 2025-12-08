@@ -4,7 +4,6 @@ from decimal import Decimal
 from enum import Enum
 from unittest.mock import MagicMock
 
-import pytest
 from django.db.models import Model
 
 from common.utils import normalize_value

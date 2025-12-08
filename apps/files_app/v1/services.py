@@ -6,6 +6,8 @@ from typing import Any, Dict, Generator, List
 from django.core.files.uploadedfile import UploadedFile
 from ninja.errors import HttpError
 
+from common.logger_helper import get_request_logger
+
 
 class FileService:
     @staticmethod
@@ -13,7 +15,13 @@ class FileService:
         """
         Validates that the file size is within the specified limit (in KB).
         """
+        logger = get_request_logger()
+        if logger:
+            logger.info(f"[1] Entering FileService.validate_file_size with file: {file.name}")
+
         if file.size > limit_kb * 1024:
+            if logger:
+                logger.info(f"[2] File size {file.size} exceeds limit {limit_kb}KB")
             raise HttpError(
                 400, f"File size exceeds the limit of {limit_kb}KB. Current size: {file.size / 1024:.2f}KB"
             )
@@ -35,6 +43,10 @@ class FileService:
         Parses a linear data file (CSV or JSON) and returns a list of records.
         Returns the top 10 records.
         """
+        logger = get_request_logger()
+        if logger:
+            logger.info("[1] Entering FileService.parse_linear_file")
+
         # Ensure we are at the start of the file
         file.seek(0)
         content = file.read().decode("utf-8")
@@ -43,11 +55,15 @@ class FileService:
         data = []
 
         if file_ext == "csv":
+            if logger:
+                logger.info("[2] Parsing CSV file")
             # Parse CSV
             csv_file = io.StringIO(content)
             reader = csv.DictReader(csv_file)
             data = [row for row in reader]
         elif file_ext == "json":
+            if logger:
+                logger.info("[2] Parsing JSON file")
             # Parse JSON
             try:
                 json_data = json.loads(content)
@@ -58,6 +74,8 @@ class FileService:
             except json.JSONDecodeError:
                 raise HttpError(400, "Invalid JSON file.")
         else:
+            if logger:
+                logger.info(f"[3] Unsupported file type: {file_ext}")
             raise HttpError(400, "Unsupported file type. Only .csv and .json are allowed for linear data.")
 
         return data[:10]

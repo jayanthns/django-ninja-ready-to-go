@@ -35,7 +35,10 @@ class TestSystemPing:
         assert response["error"] == {}
 
         # 3️⃣ Logger call check
-        mock_request.logger.info.assert_called_once_with("Basic ping endpoint accessed")
+        # Expecting Entry [1] and Exit [2]
+        assert mock_request.logger.info.call_count == 2
+        mock_request.logger.info.assert_any_call("[1] Entering ping endpoint")
+        mock_request.logger.info.assert_any_call("[2] Exiting ping endpoint")
 
     async def test_ping_trace_id_is_unique_per_call(self, mock_request):
         """✅ Each call should produce a different trace_id."""
@@ -107,6 +110,15 @@ class TestSystemHealth:
 
         mock_system_health_service.log_health_check.assert_awaited()
 
+        # Verify logs
+        # [1] Entry, [2] Call Service, [3] Log Checks, [4] Complete, [5] Exit
+        assert mock_request.logger.info.call_count == 5
+        mock_request.logger.info.assert_any_call("[1] Entering get_system_health endpoint")
+        mock_request.logger.info.assert_any_call("[2] Calling SystemHealthService.check_system_health")
+        mock_request.logger.info.assert_any_call("[3] Logging health checks for services")
+        mock_request.logger.info.assert_any_call("[4] System health check completed - Status: healthy")
+        mock_request.logger.info.assert_any_call("[5] Exiting get_system_health endpoint")
+
     @patch("apps.ping_app.v1.views.system_views.SystemHealthService")
     async def test_system_health_endpoint_returns_error_response_on_db_exception(
         self, mock_system_health_service
@@ -138,8 +150,19 @@ class TestSystemHealth:
         assert str(mock_request.trace_id) == response["trace_id"]
 
         # Log assertions
-        mock_request.logger.info.assert_called_once_with("Performing system health check")
+        # Expect [1] Entry, [2] Call Service -> Exception -> [Error] Exception, [Exit-Error]
+        # Info calls: [1], [2], [Exit-Error] -> 3 calls
+        assert mock_request.logger.info.call_count == 3
+        mock_request.logger.info.assert_any_call("[1] Entering get_system_health endpoint")
+        mock_request.logger.info.assert_any_call("[2] Calling SystemHealthService.check_system_health")
+        mock_request.logger.info.assert_any_call(
+            "[Exit-Error] Exiting get_system_health endpoint with error: DB connection failed"
+        )
+
+        # Exception call
         mock_request.logger.exception.assert_called_once()
+        args, _ = mock_request.logger.exception.call_args
+        assert "[Error] Error performing system health check" in args[0]
 
     @patch("apps.ping_app.v1.views.system_views.SystemHealthService")
     async def test_system_health_endpoint_returns_error_response_on_cache_exception(
@@ -172,7 +195,16 @@ class TestSystemHealth:
         assert str(mock_request.trace_id) == response["trace_id"]
 
         # Log assertions
-        mock_request.logger.info.assert_called_once_with("Performing system health check")
+        # Expect [1] Entry, [2] Call Service -> Exception -> [Error] Exception, [Exit-Error]
+        # Info calls: [1], [2], [Exit-Error] -> 3 calls
+        assert mock_request.logger.info.call_count == 3
+        mock_request.logger.info.assert_any_call("[1] Entering get_system_health endpoint")
+        mock_request.logger.info.assert_any_call("[2] Calling SystemHealthService.check_system_health")
+        mock_request.logger.info.assert_any_call(
+            "[Exit-Error] Exiting get_system_health endpoint with error: Cache connection failed"
+        )
+
+        # Exception call
         mock_request.logger.exception.assert_called_once()
 
     # ---------------- Same above tests in the parameterized pattern ----------------
@@ -209,5 +241,9 @@ class TestSystemHealth:
         assert str(mock_request.trace_id) == response["trace_id"]
 
         # Verify logs
-        mock_request.logger.info.assert_called_once_with("Performing system health check")
+        # [1] Entry, [2] Call, [Exit-Error]
+        assert mock_request.logger.info.call_count == 3
+        mock_request.logger.info.assert_any_call("[1] Entering get_system_health endpoint")
+        mock_request.logger.info.assert_any_call("[2] Calling SystemHealthService.check_system_health")
+
         mock_request.logger.exception.assert_called_once()
