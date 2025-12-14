@@ -272,6 +272,37 @@ pytest-open-report:
 
 test-report: pytest-open-report
 
+# Health Checks
+
+check-redis:
+	@echo "Checking Redis health..."
+	@REDIS_PASSWORD=$$(grep "^REDIS_PASSWORD=" .env 2>/dev/null | cut -d '=' -f2 | tr -d '"' | tr -d "'"); \
+	if [ -z "$$REDIS_PASSWORD" ]; then \
+		echo "Error: REDIS_PASSWORD not found in .env"; \
+		exit 1; \
+	fi; \
+	if docker exec django_ninja_redis_container redis-cli -a $$REDIS_PASSWORD ping > /dev/null 2>&1; then \
+		echo "\033[0;32m✅ Redis is HEALTHY\033[0m"; \
+	else \
+		echo "\033[0;31m❌ Redis is UNHEALTHY\033[0m"; \
+		exit 1; \
+	fi
+
+check-postgres:
+	@echo "Checking Postgres health..."
+	@DB_USER=$$(grep "^DB_USER=" .env 2>/dev/null | cut -d '=' -f2 | tr -d '"' | tr -d "'"); \
+	DB_NAME=$$(grep "^DB_NAME=" .env 2>/dev/null | cut -d '=' -f2 | tr -d '"' | tr -d "'"); \
+	if [ -z "$$DB_USER" ] || [ -z "$$DB_NAME" ]; then \
+		echo "Error: DB_USER or DB_NAME not found in .env"; \
+		exit 1; \
+	fi; \
+	if docker exec django_ninja_db_container pg_isready -U $$DB_USER -d $$DB_NAME > /dev/null 2>&1; then \
+		echo "\033[0;32m✅ Postgres is HEALTHY\033[0m"; \
+	else \
+		echo "\033[0;31m❌ Postgres is UNHEALTHY\033[0m"; \
+		exit 1; \
+	fi
+
 # Docker related
 
 run_docker_compose:
