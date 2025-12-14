@@ -773,3 +773,38 @@ class TestAuditInstanceDelete:
         serialized = kwargs.get("serialized_instance")
         assert serialized is not None
         assert serialized["target_object_id"] == "888"
+
+    def test_delete_recursion_guard_logs(self):
+        logger = MagicMock()
+        inst = make_instance(audit_enabled=True)
+        inst._audit_in_progress = True
+        inst.__original_delete__ = MagicMock(return_value="deleted")
+
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=logger):
+            result = AuditPatcher.delete(inst)
+
+        assert result == "deleted"
+        logger.info.assert_has_calls(
+            [
+                call("[1] Entering AuditPatcher.delete"),
+                call("[2] Recursion detected in delete, skipping audit"),
+            ]
+        )
+
+    @pytest.mark.asyncio
+    async def test_adelete_recursion_guard_logs(self):
+        logger = MagicMock()
+        inst = make_instance(audit_enabled=True)
+        inst._audit_in_progress = True
+        inst.__original_adelete__ = AsyncMock(return_value="deleted")
+
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=logger):
+            result = await AuditPatcher.adelete(inst)
+
+        assert result == "deleted"
+        logger.info.assert_has_calls(
+            [
+                call("[1] Entering AuditPatcher.adelete"),
+                call("[2] Recursion detected in adelete, skipping audit"),
+            ]
+        )

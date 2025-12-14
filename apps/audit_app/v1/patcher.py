@@ -182,22 +182,30 @@ class AuditPatcher:
         logger = get_request_logger()
         logger.info("[1] Entering AuditPatcher.adelete")
 
-        should_audit = getattr(self, "AUDIT_ENABLED", False)
-        changes = None
-        serialized_instance = None
+        if getattr(self, "_audit_in_progress", False):
+            logger.info("[2] Recursion detected in adelete, skipping audit")
+            return await self.__original_adelete__(*args, **kwargs)
 
-        if should_audit:
-            changes = compute_delete_diff(self)
-            serialized_instance = AuditPatcher.serialize_instance(self)
+        self._audit_in_progress = True
+        try:
+            should_audit = getattr(self, "AUDIT_ENABLED", False)
+            changes = None
+            serialized_instance = None
 
-        result = await self.__original_adelete__(*args, **kwargs)
+            if should_audit:
+                changes = compute_delete_diff(self)
+                serialized_instance = AuditPatcher.serialize_instance(self)
 
-        if should_audit:
-            logger.info("[2] Auditing deletion in adelete")
-            await AuditPatcher.audit_delete_async(self, changes, serialized_instance=serialized_instance)
+            result = await self.__original_adelete__(*args, **kwargs)
 
-        logger.info("[3] Exiting AuditPatcher.adelete")
-        return result
+            if should_audit:
+                logger.info("[2] Auditing deletion in adelete")
+                await AuditPatcher.audit_delete_async(self, changes, serialized_instance=serialized_instance)
+
+            logger.info("[3] Exiting AuditPatcher.adelete")
+            return result
+        finally:
+            self._audit_in_progress = False
 
     # ------------------------------------------------------------------
     # 🔥 ASYNC QUERYSET PATCHES
@@ -298,22 +306,30 @@ class AuditPatcher:
         logger = get_request_logger()
         logger.info("[1] Entering AuditPatcher.delete")
 
-        should_audit = getattr(self, "AUDIT_ENABLED", False)
-        changes = None
-        serialized_instance = None
+        if getattr(self, "_audit_in_progress", False):
+            logger.info("[2] Recursion detected in delete, skipping audit")
+            return self.__original_delete__(*args, **kwargs)
 
-        if should_audit:
-            changes = compute_delete_diff(self)
-            serialized_instance = AuditPatcher.serialize_instance(self)
+        self._audit_in_progress = True
+        try:
+            should_audit = getattr(self, "AUDIT_ENABLED", False)
+            changes = None
+            serialized_instance = None
 
-        result = self.__original_delete__(*args, **kwargs)
+            if should_audit:
+                changes = compute_delete_diff(self)
+                serialized_instance = AuditPatcher.serialize_instance(self)
 
-        if should_audit:
-            logger.info("[2] Auditing deletion in delete")
-            AuditPatcher.audit_delete_sync(self, changes, serialized_instance=serialized_instance)
+            result = self.__original_delete__(*args, **kwargs)
 
-        logger.info("[3] Exiting AuditPatcher.delete")
-        return result
+            if should_audit:
+                logger.info("[2] Auditing deletion in delete")
+                AuditPatcher.audit_delete_sync(self, changes, serialized_instance=serialized_instance)
+
+            logger.info("[3] Exiting AuditPatcher.delete")
+            return result
+        finally:
+            self._audit_in_progress = False
 
     # ------------------------------------------------------------------
     # 🔥 SYNC QUERYSET PATCHES
