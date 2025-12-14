@@ -722,3 +722,54 @@ class TestAuditInstanceDelete:
                 call("[3] Exiting AuditPatcher.delete"),
             ]
         )
+
+    def test_delete_logs_pk_loss_simulation(self):
+        # Simulates Django behavior where PK is cleared after delete
+        logger = MagicMock()
+        inst = make_instance(audit_enabled=True, pk="999")
+
+        # Define side effect to clear PK
+        def delete_side_effect(*args, **kwargs):
+            inst.pk = None
+            return "deleted"
+
+        inst.__original_delete__ = MagicMock(side_effect=delete_side_effect)
+
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=logger):
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"d": 1}):
+                # We mock audit_delete_sync to verify it receives serialized_instance
+                with patch("apps.audit_app.v1.patcher.AuditPatcher.audit_delete_sync") as mock_audit:
+                    AuditPatcher.delete(inst)
+
+        # Check that audit_delete_sync was called
+        mock_audit.assert_called_once()
+        # Verify serialized_instance was passed and contains the original PK
+        kwargs = mock_audit.call_args.kwargs
+        serialized = kwargs.get("serialized_instance")
+        assert serialized is not None
+        assert serialized["target_object_id"] == "999"
+
+    @pytest.mark.asyncio
+    async def test_adelete_logs_pk_loss_simulation(self):
+        # Simulates Django behavior where PK is cleared after async delete
+        logger = MagicMock()
+        inst = make_instance(audit_enabled=True, pk="888")
+
+        async def delete_side_effect(*args, **kwargs):
+            inst.pk = None
+            return "deleted"
+
+        inst.__original_adelete__ = AsyncMock(side_effect=delete_side_effect)
+
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=logger):
+            with patch("apps.audit_app.v1.patcher.compute_delete_diff", return_value={"d": 1}):
+                with patch(
+                    "apps.audit_app.v1.patcher.AuditPatcher.audit_delete_async", new=AsyncMock()
+                ) as mock_audit:
+                    await AuditPatcher.adelete(inst)
+
+        mock_audit.assert_awaited_once()
+        kwargs = mock_audit.call_args.kwargs
+        serialized = kwargs.get("serialized_instance")
+        assert serialized is not None
+        assert serialized["target_object_id"] == "888"
