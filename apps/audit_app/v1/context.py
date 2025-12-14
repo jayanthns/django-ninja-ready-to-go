@@ -32,10 +32,12 @@ def get_normalized_context():
 
     # No request context? → System-level operation
     if not ctx.get("trace_id") and not ctx.get("actor_id"):
+        import uuid
+
         return {
             "actor_id": "system",
             "actor_email": None,
-            "trace_id": "system-trace",
+            "trace_id": str(uuid.uuid4()),
             "correlation_id": None,
             "session_key": None,
             "ip_address": None,

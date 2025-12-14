@@ -1,3 +1,4 @@
+import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -78,7 +79,11 @@ def test_get_normalized_context(mock_get_context, name, context_input, expected_
         # system defaults MUST be used
         assert ctx["actor_id"] == "system"
         assert ctx["actor_email"] is None
-        assert ctx["trace_id"] == "system-trace"
+        # assert valid uuid
+        try:
+            uuid.UUID(ctx["trace_id"])
+        except ValueError:
+            pytest.fail(f"trace_id '{ctx['trace_id']}' is not a valid UUID")
         assert ctx["correlation_id"] is None
         assert ctx["session_key"] is None
         assert ctx["ip_address"] is None

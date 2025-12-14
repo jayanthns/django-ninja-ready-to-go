@@ -144,6 +144,9 @@ DATABASE_PASSWORD = os.getenv("DB_PASSWORD", "django.db.sqlite3")
 DATABASE_HOST = os.getenv("DB_HOST", "django.db.sqlite3")
 DATABASE_PORT = os.getenv("DB_PORT", "django.db.sqlite3")
 
+# Auth User Model
+AUTH_USER_MODEL = "apps_users_app_v1.User"
+
 # TMP Path
 PROJECT_TEMP_PATH = ROOT_DIR.joinpath("tmp")
 

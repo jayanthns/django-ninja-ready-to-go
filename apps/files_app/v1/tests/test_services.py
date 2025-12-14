@@ -118,7 +118,19 @@ class TestFileService:
         data = FileService.parse_linear_file(file_csv)
         assert len(data) == 1
 
-        # 3. Unsupported file with no logger (should not crash)
+        # 3. Parse JSON file (should not crash)
+        content_json = json.dumps([{"name": "Alice", "age": 30}]).encode("utf-8")
+        file_json = SimpleUploadedFile("test.json", content_json, content_type="application/json")
+        data = FileService.parse_linear_file(file_json)
+        assert len(data) == 1
+
+        # 4. File size exceeded with no logger (should not crash but raise HttpError)
+        large_content = b"a" * (26 * 1024)
+        large_file = SimpleUploadedFile("large.txt", large_content)
+        with pytest.raises(HttpError):
+            FileService.validate_file_size(large_file, limit_kb=25)
+
+        # 5. Unsupported file with no logger (should not crash)
         file_txt = SimpleUploadedFile("test.txt", b"content", content_type="text/plain")
         with pytest.raises(HttpError):
             FileService.parse_linear_file(file_txt)

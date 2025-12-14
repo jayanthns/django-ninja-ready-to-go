@@ -1,25 +1,55 @@
-from asgiref.sync import sync_to_async
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
 from common.models import BaseModel
 
 
-class User(BaseModel):
-    username = models.CharField(max_length=150, unique=True)
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("Email must be set")
+
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
+
+        if not extra_fields.get("is_staff"):
+            raise ValueError("Superuser must have is_staff=True.")
+        if not extra_fields.get("is_superuser"):
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return self.create_user(email, password, **extra_fields)
+
+
+class User(AbstractBaseUser, PermissionsMixin, BaseModel):
+    # --- Identity ---
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=255)  # Store hashed passwords
+    username = models.CharField(max_length=150, unique=True)
 
-    async def set_password(self, raw_password: str):
-        """Asynchronously hash the password before saving."""
-        self.password = await sync_to_async(make_password)(raw_password)
+    # --- Status flags ---
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
-    async def check_password(self, raw_password: str) -> bool:
-        """Asynchronously check if the given password matches the stored hash."""
-        return await sync_to_async(check_password)(raw_password, self.password)
+    # --- Audit ---
+    last_login = models.DateTimeField(null=True, blank=True)
+
+    # --- Manager ---
+    objects = UserManager()
+
+    # --- Auth config ---
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username"]
 
     class Meta:
         db_table = "users"
 
     def __str__(self):
-        return self.email  # pragma: no cover
+        return self.email

@@ -808,3 +808,27 @@ class TestAuditInstanceDelete:
                 call("[2] Recursion detected in adelete, skipping audit"),
             ]
         )
+
+
+# ============================================================
+#  GET LOGGER HELPER
+# ============================================================
+
+
+class TestAuditPatcherGetLogger:
+    def test_get_logger_with_request_logger(self):
+        mock_logger = MagicMock()
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=mock_logger):
+            logger = AuditPatcher._get_logger()
+            assert logger == mock_logger
+
+    def test_get_logger_fallback_to_system(self):
+        with patch("apps.audit_app.v1.patcher.get_request_logger", return_value=None):
+            with patch("common.logger_helper.get_logger_with_trace") as mock_get_trace:
+                system_logger = MagicMock()
+                mock_get_trace.return_value = system_logger
+
+                logger = AuditPatcher._get_logger()
+
+                assert logger == system_logger
+                mock_get_trace.assert_called_with("system")

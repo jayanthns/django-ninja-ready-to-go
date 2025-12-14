@@ -32,13 +32,22 @@ class AuditPatcher:
             "object_representation": str(instance),
         }
 
+    @staticmethod
+    def _get_logger():
+        logger = get_request_logger()
+        if logger:
+            return logger
+        from common.logger_helper import get_logger_with_trace
+
+        return get_logger_with_trace("system")
+
     # ------------------------------------------------------------------
     # 🔥 ASYNC AUDIT DISPATCHERS
     # ------------------------------------------------------------------
 
     @classmethod
     async def audit_create_async(cls, instance, changes):
-        logger = get_request_logger()
+        logger = cls._get_logger()
         logger.info("[1] Entering AuditPatcher.audit_create_async")
 
         payload = {
@@ -55,7 +64,7 @@ class AuditPatcher:
         if not changes:
             return
 
-        logger = get_request_logger()
+        logger = cls._get_logger()
         logger.info("[1] Entering AuditPatcher.audit_update_async")
 
         payload = {
@@ -69,7 +78,7 @@ class AuditPatcher:
 
     @classmethod
     async def audit_delete_async(cls, instance, changes, serialized_instance=None):
-        logger = get_request_logger()
+        logger = cls._get_logger()
         logger.info("[1] Entering AuditPatcher.audit_delete_async")
 
         payload = {
@@ -87,7 +96,7 @@ class AuditPatcher:
 
     @classmethod
     def audit_create_sync(cls, instance, changes):
-        logger = get_request_logger()
+        logger = cls._get_logger()
         logger.info("[1] Entering AuditPatcher.audit_create_sync")
 
         payload = {
@@ -104,7 +113,7 @@ class AuditPatcher:
         if not changes:
             return
 
-        logger = get_request_logger()
+        logger = cls._get_logger()
         logger.info("[1] Entering AuditPatcher.audit_update_sync")
 
         payload = {
@@ -118,7 +127,7 @@ class AuditPatcher:
 
     @classmethod
     def audit_delete_sync(cls, instance, changes, serialized_instance=None):
-        logger = get_request_logger()
+        logger = cls._get_logger()
         logger.info("[1] Entering AuditPatcher.audit_delete_sync")
 
         payload = {
@@ -136,7 +145,7 @@ class AuditPatcher:
 
     @staticmethod
     async def asave(self, *args, **kwargs):
-        logger = get_request_logger()
+        logger = AuditPatcher._get_logger()
         logger.info("[1] Entering AuditPatcher.asave")
 
         if getattr(self, "_audit_in_progress", False):
@@ -179,7 +188,7 @@ class AuditPatcher:
 
     @staticmethod
     async def adelete(self, *args, **kwargs):
-        logger = get_request_logger()
+        logger = AuditPatcher._get_logger()
         logger.info("[1] Entering AuditPatcher.adelete")
 
         if getattr(self, "_audit_in_progress", False):
@@ -214,7 +223,7 @@ class AuditPatcher:
     @staticmethod
     async def aupdate(self, **kwargs):
         model = self.model
-        logger = get_request_logger()
+        logger = AuditPatcher._get_logger()
         logger.info("[1] Entering AuditPatcher.aupdate")
 
         if getattr(model, "AUDIT_ENABLED", False):
@@ -234,7 +243,7 @@ class AuditPatcher:
     @staticmethod
     async def adelete_queryset(self, **kwargs):
         model = self.model
-        logger = get_request_logger()
+        logger = AuditPatcher._get_logger()
         logger.info("[1] Entering AuditPatcher.adelete_queryset")
 
         if not getattr(model, "AUDIT_ENABLED", False):
@@ -260,7 +269,7 @@ class AuditPatcher:
 
     @staticmethod
     def save(self, *args, **kwargs):
-        logger = get_request_logger()
+        logger = AuditPatcher._get_logger()
         logger.info("[1] Entering AuditPatcher.save")
 
         if getattr(self, "_audit_in_progress", False):
@@ -303,7 +312,7 @@ class AuditPatcher:
 
     @staticmethod
     def delete(self, *args, **kwargs):
-        logger = get_request_logger()
+        logger = AuditPatcher._get_logger()
         logger.info("[1] Entering AuditPatcher.delete")
 
         if getattr(self, "_audit_in_progress", False):
@@ -338,7 +347,7 @@ class AuditPatcher:
     @staticmethod
     def update(self, **kwargs):
         model = self.model
-        logger = get_request_logger()
+        logger = AuditPatcher._get_logger()
         logger.info("[1] Entering AuditPatcher.update")
 
         if getattr(model, "AUDIT_ENABLED", False):
@@ -358,7 +367,7 @@ class AuditPatcher:
     @staticmethod
     def delete_queryset(self, **kwargs):
         model = self.model
-        logger = get_request_logger()
+        logger = AuditPatcher._get_logger()
         logger.info("[1] Entering AuditPatcher.delete_queryset")
 
         if not getattr(model, "AUDIT_ENABLED", False):
