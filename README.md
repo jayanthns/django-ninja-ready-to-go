@@ -512,6 +512,7 @@ Comprehensive health check and monitoring system with organized API structure.
 - **System Health Aggregation**: Overall system status monitoring with detailed service breakdowns
 - **Performance Analytics**: Response time tracking, success rates, and historical statistics
 - **Admin Interface**: Django admin integration for monitoring and management
+- **Management Commands**: CLI tools `check_db` and `check_redis` for container health checks
 
 **API Structure:**
 

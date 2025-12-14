@@ -16,6 +16,7 @@ This guide provides naming conventions, coding standards, and best practices for
 10. [FAQ](#faq)
 11. [Pydantic & Validation Guide](#pydantic--validation-guide)
 12. [Background Tasks (Celery & Dramatiq)](#background-tasks-celery--dramatiq)
+13. [Creating Management Commands](#creating-management-commands)
 
 ---
 
@@ -2540,3 +2541,62 @@ def ping_celery_task(self, duration: int = 0, trace_id: str = None):
 - [Project Package Manager Guide](PACKAGE_MANAGER.md)
 - [Project Testing Guide](TESTING.md)
 - [App Generator Script Guide](../scripts/README.md)
+
+---
+
+## Creating Management Commands
+
+Django management commands are the standard way to create CLI tools for your application. In this project, we follow specific conventions to keep commands organized and maintainable.
+
+### Location
+
+Place your management commands within the relevant app's structure. If using the versioned structure (v1/), place them there:
+
+```bash
+apps/{app_name}/v1/management/commands/{command_name}.py
+```
+
+**Important**: Ensure that both `management/` and `management/commands/` directories have `__init__.py` files so Django can discover them.
+
+### Naming
+
+- Use **snake_case** for filenames (e.g., `check_db.py`, `import_users.py`).
+- The filename becomes the command name (e.g., `python manage.py check_db`).
+
+### Implementation Template
+
+Use the following template for consistency:
+
+```python
+from django.core.management.base import BaseCommand, CommandError
+
+class Command(BaseCommand):
+    help = "Brief description of what the command does"
+
+    def add_arguments(self, parser):
+        # Optional: Add arguments
+        parser.add_argument("poll_ids", nargs="+", type=int, help="Poll IDs")
+        parser.add_argument(
+            "--delete",
+            action="store_true",
+            help="Delete poll instead of closing it",
+        )
+
+    def handle(self, *args, **options):
+        # Your logic here
+        try:
+            # Do work...
+            self.stdout.write(self.style.SUCCESS("Successfully closed poll"))
+            
+        except Exception as e:
+            # Raise CommandError for expected failures
+            raise CommandError(f"Poll does not exist: {e}")
+```
+
+### Best Practices
+
+1.  **Output Formatting**: Use `self.stdout.write()` and `self.stderr.write()` instead of `print()`.
+    - Use `self.style.SUCCESS()`, `self.style.WARNING()`, `self.style.ERROR()` for colored output.
+2.  **Idempotency**: Ideally, commands should be safe to run multiple times without side effects.
+3.  **Logging**: You can still use the project's logging system within commands for detailed logs, while using stdout for user feedback.
+4.  **Testing**: Write unit tests for your commands using `call_command` and checking `stdout`/`stderr`.

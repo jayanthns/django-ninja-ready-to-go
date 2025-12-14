@@ -773,4 +773,31 @@ This ping app is part of the Django Ninja Ready-to-Go project and follows the sa
 
 ---
 
-**Note**: This ping app is designed to be production-ready and provides comprehensive health monitoring capabilities for Django Ninja applications. It integrates seamlessly with the project's logging, tracing, and admin systems.
+
+## 🛠️ Management Commands
+
+The app includes Django management commands for performing health checks from the CLI, suitable for cron jobs or container health checks.
+
+### `check_db`
+
+Checks the database connectivity and health status.
+
+```bash
+python manage.py check_db
+```
+
+**Output:**
+- Success: `✅ Database is HEALTHY` (Exit code 0)
+- Failure: `❌ Database is UNHEALTHY: <error message>` (Exit code 1)
+
+### `check_redis`
+
+Checks the Redis cache connectivity and health status.
+
+```bash
+python manage.py check_redis
+```
+
+**Output:**
+- Success: `✅ Redis is HEALTHY` (Exit code 0)
+- Failure: `❌ Redis is UNHEALTHY: <error message>` (Exit code 1)
