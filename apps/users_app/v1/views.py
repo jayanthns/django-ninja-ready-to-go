@@ -29,8 +29,11 @@ async def register_user(request: HttpRequest, payload: UserCreateSchema) -> Json
         raise
 
 
-@router.get("/{user_id}/", response=create_api_response_schema(UserSchema))
-async def get_user(request: HttpRequest, user_id: uuid.UUID) -> create_api_response_schema(UserSchema):
+@router.get(
+    "/{user_id}/",
+    response={200: create_api_response_schema(UserSchema), 404: create_api_response_schema(UserSchema)},
+)
+async def get_user(request: HttpRequest, user_id: uuid.UUID):
     """Retrieve a user by ID (Async)."""
     request.logger.info(f"[1] Entering get_user endpoint for ID: {user_id}")
     request.logger.info("[2] Calling UserService.get")
@@ -39,14 +42,16 @@ async def get_user(request: HttpRequest, user_id: uuid.UUID) -> create_api_respo
     if not user:
         request.logger.warning(f"[3] User not found: {user_id}")
         request.logger.info("[4] Exiting get_user endpoint (Not Found)")
-        return create_api_response_schema(UserSchema)(
-            error={"message": "User not found"},
-            trace_id=str(request.trace_id),
-        )
+        return 404, {
+            "error": {"message": "User not found"},
+            "trace_id": str(request.trace_id),
+            "data": None,
+        }
 
     request.logger.info("[3] User found")
     request.logger.info("[4] Exiting get_user endpoint")
-    return create_api_response_schema(UserSchema)(
-        data=user,
-        trace_id=str(request.trace_id),
-    )
+    return 200, {
+        "data": user,
+        "trace_id": str(request.trace_id),
+        "error": {},
+    }

@@ -16,11 +16,26 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.http import Http404
 from django.urls import path
 from ninja import NinjaAPI
 
 # Create a global API instance
 api = NinjaAPI(title="My Project API")
+
+
+@api.exception_handler(Http404)
+def on_404(request, exc):
+    return api.create_response(
+        request,
+        {
+            "error": {"message": "Not Found"},
+            "trace_id": getattr(request, "trace_id", None),
+            "data": None,
+        },
+        status=404,
+    )
+
 
 # Include routers from each app
 from apps.animals_app.v1.views import router as animals_router  # noqa
@@ -46,6 +61,20 @@ api.add_router("/v1/pings/cache/", cache_router, tags=["cache-pings"])
 api.add_router("/v1/pings/db/", database_router, tags=["database-pings"])
 api.add_router("/v1/pings/external/", external_router, tags=["external-pings"])
 api.add_router("/v1/tasks/", tasks_router, tags=["background-tasks"])
+
+
+# Catch-all for unmatched API routes
+@api.api_operation(["GET", "POST", "PUT", "DELETE", "PATCH"], "/{path:path}")
+def catch_all(request, path: str):
+    return api.create_response(
+        request,
+        {
+            "error": {"message": "Not Found"},
+            "trace_id": getattr(request, "trace_id", None),
+            "data": None,
+        },
+        status=404,
+    )
 
 
 urlpatterns = [

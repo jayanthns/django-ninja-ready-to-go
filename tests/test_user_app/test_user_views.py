@@ -73,9 +73,10 @@ class TestUserViews:
 
         mock_user_service.get = AsyncMock(return_value=user_data)
 
-        resp = await get_user(req, user_id)
+        status, resp = await get_user(req, user_id)
 
-        assert resp.data == user_data
+        assert status == 200
+        assert resp["data"] == user_data
         mock_user_service.get.assert_awaited_with(user_id)
 
         # Verify Logs
@@ -92,9 +93,10 @@ class TestUserViews:
 
         mock_user_service.get = AsyncMock(return_value=None)
 
-        resp = await get_user(req, user_id)
+        status, resp = await get_user(req, user_id)
 
-        assert resp.error == {"message": "User not found"}
+        assert status == 404
+        assert resp["error"] == {"message": "User not found"}
         mock_user_service.get.assert_awaited_with(user_id)
 
         # Verify Logs
