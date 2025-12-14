@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from unittest.mock import MagicMock, patch
@@ -143,6 +144,112 @@ class TestTraceIDMiddleware:
 
         assert TRACE_ID_RESPONSE_HEADER in response
         assert response[TRACE_ID_RESPONSE_HEADER] == request.trace_id
+
+    def test_generic_500_post_passthrough(self):
+        """
+        Ensure that a generic 500 error on POST (not related to slash)
+        passes through the middleware without being intercepted.
+        """
+        middleware = TraceIDMiddleware(self._dummy_get_response())
+        # Mock get_response to return a 500 Generic Error
+        middleware.get_response = MagicMock(return_value=HttpResponse("Generic Error", status=500))
+
+        # Request with NO slash, so it falls through the first check
+        # and response content "Generic Error" fails the second check.
+        request = self._build_request(method="POST", path="/api/v1/test")
+
+        response = middleware(request)
+
+        # Should still be 500
+        assert response.status_code == 500
+        # Should contain trace ID (verifying it fell through to normal handling)
+        assert TRACE_ID_RESPONSE_HEADER in response
+        assert response.content == b"Generic Error"
+
+    def test_500_post_with_slash_passthrough(self):
+        """
+        Ensure that a 500 error on POST where URL HAS a slash
+        passes through, even if it looks like a RuntimeError.
+        """
+        middleware = TraceIDMiddleware(self._dummy_get_response())
+        # Mock get_response to return a 500 with RuntimeError text (to simulate tricky case)
+        middleware.get_response = MagicMock(
+            return_value=HttpResponse("RuntimeError APPEND_SLASH", status=500)
+        )
+
+        # Request WITH slash, so the first check `not endswith(/)` is False.
+        # It should short-circuit and pass through.
+        request = self._build_request(method="POST", path="/api/v1/test/")
+
+        response = middleware(request)
+
+        # Should still be 500
+        assert response.status_code == 500
+        assert TRACE_ID_RESPONSE_HEADER in response
+        assert response.content == b"RuntimeError APPEND_SLASH"
+
+    def test_runtime_error_no_append_slash_passthrough(self):
+        """
+        Ensure that a 500 error on POST with 'RuntimeError' but MISSING 'APPEND_SLASH'
+        passes through.
+        """
+        middleware = TraceIDMiddleware(self._dummy_get_response())
+        # Mock 500 with RuntimeError but no mentions of APPEND_SLASH
+        middleware.get_response = MagicMock(return_value=HttpResponse("RuntimeError occurred", status=500))
+
+        # Request with NO slash. First check True.
+        # Second check (RuntimeError) True.
+        # Third check (APPEND_SLASH) False.
+        request = self._build_request(method="POST", path="/api/v1/test")
+
+        response = middleware(request)
+
+        # Should still be 500
+        assert response.status_code == 500
+        assert TRACE_ID_RESPONSE_HEADER in response
+        assert response.content == b"RuntimeError occurred"
+
+    def test_runtime_error_exception_caught(self):
+        """
+        Ensure that if the RuntimeError BUbbles up (not caught downstream),
+        we catch it in the except block and return 404.
+        """
+
+        def raising_response(request):
+            raise RuntimeError("You called this URL via POST, but the URL doesn't end in a slash")
+
+        middleware = TraceIDMiddleware(raising_response)
+
+        request = self._build_request(method="POST", path="/api/v1/test")
+
+        response = middleware(request)
+
+        assert response.status_code == 404
+        data = json.loads(response.content)
+        assert "RuntimeError" in data["detail"]
+
+    def test_500_post_intercepted_from_response(self):
+        """
+        Ensure that a 500 error on POST with missing slash AND valid RuntimeError text
+        is intercepted and returns 404 JSON.
+        """
+        middleware = TraceIDMiddleware(self._dummy_get_response())
+        # Mock get_response to return a 500 with the exact text looked for
+        # Note: We need both 'RuntimeError' and 'APPEND_SLASH' in the content
+        content = b"Traceback... RuntimeError ... You called this URL via POST ... APPEND_SLASH"
+        middleware.get_response = MagicMock(return_value=HttpResponse(content, status=500))
+
+        request = self._build_request(method="POST", path="/api/v1/test")  # No trailing slash
+
+        response = middleware(request)
+
+        # Should be intercepted and converted to 404
+        assert response.status_code == 404
+        assert TRACE_ID_RESPONSE_HEADER in response
+
+        data = json.loads(response.content)
+        assert "RuntimeError" in data["detail"]
+        assert "Please add a trailing slash" in data["detail"]
 
 
 class TestTraceIDContextFilter:

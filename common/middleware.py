@@ -2,7 +2,7 @@ import logging
 import uuid
 from typing import Callable, Optional
 
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 
 from .logger_helper import get_logger_with_trace, get_request_logger, logger_helper
 
@@ -67,6 +67,25 @@ class TraceIDMiddleware:
             # Process the request
             response = self.get_response(request)
 
+            # Intercept Django's RuntimeError for missing slash on POST (caught and returned as 500 by downstream wrappers)
+            if response.status_code == 500 and request.method == "POST":
+                # Check for the specific error
+                # In DEBUG=True, content is the traceback page.
+                if (
+                    not request.path.endswith("/")
+                    and b"RuntimeError" in response.content
+                    and b"APPEND_SLASH" in response.content
+                ):
+                    request.logger.warning(
+                        f"[3] Request failed - {request.method} {request.path} - Missing trailing slash on POST (intercepted 500)",
+                    )
+                    response = JsonResponse(
+                        {
+                            "detail": "RuntimeError: Method POST not allowed on URL without trailing slash. Please add a trailing slash."
+                        },
+                        status=404,
+                    )
+
             # Add trace headers to response
             response[TRACE_ID_RESPONSE_HEADER] = str(trace_id)
             if correlation_id:
@@ -81,10 +100,24 @@ class TraceIDMiddleware:
             return response
 
         except Exception as e:
+            # Handle Django's RuntimeError for missing slash on POST
+            if isinstance(e, RuntimeError) and "You called this URL via POST" in str(e):
+                request.logger.warning(
+                    f"[3] Request failed - {request.method} {request.path} - Missing trailing slash on POST",
+                    extra={"error": str(e)},
+                )
+                return JsonResponse(
+                    {
+                        "detail": "RuntimeError: Method POST not allowed on URL without trailing slash. Please add a trailing slash."
+                    },
+                    status=404,
+                )
+
             # Log error with trace ID
             request.logger.exception(
                 f"[3] Request failed - {request.method} {request.path}", extra={"error": str(e)}
             )
+            # Make sure to remove debug print if present
             raise
         finally:
             # Clean up the logger context
