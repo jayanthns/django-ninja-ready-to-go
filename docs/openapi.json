@@ -69,8 +69,9 @@
                         "in": "path",
                         "name": "animal_id",
                         "schema": {
+                            "format": "uuid",
                             "title": "Animal Id",
-                            "type": "integer"
+                            "type": "string"
                         },
                         "required": true
                     }
@@ -111,8 +112,9 @@
                         "in": "path",
                         "name": "animal_id",
                         "schema": {
+                            "format": "uuid",
                             "title": "Animal Id",
-                            "type": "integer"
+                            "type": "string"
                         },
                         "required": true
                     }
@@ -163,8 +165,9 @@
                         "in": "path",
                         "name": "animal_id",
                         "schema": {
+                            "format": "uuid",
                             "title": "Animal Id",
-                            "type": "integer"
+                            "type": "string"
                         },
                         "required": true
                     }
@@ -271,8 +274,9 @@
                         "in": "path",
                         "name": "user_id",
                         "schema": {
+                            "format": "uuid",
                             "title": "User Id",
-                            "type": "integer"
+                            "type": "string"
                         },
                         "required": true
                     }
@@ -984,6 +988,138 @@
                     "external-pings"
                 ]
             }
+        },
+        "/api/v1/tasks/celery/ping": {
+            "post": {
+                "operationId": "apps_ping_app_v1_views_tasks_views_trigger_celery_ping",
+                "summary": "Trigger Celery Ping",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Trigger a Celery ping task.",
+                "tags": [
+                    "background-tasks"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TaskTriggerSchema"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/tasks/celery/status/{task_id}": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_tasks_views_get_celery_status",
+                "summary": "Get Celery Status",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "task_id",
+                        "schema": {
+                            "title": "Task Id",
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Get the status of a Celery ping task.",
+                "tags": [
+                    "background-tasks"
+                ]
+            }
+        },
+        "/api/v1/tasks/dramatiq/ping": {
+            "post": {
+                "operationId": "apps_ping_app_v1_views_tasks_views_trigger_dramatiq_ping",
+                "summary": "Trigger Dramatiq Ping",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Trigger a Dramatiq ping task.",
+                "tags": [
+                    "background-tasks"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TaskTriggerSchema"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/tasks/dramatiq/status/{task_id}": {
+            "get": {
+                "operationId": "apps_ping_app_v1_views_tasks_views_get_dramatiq_status",
+                "summary": "Get Dramatiq Status",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "task_id",
+                        "schema": {
+                            "title": "Task Id",
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResponseSchema"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Get the status of a Dramatiq ping task.",
+                "tags": [
+                    "background-tasks"
+                ]
+            }
         }
     },
     "components": {
@@ -1032,8 +1168,9 @@
             "AnimalSchema": {
                 "properties": {
                     "id": {
+                        "format": "uuid",
                         "title": "Id",
-                        "type": "integer"
+                        "type": "string"
                     },
                     "name": {
                         "title": "Name",
@@ -1083,8 +1220,9 @@
             "UserSchema": {
                 "properties": {
                     "id": {
+                        "format": "uuid",
                         "title": "Id",
-                        "type": "integer"
+                        "type": "string"
                     },
                     "username": {
                         "title": "Username",
@@ -1605,6 +1743,54 @@
                     "last_24h_success_rate"
                 ],
                 "title": "PingStatsSchema",
+                "type": "object"
+            },
+            "TaskResponseSchema": {
+                "properties": {
+                    "trace_id": {
+                        "title": "Trace Id",
+                        "type": "string"
+                    },
+                    "task_id": {
+                        "title": "Task Id",
+                        "type": "string"
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string"
+                    },
+                    "result": {
+                        "anyOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Result"
+                    }
+                },
+                "required": [
+                    "trace_id",
+                    "task_id",
+                    "status"
+                ],
+                "title": "TaskResponseSchema",
+                "type": "object"
+            },
+            "TaskTriggerSchema": {
+                "properties": {
+                    "duration": {
+                        "default": 0,
+                        "title": "Duration",
+                        "type": "integer"
+                    }
+                },
+                "title": "TaskTriggerSchema",
                 "type": "object"
             }
         }
