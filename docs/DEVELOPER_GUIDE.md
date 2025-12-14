@@ -17,6 +17,7 @@ This guide provides naming conventions, coding standards, and best practices for
 11. [Pydantic & Validation Guide](#pydantic--validation-guide)
 12. [Background Tasks (Celery & Dramatiq)](#background-tasks-celery--dramatiq)
 13. [Creating Management Commands](#creating-management-commands)
+14. [Audit System Integration](#audit-system-integration)
 
 ---
 
@@ -936,6 +937,7 @@ USE_REDIS=1
 6. **Request Logging**: Use `request.logger` for automatic trace context
 7. **Schema Validation**: Let Pydantic handle all input validation
 8. **Docstrings**: Document all public functions and classes
+9. **Audit Compliance**: Never use queryset updates on audited models; use `save()` instead.
 
 ---
 
@@ -2593,10 +2595,81 @@ class Command(BaseCommand):
             raise CommandError(f"Poll does not exist: {e}")
 ```
 
-### Best Practices
+### Command Best Practices
 
 1.  **Output Formatting**: Use `self.stdout.write()` and `self.stderr.write()` instead of `print()`.
     - Use `self.style.SUCCESS()`, `self.style.WARNING()`, `self.style.ERROR()` for colored output.
 2.  **Idempotency**: Ideally, commands should be safe to run multiple times without side effects.
 3.  **Logging**: You can still use the project's logging system within commands for detailed logs, while using stdout for user feedback.
 4.  **Testing**: Write unit tests for your commands using `call_command` and checking `stdout`/`stderr`.
+
+---
+
+## Audit System Integration
+
+The Audit App provides automatic tracking of all model changes (creation, updates, deletions) for models with `AUDIT_ENABLED = True`.
+
+### How It Works
+
+The system uses a centralized `AuditPatcher` that intercepts `save()`, `asave()`, `delete()`, and `adelete()` calls to:
+1.  Compute the difference (diff) between the old and new state.
+2.  Serialize the changes.
+3.  Dispatch an audit log entry (usually to a background task).
+
+### Making Updates to Audit-Enabled Models
+
+> [!WARNING]
+> **CRITICAL RULE**: You CANNOT use `QuerySet.update()` or `QuerySet.aupdate()` on audit-enabled models.
+
+These methods operate directly at the SQL level and bypass Django's signal framework and method overrides. Using them would skip audit logging, creating a compliance gap.
+
+**The `AuditPatcher` will explicitly raise a `RuntimeError` if you attempt to call `update()` or `aupdate()` on an audited model.**
+
+#### Incorrect Approach (Will Fail)
+
+```python
+# ❌ INCORRECT: Causes RuntimeError on audited models
+await User.objects.filter(is_active=False).aupdate(is_active=True)
+```
+
+#### Correct Approach (Fetch -> Update -> Save)
+
+To update an audited model, you must fetch the instance, modify parameters, and call `save()` or `asave()`.
+
+```python
+# ✅ CORRECT: Ensures audit log is generated
+user = await User.objects.aget(pk=user_id)
+user.is_active = True
+await user.asave()
+```
+
+### Using BaseCRUDService
+
+The easiest way to ensure compliance is to use the `BaseCRUDService`, which handles this pattern automatically:
+
+```python
+# common/services.py implementation
+# ...
+instance = await cls.model.objects.aget(pk=id)
+for field, value in data.items():
+    setattr(instance, field, value)
+await instance.asave()  # Triggers audit
+# ...
+```
+
+**Usage**:
+
+```python
+await UserService.update(user_id, {"is_active": True})
+```
+
+### Enabling Audits on a Model
+
+To enable auditing for a model, simply add `AUDIT_ENABLED = True` to the class definition.
+
+```python
+class Animal(BaseModel):
+    AUDIT_ENABLED = True  # Activates AuditPatcher
+    name = models.CharField(max_length=100)
+    # ...
+```
