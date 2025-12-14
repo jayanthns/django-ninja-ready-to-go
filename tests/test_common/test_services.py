@@ -22,6 +22,7 @@ class TestBaseCRUDService:
         schema = DummySchema(field1="value")
         DummyService.model.objects.acreate = AsyncMock(return_value="created_instance")
 
+        # Hooks are no-op by default, but we should verify the whole flow works
         result = await DummyService.create(schema)
 
         assert result == "created_instance"
@@ -88,15 +89,20 @@ class TestBaseCRUDService:
         assert result is None
 
     async def test_delete(self):
-        DummyService.model.objects.filter.return_value.adelete = AsyncMock(return_value=(1, {}))
+        # New implementation uses aget + instance.adelete
+        mock_instance = MagicMock()
+        mock_instance.adelete = AsyncMock()
+        DummyService.model.objects.aget = AsyncMock(return_value=mock_instance)
 
         result = await DummyService.delete(1)
 
         assert result is True
-        DummyService.model.objects.filter.assert_called_with(pk=1)
+        DummyService.model.objects.aget.assert_awaited_with(pk=1)
+        mock_instance.adelete.assert_awaited_once()
 
     async def test_delete_fail(self):
-        DummyService.model.objects.filter.return_value.adelete = AsyncMock(return_value=(0, {}))
+        DummyService.model.DoesNotExist = Exception
+        DummyService.model.objects.aget = AsyncMock(side_effect=DummyService.model.DoesNotExist)
 
         result = await DummyService.delete(1)
 
