@@ -21,8 +21,8 @@ async def create_animal(request, payload: AnimalCreateSchema):
 
     try:
         # Create the animal
-        request.logger.info("[3] Calling AnimalService.create_animal")
-        animal = await AnimalService.create_animal(payload.name, payload.species, payload.age)
+        request.logger.info("[3] Calling AnimalService.create")
+        animal = await AnimalService.create(payload)
 
         # Log successful creation
         request.logger.info(f"[4] Successfully created animal with ID: {animal.id}")
@@ -45,7 +45,7 @@ async def create_animal(request, payload: AnimalCreateSchema):
 async def list_animals(request):
     """Retrieve all animals (Async)."""
     request.logger.info("[1] Entering list_animals endpoint")
-    result = await AnimalService.list_animals()
+    result = await AnimalService.list()
     request.logger.info("[2] Exiting list_animals endpoint")
     return {"data": result, "trace_id": str(request.trace_id), "error": {}}
 
@@ -55,7 +55,7 @@ async def list_animals(request):
 async def get_animal(request, animal_id: uuid.UUID):
     """Retrieve a single animal by ID (Async)."""
     request.logger.info(f"[1] Entering get_animal endpoint for ID: {animal_id}")
-    animal = await AnimalService.get_animal(animal_id)
+    animal = await AnimalService.get(animal_id)
     if not animal:
         request.logger.warning(f"[2] Animal not found: {animal_id}")
         request.logger.info("[3] Exiting get_animal endpoint (Not Found)")
@@ -70,7 +70,7 @@ async def get_animal(request, animal_id: uuid.UUID):
 async def update_animal(request, animal_id: uuid.UUID, payload: AnimalCreateSchema):
     """Update an animal (Async)."""
     request.logger.info(f"[1] Entering update_animal endpoint for ID: {animal_id}")
-    animal = await AnimalService.update_animal(animal_id, payload)
+    animal = await AnimalService.update(animal_id, payload)
     if not animal:
         request.logger.warning(f"[2] Animal not found for update: {animal_id}")
         request.logger.info("[3] Exiting update_animal endpoint (Not Found)")
@@ -89,8 +89,8 @@ async def delete_animal(request, animal_id: uuid.UUID):
     request.logger.info(f"[2] Attempting to delete animal with ID: {animal_id}")
 
     try:
-        request.logger.info("[3] Calling AnimalService.delete_animal")
-        success = await AnimalService.delete_animal(animal_id)
+        request.logger.info("[3] Calling AnimalService.delete")
+        success = await AnimalService.delete(animal_id)
         if not success:
             request.logger.warning(f"[4] Animal not found for deletion: {animal_id}")
             request.logger.info("[5] Exiting delete_animal endpoint (Not Found)")

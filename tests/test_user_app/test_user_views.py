@@ -25,20 +25,20 @@ class TestUserViews:
         user_id = uuid.uuid4()
         user_data = UserSchema(id=user_id, username="testuser", email="test@example.com")
 
-        mock_user_service.create_user = AsyncMock(return_value=user_data)
+        mock_user_service.create = AsyncMock(return_value=user_data)
 
         resp = await register_user(req, payload)
 
         assert resp["data"] == user_data
         assert "trace_id" in resp
         assert resp["error"] == {}
-        mock_user_service.create_user.assert_awaited_with(payload)
+        mock_user_service.create.assert_awaited_with(payload)
 
         # Verify Logs
         assert req.logger.info.call_count == 5
         req.logger.info.assert_any_call("[1] Entering register_user endpoint")
         req.logger.info.assert_any_call(f"[2] Creating new user: {payload.email}")
-        req.logger.info.assert_any_call("[3] Calling UserService.create_user")
+        req.logger.info.assert_any_call("[3] Calling UserService.create")
         req.logger.info.assert_any_call(f"[4] User created successfully: {user_id}")
         req.logger.info.assert_any_call("[5] Exiting register_user endpoint")
 
@@ -47,7 +47,7 @@ class TestUserViews:
         req = await self._make_request()
         payload = UserCreateSchema(username="testuser", email="test@example.com", password="password123")
 
-        mock_user_service.create_user = AsyncMock(side_effect=Exception("Registration failed"))
+        mock_user_service.create = AsyncMock(side_effect=Exception("Registration failed"))
 
         with pytest.raises(Exception) as exc:
             await register_user(req, payload)
@@ -58,7 +58,7 @@ class TestUserViews:
         assert req.logger.info.call_count == 3
         req.logger.info.assert_any_call("[1] Entering register_user endpoint")
         req.logger.info.assert_any_call(f"[2] Creating new user: {payload.email}")
-        req.logger.info.assert_any_call("[3] Calling UserService.create_user")
+        req.logger.info.assert_any_call("[3] Calling UserService.create")
 
         req.logger.exception.assert_called_once()
         args, _ = req.logger.exception.call_args
@@ -71,17 +71,17 @@ class TestUserViews:
 
         user_data = UserSchema(id=user_id, username="testuser", email="test@example.com")
 
-        mock_user_service.get_user_by_id = AsyncMock(return_value=user_data)
+        mock_user_service.get = AsyncMock(return_value=user_data)
 
         resp = await get_user(req, user_id)
 
         assert resp.data == user_data
-        mock_user_service.get_user_by_id.assert_awaited_with(user_id)
+        mock_user_service.get.assert_awaited_with(user_id)
 
         # Verify Logs
         assert req.logger.info.call_count == 4
         req.logger.info.assert_any_call(f"[1] Entering get_user endpoint for ID: {user_id}")
-        req.logger.info.assert_any_call("[2] Calling UserService.get_user_by_id")
+        req.logger.info.assert_any_call("[2] Calling UserService.get")
         req.logger.info.assert_any_call("[3] User found")
         req.logger.info.assert_any_call("[4] Exiting get_user endpoint")
 
@@ -90,19 +90,19 @@ class TestUserViews:
         req = await self._make_request()
         user_id = uuid.uuid4()
 
-        mock_user_service.get_user_by_id = AsyncMock(return_value=None)
+        mock_user_service.get = AsyncMock(return_value=None)
 
         resp = await get_user(req, user_id)
 
         assert resp.error == {"message": "User not found"}
-        mock_user_service.get_user_by_id.assert_awaited_with(user_id)
+        mock_user_service.get.assert_awaited_with(user_id)
 
         # Verify Logs
         # Info calls: [1], [2], [4] Exiting (Not Found) -> 3 calls
         # Warning calls: [3] User not found -> 1 call
         assert req.logger.info.call_count == 3
         req.logger.info.assert_any_call(f"[1] Entering get_user endpoint for ID: {user_id}")
-        req.logger.info.assert_any_call("[2] Calling UserService.get_user_by_id")
+        req.logger.info.assert_any_call("[2] Calling UserService.get")
         req.logger.info.assert_any_call("[4] Exiting get_user endpoint (Not Found)")
 
         req.logger.warning.assert_called_once_with(f"[3] User not found: {user_id}")
@@ -112,7 +112,7 @@ class TestUserViews:
         req = await self._make_request()
         user_id = uuid.uuid4()
 
-        mock_user_service.get_user_by_id = AsyncMock(side_effect=Exception("Database error"))
+        mock_user_service.get = AsyncMock(side_effect=Exception("Database error"))
 
         with pytest.raises(Exception) as exc:
             await get_user(req, user_id)
@@ -123,4 +123,4 @@ class TestUserViews:
         # [1], [2]
         assert req.logger.info.call_count == 2
         req.logger.info.assert_any_call(f"[1] Entering get_user endpoint for ID: {user_id}")
-        req.logger.info.assert_any_call("[2] Calling UserService.get_user_by_id")
+        req.logger.info.assert_any_call("[2] Calling UserService.get")

@@ -17,8 +17,8 @@ async def register_user(request: HttpRequest, payload: UserCreateSchema) -> Json
     request.logger.info(f"[2] Creating new user: {payload.email}")
 
     try:
-        request.logger.info("[3] Calling UserService.create_user")
-        data = await UserService.create_user(payload)
+        request.logger.info("[3] Calling UserService.create")
+        data = await UserService.create(payload)
 
         request.logger.info(f"[4] User created successfully: {data.id}")
         request.logger.info("[5] Exiting register_user endpoint")
@@ -33,9 +33,9 @@ async def register_user(request: HttpRequest, payload: UserCreateSchema) -> Json
 async def get_user(request: HttpRequest, user_id: uuid.UUID) -> create_api_response_schema(UserSchema):
     """Retrieve a user by ID (Async)."""
     request.logger.info(f"[1] Entering get_user endpoint for ID: {user_id}")
-    request.logger.info("[2] Calling UserService.get_user_by_id")
+    request.logger.info("[2] Calling UserService.get")
 
-    user = await UserService.get_user_by_id(user_id)
+    user = await UserService.get(user_id)
     if not user:
         request.logger.warning(f"[3] User not found: {user_id}")
         request.logger.info("[4] Exiting get_user endpoint (Not Found)")

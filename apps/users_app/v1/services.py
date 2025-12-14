@@ -1,24 +1,22 @@
+from typing import Any, Dict, Union
+
 from django.contrib.auth.hashers import make_password
+from pydantic import BaseModel
+
+from common.services import BaseCRUDService
 
 from .models import User
-from .schemas import UserCreateSchema, UserSchema
 
 
-class UserService:
-    @staticmethod
-    async def create_user(payload: UserCreateSchema) -> UserSchema:
-        """Create a new user asynchronously."""
-        user = await User.objects.acreate(
-            username=payload.username,
-            email=payload.email,
-            password=make_password(payload.password),  # Hash the password
-        )
-        return user
-        # return UserSchema.model_validate(user)  # ✅ Convert Django model to Pydantic schema
+class UserService(BaseCRUDService):
+    model = User
 
-    @staticmethod
-    async def get_user_by_id(user_id: int) -> UserSchema | None:
-        """Fetch a user by ID asynchronously."""
-        user = await User.objects.filter(id=user_id).afirst()
-        return user
-        # return UserSchema.model_validate(user) if user else None
+    @classmethod
+    async def create(cls, data: Union[BaseModel, Dict[str, Any]]) -> User:
+        if isinstance(data, BaseModel):
+            data = data.dict(exclude_unset=True)
+
+        if "password" in data:
+            data["password"] = make_password(data["password"])
+
+        return await super().create(data)
