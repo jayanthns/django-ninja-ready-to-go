@@ -395,6 +395,33 @@ d-wipe-local-data:
 	docker run --rm -v /var/lib/docker-data:/data alpine sh -c "rm -rf /data/django_ninja_db_data /data/django_ninja_redis_data"
 	@echo "Data wiped."
 
+d-purge-data:
+	@echo "WARNING: This will permanently remove all project volumes and local data."
+	@echo "This includes:"
+	@echo "  1. Docker volumes (postgres data, redis data)"
+	@echo "  2. Local bind mounts in /var/lib/docker-data/"
+	@read -p "Are you sure you want to DESTROY all data? [y/N] " ans && [ $${ans:-N} = y ]
+	@$(MAKE) d-volumes
+	@$(MAKE) d-clean-volumes
+	@$(MAKE) d-wipe-local-data
+	@echo "✅ Data wipe complete."
+
+quick-help:
+	@echo "== Quick Commands List =="
+	@echo "  run                   : Start Django server (auto-kill port 8000)"
+	@echo "  kill-port             : Kill processes on port 8000"
+	@echo "  d-up                  : Start all Docker services"
+	@echo "  d-down                : Stop all Docker services"
+	@echo "  d-restart             : Restart all Docker services"
+	@echo "  d-db-and-redis        : Start only DB and Redis containers"
+	@echo "  d-purge-data          : Destroy all data (volumes + local) - SAFE WIPE"
+	@echo "  makemigrations        : Create migrations"
+	@echo "  migrate               : Apply migrations"
+	@echo "  createsuperuser       : Create admin user"
+	@echo "  pytest                : Run tests"
+	@echo ""
+	@echo "Run 'make help' for the full list of commands."
+
 help:
 	@echo "Available Makefile commands:"
 	@echo ""
@@ -477,6 +504,7 @@ help:
 	@echo "  d-volumes: List Docker volumes for this project"
 	@echo "  d-clean-volumes: Remove Docker volumes for this project (down -v)"
 	@echo "  d-wipe-local-data: Wipe local data directories (bind mounts)"
+	@echo "  d-purge-data: Safely purge all project data (volumes + local) with confirmation"
 	@echo "  test-api: Run API test suite"
 	@echo "  help: Show this help message"
 
