@@ -98,44 +98,17 @@ EOF
 
 # Create services.py
 cat > "$APP_DIR/services.py" << 'EOF'
-from typing import List, Optional
+from typing import List, Optional, Union, Dict, Any
+from pydantic import BaseModel
+
+from common.services import BaseCRUDService
 
 
 # Example service class - customize as needed
-# class YourModelService:
-#     @staticmethod
-#     async def create(name: str):
-#         """Create a new instance asynchronously."""
-#         from .models import YourModel
-#         return await YourModel.objects.acreate(name=name)
-#
-#     @staticmethod
-#     async def list_all() -> List:
-#         """Retrieve all instances asynchronously."""
-#         from .models import YourModel
-#         return [item async for item in YourModel.objects.all()]
-#
-#     @staticmethod
-#     async def get_by_id(item_id: int) -> Optional:
-#         """Retrieve a single instance by ID asynchronously."""
-#         from .models import YourModel
-#         return await YourModel.objects.filter(id=item_id).afirst()
-#
-#     @staticmethod
-#     async def update(item_id: int, **kwargs) -> Optional:
-#         """Update an instance asynchronously."""
-#         from .models import YourModel
-#         updated_count = await YourModel.objects.filter(id=item_id).aupdate(**kwargs)
-#         if updated_count:
-#             return await YourModel.objects.aget(id=item_id)
-#         return None
-#
-#     @staticmethod
-#     async def delete(item_id: int) -> bool:
-#         """Delete an instance asynchronously."""
-#         from .models import YourModel
-#         deleted_count, _ = await YourModel.objects.filter(id=item_id).adelete()
-#         return deleted_count > 0
+# class YourModelService(BaseCRUDService):
+#     from .models import YourModel
+#     # Must allow access to the model class
+#     model = YourModel
 EOF
 
 # Create views.py
@@ -158,7 +131,8 @@ router = Router()
 #     request.logger.info(f"Creating new item: {payload.name}")
 #
 #     try:
-#         item = await YourModelService.create(payload.name)
+#         # BaseCRUDService.create accepts dict or schema
+#         item = await YourModelService.create(payload)
 #         request.logger.info(f"Successfully created item with ID: {item.id}")
 #
 #         return {
@@ -175,7 +149,7 @@ router = Router()
 # async def list_items(request):
 #     """Retrieve all items (Async)."""
 #     return {
-#         "data": await YourModelService.list_all(),
+#         "data": await YourModelService.list(),
 #         "trace_id": str(request.trace_id),
 #         "error": {}
 #     }
@@ -184,7 +158,7 @@ router = Router()
 # @router.get("/{item_id}/", response={200: YourModelSchema, 404: Dict[str, Any]})
 # async def get_item(request, item_id: int):
 #     """Retrieve a single item by ID (Async)."""
-#     item = await YourModelService.get_by_id(item_id)
+#     item = await YourModelService.get(item_id)
 #     if not item:
 #         return 404, {"error": "Item not found"}
 #     return item
