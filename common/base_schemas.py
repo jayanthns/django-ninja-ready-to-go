@@ -62,3 +62,7 @@ def create_api_response_schema(data_schema: Type[T]) -> Type[Schema]:
         data: Optional[Union[data_schema, List[data_schema]]] = None  # ✅ Correct usage
 
     return APIResponse
+
+
+class MessageSchema(Schema):
+    message: str
