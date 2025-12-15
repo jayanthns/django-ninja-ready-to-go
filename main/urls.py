@@ -18,7 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.http import Http404
 from django.urls import path
-from ninja import NinjaAPI
+from ninja import NinjaAPI, Router
 
 # Create a global API instance
 api = NinjaAPI(title="My Project API")
@@ -64,8 +64,12 @@ api.add_router("/v1/tasks/", tasks_router, tags=["background-tasks"])
 
 
 # Catch-all for unmatched API routes
-# Catch-all for unmatched API routes
-@api.api_operation(["GET", "POST", "PUT", "DELETE", "PATCH"], "/{path:path}", include_in_schema=False)
+catch_all_router = Router()
+
+
+@catch_all_router.api_operation(
+    ["GET", "POST", "PUT", "DELETE", "PATCH"], "/{path:path}", include_in_schema=False
+)
 def catch_all(request, path: str):
     return api.create_response(
         request,
@@ -76,6 +80,9 @@ def catch_all(request, path: str):
         },
         status=404,
     )
+
+
+api.add_router("", catch_all_router)
 
 
 urlpatterns = [
