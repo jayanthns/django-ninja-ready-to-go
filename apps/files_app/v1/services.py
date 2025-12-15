@@ -49,7 +49,14 @@ class FileService:
 
         # Ensure we are at the start of the file
         file.seek(0)
-        content = file.read().decode("utf-8")
+        try:
+            content = file.read().decode("utf-8")
+        except UnicodeDecodeError:
+            if logger:
+                logger.info(f"[2] UnicodeDecodeError for file: {file.name}")
+            raise HttpError(
+                400, "Unable to decode file. Please ensure it is a valid UTF-8 text file (CSV or JSON)."
+            )
         file_ext = file.name.split(".")[-1].lower()
 
         data = []

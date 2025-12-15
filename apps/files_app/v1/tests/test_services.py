@@ -103,6 +103,31 @@ class TestFileService:
         mock_logger.info.assert_any_call("[3] Unsupported file type: txt")
 
     @patch("apps.files_app.v1.services.get_request_logger")
+    def test_parse_linear_file_unicode_error(self, mock_get_logger):
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
+        # Content that is not valid UTF-8 (e.g., 0xFF byte)
+        content = b"\xff\xff\xff"
+        file = SimpleUploadedFile("test.bin", content, content_type="application/octet-stream")
+        with pytest.raises(HttpError) as exc:
+            FileService.parse_linear_file(file)
+        assert exc.value.status_code == 400
+        assert "Unable to decode file" in str(exc.value)
+
+        mock_logger.info.assert_any_call("[1] Entering FileService.parse_linear_file")
+        mock_logger.info.assert_any_call(f"[2] UnicodeDecodeError for file: {file.name}")
+
+    @patch("apps.files_app.v1.services.get_request_logger")
+    def test_parse_linear_file_unicode_error_no_logger(self, mock_get_logger):
+        mock_get_logger.return_value = None
+        content = b"\xff\xff\xff"
+        file = SimpleUploadedFile("test.bin", content, content_type="application/octet-stream")
+        with pytest.raises(HttpError) as exc:
+            FileService.parse_linear_file(file)
+        assert exc.value.status_code == 400
+        assert "Unable to decode file" in str(exc.value)
+
+    @patch("apps.files_app.v1.services.get_request_logger")
     def test_logging_no_logger(self, mock_get_logger):
         """Test that methods run safely when logger is None (e.g. outside request)."""
         mock_get_logger.return_value = None
