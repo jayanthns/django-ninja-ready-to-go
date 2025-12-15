@@ -215,7 +215,6 @@
                         }
                     }
                 },
-                "description": "Register a new user (Async).",
                 "tags": [
                     "Users"
                 ],
@@ -231,48 +230,79 @@
                 }
             }
         },
-        "/api/v1/users/{user_id}/": {
-            "get": {
-                "operationId": "apps_users_app_v1_views_get_user",
-                "summary": "Get User",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "user_id",
-                        "schema": {
-                            "format": "uuid",
-                            "title": "User Id",
-                            "type": "string"
-                        },
-                        "required": true
-                    }
-                ],
+        "/api/v1/users/verify-email": {
+            "post": {
+                "operationId": "apps_users_app_v1_views_verify_email",
+                "summary": "Verify Email",
+                "parameters": [],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/APIResponse"
-                                }
+                        "description": "OK"
+                    }
+                },
+                "tags": [
+                    "Users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VerifyOTPSchema"
                             }
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/APIResponse"
-                                }
-                            }
-                        }
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/users/password-reset/request": {
+            "post": {
+                "operationId": "apps_users_app_v1_views_reset_password_request",
+                "summary": "Reset Password Request",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 },
-                "description": "Retrieve a user by ID (Async).",
                 "tags": [
                     "Users"
-                ]
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResetPasswordRequestSchema"
+                            }
+                        }
+                    },
+                    "required": true
+                }
+            }
+        },
+        "/api/v1/users/password-reset/confirm": {
+            "post": {
+                "operationId": "apps_users_app_v1_views_reset_password_confirm",
+                "summary": "Reset Password Confirm",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "tags": [
+                    "Users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResetPasswordConfirmSchema"
+                            }
+                        }
+                    },
+                    "required": true
+                }
             }
         },
         "/api/v1/files/upload/linear": {
@@ -1253,6 +1283,63 @@
                     "password"
                 ],
                 "title": "UserCreateSchema",
+                "type": "object"
+            },
+            "VerifyOTPSchema": {
+                "properties": {
+                    "email": {
+                        "format": "email",
+                        "title": "Email",
+                        "type": "string"
+                    },
+                    "code": {
+                        "title": "Code",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "code"
+                ],
+                "title": "VerifyOTPSchema",
+                "type": "object"
+            },
+            "ResetPasswordRequestSchema": {
+                "properties": {
+                    "email": {
+                        "format": "email",
+                        "title": "Email",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email"
+                ],
+                "title": "ResetPasswordRequestSchema",
+                "type": "object"
+            },
+            "ResetPasswordConfirmSchema": {
+                "properties": {
+                    "email": {
+                        "format": "email",
+                        "title": "Email",
+                        "type": "string"
+                    },
+                    "code": {
+                        "title": "Code",
+                        "type": "string"
+                    },
+                    "new_password": {
+                        "title": "New Password",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "code",
+                    "new_password"
+                ],
+                "title": "ResetPasswordConfirmSchema",
                 "type": "object"
             },
             "LinearDataResponseSchema": {

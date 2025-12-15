@@ -109,6 +109,10 @@ redoc: generate-docs
 	fi
 	@$(VENV_ACTIVATE) && python -m http.server 8002 --directory docs
 
+open-swagger: swagger
+
+open-coverage: pytest-open-report
+
 create-app:
 	@if [ -z "$(APP)" ]; then \
 		echo "Error: APP name is required"; \
