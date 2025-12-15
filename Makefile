@@ -25,6 +25,24 @@ migrate:
 	@echo "Applying Django database migrations..."
 	@$(VENV_ACTIVATE) && python manage.py migrate
 
+clean-migrations:
+	@echo "WARNING: This will delete all migration files (except __init__.py) and their pycache."
+	@read -p "Are you sure you want to continue? [y/N] " ans && [ $${ans:-N} = y ]
+	@echo "Deleting migration files..."
+	@find . -path "*/migrations/*.py" -not -path "*/venv/*" -not -path "*/.venv/*" -not -name "__init__.py" -delete
+	@find . -path "*/migrations/*.pyc" -not -path "*/venv/*" -not -path "*/.venv/*" -delete
+	@echo "Deleting migration pycache folders..."
+	@find . -path "*/migrations/__pycache__" -type d -not -path "*/venv/*" -not -path "*/.venv/*" -exec rm -r {} +
+	@echo "Done."
+
+clean-pyc:
+	@echo "Cleaning compiled Python files..."
+	@find . -type f -name "*.pyc" -not -path "*/venv/*" -not -path "*/.venv/*" -delete
+	@find . -type f -name "*.pyo" -not -path "*/venv/*" -not -path "*/.venv/*" -delete
+	@find . -type d -name "__pycache__" -not -path "*/venv/*" -not -path "*/.venv/*" -exec rm -rf {} +
+	@echo "Done."
+
+
 shell:
 	@echo "Logging into the Django shell..."
 	@$(VENV_ACTIVATE) && python manage.py shell
@@ -430,6 +448,9 @@ help:
 	@echo "  kill-port: Kill processes using port 8000"
 	@echo "  makemigrations: Create Django database migrations"
 	@echo "  migrate: Apply Django database migrations"
+	@echo "  clean-migrations: Delete all migration files (except __init__.py)"
+	@echo "  clean-migrations: Delete all migration files (except __init__.py)"
+	@echo "  clean-pyc: Remove Python file artifacts (pyc, pyo, __pycache__)"
 	@echo "  shell: Log into the Django shell"
 	@echo "  shell_plus: Log into the Django Shell Plus"
 	@echo "  createsuperuser: Create a superuser"
@@ -508,4 +529,4 @@ help:
 	@echo "  test-api: Run API test suite"
 	@echo "  help: Show this help message"
 
-.PHONY: run makemigrations migrate shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report test-api d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec d-supervisor-logs d-uvicorn-logs d-gunicorn-logs d-celery-logs d-all-logs d-volumes d-clean-volumes d-wipe-local-data help generate-docs swagger redoc celery dramatiq
+.PHONY: run makemigrations migrate clean-migrations clean-pyc shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report test-api d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec d-supervisor-logs d-uvicorn-logs d-gunicorn-logs d-celery-logs d-all-logs d-volumes d-clean-volumes d-wipe-local-data help generate-docs swagger redoc celery dramatiq

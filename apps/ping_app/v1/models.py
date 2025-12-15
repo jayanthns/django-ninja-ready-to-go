@@ -50,6 +50,7 @@ class SystemHealth(models.Model):
         ordering = ["-checked_at"]
         verbose_name = "System Health Check"
         verbose_name_plural = "System Health Checks"
+        db_table = "system_health_checks"
 
     def __str__(self) -> str:
         status = "Healthy" if self.is_healthy else "Unhealthy"
