@@ -82,7 +82,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/AnimalSchema"
+                                    "$ref": "#/components/schemas/APIResponse"
                                 }
                             }
                         }
@@ -92,8 +92,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "title": "Response",
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/APIResponse"
                                 }
                             }
                         }
@@ -125,7 +124,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/AnimalSchema"
+                                    "$ref": "#/components/schemas/APIResponse"
                                 }
                             }
                         }
@@ -135,8 +134,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "title": "Response",
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/APIResponse"
                                 }
                             }
                         }
@@ -178,11 +176,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "additionalProperties": {
-                                        "type": "string"
-                                    },
-                                    "title": "Response",
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/APIResponse"
                                 }
                             }
                         }
@@ -192,41 +186,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "additionalProperties": {
-                                        "type": "string"
-                                    },
-                                    "title": "Response",
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/APIResponse"
                                 }
                             }
                         }
                     }
                 },
                 "description": "Delete an animal (Async).",
-                "tags": [
-                    "Animals"
-                ]
-            }
-        },
-        "/api/v1/animals/logger-demo/": {
-            "get": {
-                "operationId": "apps_animals_app_v1_views_logger_demo",
-                "summary": "Logger Demo",
-                "parameters": [],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "title": "Response",
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "description": "Demo endpoint to showcase the logger helper functionality.",
                 "tags": [
                     "Animals"
                 ]
@@ -284,6 +250,16 @@
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/APIResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1215,6 +1191,19 @@
                     "age"
                 ],
                 "title": "AnimalCreateSchema",
+                "type": "object"
+            },
+            "MessageSchema": {
+                "properties": {
+                    "message": {
+                        "title": "Message",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "message"
+                ],
+                "title": "MessageSchema",
                 "type": "object"
             },
             "UserSchema": {

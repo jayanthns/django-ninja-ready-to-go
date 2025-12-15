@@ -64,7 +64,8 @@ api.add_router("/v1/tasks/", tasks_router, tags=["background-tasks"])
 
 
 # Catch-all for unmatched API routes
-@api.api_operation(["GET", "POST", "PUT", "DELETE", "PATCH"], "/{path:path}")
+# Catch-all for unmatched API routes
+@api.api_operation(["GET", "POST", "PUT", "DELETE", "PATCH"], "/{path:path}", include_in_schema=False)
 def catch_all(request, path: str):
     return api.create_response(
         request,
