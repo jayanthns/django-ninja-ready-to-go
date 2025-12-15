@@ -7,6 +7,7 @@ def make_field(name):
     """Helper to mimic a Django model field."""
     f = MagicMock()
     f.name = name
+    f.attname = name
     return f
 
 
