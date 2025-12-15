@@ -1,57 +1,126 @@
-import uuid
-
-from django.http import HttpRequest, JsonResponse
+from django.db import IntegrityError
 from ninja import Router
 
-from apps.users_app.v1.schemas import UserCreateSchema, UserSchema
+from apps.users_app.v1.schemas import (
+    ResetPasswordConfirmResponseSchema,
+    ResetPasswordConfirmSchema,
+    ResetPasswordRequestResponseSchema,
+    ResetPasswordRequestSchema,
+    UserCreateSchema,
+    UserSchema,
+    VerifyOTPResponseSchema,
+    VerifyOTPSchema,
+)
 from apps.users_app.v1.services import UserService
 from common.base_schemas import create_api_response_schema
+
+from .models import User
 
 router = Router()
 
 
-@router.post("/register", response=create_api_response_schema(UserSchema))
-async def register_user(request: HttpRequest, payload: UserCreateSchema) -> JsonResponse:
-    """Register a new user (Async)."""
-    request.logger.info("[1] Entering register_user endpoint")
-    request.logger.info(f"[2] Creating new user: {payload.email}")
-
-    try:
-        request.logger.info("[3] Calling UserService.create")
-        data = await UserService.create(payload)
-
-        request.logger.info(f"[4] User created successfully: {data.id}")
-        request.logger.info("[5] Exiting register_user endpoint")
-        return {"data": data, "trace_id": str(request.trace_id), "error": {}}
-
-    except Exception as e:
-        request.logger.exception(f"[Error] Failed to register user: {payload.email} with error: {str(e)}")
-        raise
-
-
-@router.get(
-    "/{user_id}/",
-    response={200: create_api_response_schema(UserSchema), 404: create_api_response_schema(UserSchema)},
+@router.post(
+    "/register",
+    response={200: create_api_response_schema(UserSchema), 400: create_api_response_schema(UserSchema)},
 )
-async def get_user(request: HttpRequest, user_id: uuid.UUID):
-    """Retrieve a user by ID (Async)."""
-    request.logger.info(f"[1] Entering get_user endpoint for ID: {user_id}")
-    request.logger.info("[2] Calling UserService.get")
-
-    user = await UserService.get(user_id)
-    if not user:
-        request.logger.warning(f"[3] User not found: {user_id}")
-        request.logger.info("[4] Exiting get_user endpoint (Not Found)")
-        return 404, {
-            "error": {"message": "User not found"},
+async def register_user(request, payload: UserCreateSchema):
+    request.logger.info("[1] Entering register_user endpoint")
+    try:
+        request.logger.info(f"[2] Attempting to register user with email: {payload.email}")
+        user = await UserService.register(payload.dict())
+        request.logger.info("[3] User registered successfully")
+        request.logger.info("[4] Exiting register_user endpoint")
+        return 200, {"data": user, "trace_id": str(request.trace_id), "error": {}}
+    except IntegrityError:
+        request.logger.warning(f"[3] Registration failed: Email {payload.email} already exists")
+        request.logger.info("[4] Exiting register_user endpoint with error")
+        return 400, {
+            "error": {"message": "Email already registered"},
             "trace_id": str(request.trace_id),
             "data": None,
         }
 
-    request.logger.info("[3] User found")
-    request.logger.info("[4] Exiting get_user endpoint")
-    return 200, {
-        "data": user,
-        "trace_id": str(request.trace_id),
-        "error": {},
-    }
+
+@router.post(
+    "/verify-email",
+    response={
+        200: create_api_response_schema(VerifyOTPResponseSchema),
+        400: create_api_response_schema(VerifyOTPResponseSchema),
+    },
+)
+async def verify_email(request, payload: VerifyOTPSchema):
+    request.logger.info("[1] Entering verify_email endpoint")
+    user = await User.objects.filter(email=payload.email).afirst()
+    if not user:
+        request.logger.warning(f"[2] User not found for email: {payload.email}")
+        request.logger.info("[3] Exiting verify_email endpoint with error")
+        return 400, {"error": {"message": "Invalid request"}, "trace_id": str(request.trace_id), "data": None}
+
+    request.logger.info(f"[2] Verifying OTP for user: {user.id}")
+    ok = await UserService.verify_otp(
+        user=user,
+        code=payload.code,
+        purpose="verify_email",
+    )
+    if not ok:
+        request.logger.warning("[3] OTP verification failed or expired")
+        request.logger.info("[4] Exiting verify_email endpoint with error")
+        return 400, {
+            "error": {"message": "Invalid or expired OTP"},
+            "trace_id": str(request.trace_id),
+            "data": None,
+        }
+
+    request.logger.info("[3] OTP verified successfully")
+    request.logger.info("[4] Exiting verify_email endpoint")
+    return 200, {"data": {"verified": True}, "trace_id": str(request.trace_id), "error": {}}
+
+
+@router.post(
+    "/password-reset/request",
+    response={
+        200: create_api_response_schema(ResetPasswordRequestResponseSchema),
+        400: create_api_response_schema(ResetPasswordRequestResponseSchema),
+    },
+)
+async def reset_password_request(request, payload: ResetPasswordRequestSchema):
+    request.logger.info("[1] Entering reset_password_request endpoint")
+    request.logger.info(f"[2] Initiating password reset for email: {payload.email}")
+    await UserService.initiate_password_reset(payload.email)
+    request.logger.info("[3] Exiting reset_password_request endpoint")
+    return 200, {"data": {"status": "ok"}, "trace_id": str(request.trace_id), "error": {}}
+
+
+@router.post(
+    "/password-reset/confirm",
+    response={
+        200: create_api_response_schema(ResetPasswordConfirmResponseSchema),
+        400: create_api_response_schema(ResetPasswordConfirmResponseSchema),
+    },
+)
+async def reset_password_confirm(request, payload: ResetPasswordConfirmSchema):
+    request.logger.info("[1] Entering reset_password_confirm endpoint")
+    user = await User.objects.filter(email=payload.email).afirst()
+    if not user:
+        request.logger.warning(f"[2] User not found for email: {payload.email}")
+        request.logger.info("[3] Exiting reset_password_confirm endpoint with error")
+        return 400, {"error": {"message": "Invalid request"}, "trace_id": str(request.trace_id), "data": None}
+
+    request.logger.info(f"[2] Resetting password for user: {user.id}")
+    ok = await UserService.reset_password(
+        user=user,
+        code=payload.code,
+        new_password=payload.new_password,
+    )
+    if not ok:
+        request.logger.warning("[3] Password reset failed: Invalid or expired OTP")
+        request.logger.info("[4] Exiting reset_password_confirm endpoint with error")
+        return 400, {
+            "error": {"message": "Invalid or expired OTP"},
+            "trace_id": str(request.trace_id),
+            "data": None,
+        }
+
+    request.logger.info("[3] Password reset successful")
+    request.logger.info("[4] Exiting reset_password_confirm endpoint")
+    return 200, {"data": {"password_reset": True}, "trace_id": str(request.trace_id), "error": {}}

@@ -37,14 +37,15 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     # --- Status flags ---
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
 
     # --- Audit ---
     last_login = models.DateTimeField(null=True, blank=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
 
     # --- Manager ---
     objects = UserManager()
 
-    # --- Auth config ---
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
@@ -53,3 +54,26 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
 
     def __str__(self):
         return self.email
+
+
+class UserOTP(BaseModel):
+    PURPOSE_CHOICES = (
+        ("verify_email", "Verify Email"),
+        ("reset_password", "Reset Password"),
+    )
+
+    user = models.ForeignKey(
+        "User",
+        on_delete=models.CASCADE,
+        related_name="otps",
+    )
+    code = models.CharField(max_length=6)
+    purpose = models.CharField(max_length=32, choices=PURPOSE_CHOICES)
+    is_used = models.BooleanField(default=False)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "user_otps"
+        indexes = [
+            models.Index(fields=["user", "purpose"]),
+        ]
