@@ -18,7 +18,12 @@ class TestUserModel:
         user = User(username="testuser", email="testuser@example.com")
         raw_password = "securepassword123"
         user.set_password(raw_password)
+        user.set_password(raw_password)
         assert user.check_password("wrongpassword") is False
+
+    def test_str(self):
+        user = User(username="testuser", email="test@example.com")
+        assert str(user) == "test@example.com"
 
 
 class TestUserManager:
