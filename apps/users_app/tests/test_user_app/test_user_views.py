@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from django.db import IntegrityError
@@ -39,6 +39,13 @@ class TestUserViews:
 
         mock_user_service.register = AsyncMock(return_value=user_data)
 
+        info_calls = [
+            call("[1] Entering register_user endpoint"),
+            call(f"[2] Attempting to register user with email: {payload.email}"),
+            call("[3] User registered successfully"),
+            call("[4] Exiting register_user endpoint"),
+        ]
+
         status, resp = await register_user(req, payload)
 
         assert resp["data"] == user_data
@@ -48,30 +55,58 @@ class TestUserViews:
 
         # Verify Logs
         assert req.logger.info.call_count == 4
-        req.logger.info.assert_any_call("[1] Entering register_user endpoint")
-        req.logger.info.assert_any_call(f"[2] Attempting to register user with email: {payload.email}")
-        req.logger.info.assert_any_call("[3] User registered successfully")
-        req.logger.info.assert_any_call("[4] Exiting register_user endpoint")
+        req.logger.info.assert_has_calls(info_calls)
 
     @patch("apps.users_app.v1.views.UserService")
     async def test_register_user_exception(self, mock_user_service):
         req = await self._make_request()
         payload = UserCreateSchema(username="testuser", email="test@example.com", password="password123")
 
+        info_calls = [
+            call("[1] Entering register_user endpoint"),
+            call(f"[2] Attempting to register user with email: {payload.email}"),
+            call("[4] Exiting register_user endpoint with error"),
+        ]
+
+        error_calls = [call("[3] Registration failed with exception: Registration failed")]
+
         mock_user_service.register = AsyncMock(side_effect=Exception("Registration failed"))
 
-        with pytest.raises(Exception) as exc:
-            await register_user(req, payload)
-
-        assert "Registration failed" in str(exc.value)
+        await register_user(req, payload)
 
         # Verify Logs
-        assert req.logger.info.call_count == 2
-        req.logger.info.assert_any_call("[1] Entering register_user endpoint")
-        req.logger.info.assert_any_call(f"[2] Attempting to register user with email: {payload.email}")
+        assert req.logger.info.call_count == 3
+        assert req.logger.error.call_count == 1
+        req.logger.info.assert_has_calls(info_calls)
+        req.logger.error.assert_has_calls(error_calls)
 
-        # Exception bubbles up, so no exception logging in view logic (caught by middleware usually)
-        req.logger.exception.assert_not_called()
+    @patch("apps.users_app.v1.views.UserService")
+    async def test_register_user_integrity_error(self, mock_user_service):
+        req = await self._make_request()
+        payload = UserCreateSchema(username="testuser", email="test@example.com", password="password123")
+
+        mock_user_service.register = AsyncMock(side_effect=IntegrityError("Email already registered"))
+
+        info_calls = [
+            call("[1] Entering register_user endpoint"),
+            call(f"[2] Attempting to register user with email: {payload.email}"),
+            call("[4] Exiting register_user endpoint with error"),
+        ]
+
+        warning_calls = [call(f"[3] Registration failed: Email {payload.email} already exists")]
+
+        status, resp = await register_user(req, payload)
+
+        assert status == 400
+        assert resp["error"]["message"] == "Email already registered"
+        assert resp["data"] is None
+        mock_user_service.register.assert_awaited_with(payload.model_dump())
+
+        # Verify Logs
+        assert req.logger.info.call_count == 3
+        assert req.logger.warning.call_count == 1
+        req.logger.info.assert_has_calls(info_calls)
+        req.logger.warning.assert_has_calls(warning_calls)
 
     @patch("apps.users_app.v1.views.User")
     @patch("apps.users_app.v1.views.UserService")
@@ -201,20 +236,3 @@ class TestUserViews:
         assert status == 400
         # assert resp["password_reset"] is False # Structure is different on error
         mock_user_service.reset_password.assert_not_called()
-
-    @patch("apps.users_app.v1.views.UserService")
-    async def test_register_user_integrity_error(self, mock_user_service):
-        req = await self._make_request()
-        payload = UserCreateSchema(username="testuser", email="test@example.com", password="password123")
-
-        mock_user_service.register = AsyncMock(side_effect=IntegrityError)
-
-        status, resp = await register_user(req, payload)
-
-        assert status == 400
-        assert resp["error"]["message"] == "Email already registered"
-
-        # Verify Logs
-        req.logger.warning.assert_called()
-        args, _ = req.logger.warning.call_args
-        assert "Registration failed: Email" in args[0]

@@ -46,8 +46,9 @@
 from typing import List, Optional, Type, TypeVar, Union
 
 from ninja import Schema
+from pydantic import create_model
 
-T = TypeVar("T", bound=Schema)  # ✅ Ensure T is a subclass of Schema
+T = TypeVar("T", bound=Schema)
 
 
 class APIResponseBase(Schema):
@@ -55,13 +56,22 @@ class APIResponseBase(Schema):
     error: Optional[dict] = None
 
 
-def create_api_response_schema(data_schema: Type[T]) -> Type[Schema]:
-    """Dynamically generate an API response schema for a given data type"""
+def create_api_response_schema(data_schema: Type[T]):
+    """
+    Dynamically create proper response schema that swagger can introspect.
+    """
+    fields = {
+        "trace_id": (str, ...),
+        "error": (Optional[dict], None),
+        "data": (Optional[Union[data_schema, List[data_schema]]], None),
+    }
 
-    class APIResponse(APIResponseBase):
-        data: Optional[Union[data_schema, List[data_schema]]] = None  # ✅ Correct usage
-
-    return APIResponse
+    model = create_model(
+        f"{data_schema.__name__}Response",  # 👈 Proper named schema for Swagger
+        __base__=APIResponseBase,
+        **fields,
+    )
+    return model
 
 
 class MessageSchema(Schema):

@@ -6,6 +6,7 @@ from apps.users_app.v1.schemas import (
     ResetPasswordConfirmSchema,
     ResetPasswordRequestResponseSchema,
     ResetPasswordRequestSchema,
+    UserCreateResponseSchema,
     UserCreateSchema,
     UserSchema,
     VerifyOTPResponseSchema,
@@ -21,7 +22,11 @@ router = Router()
 
 @router.post(
     "/register",
-    response={200: create_api_response_schema(UserSchema), 400: create_api_response_schema(UserSchema)},
+    response={
+        200: create_api_response_schema(UserCreateResponseSchema),
+        400: create_api_response_schema(UserCreateResponseSchema),
+        # TODO Pass an example of how to use the dynamic response schema
+    },
 )
 async def register_user(request, payload: UserCreateSchema):
     request.logger.info("[1] Entering register_user endpoint")
@@ -36,6 +41,14 @@ async def register_user(request, payload: UserCreateSchema):
         request.logger.info("[4] Exiting register_user endpoint with error")
         return 400, {
             "error": {"message": "Email already registered"},
+            "trace_id": str(request.trace_id),
+            "data": None,
+        }
+    except Exception as e:
+        request.logger.error(f"[3] Registration failed with exception: {e}")
+        request.logger.info("[4] Exiting register_user endpoint with error")
+        return 400, {
+            "error": {"message": "Registration failed"},
             "trace_id": str(request.trace_id),
             "data": None,
         }

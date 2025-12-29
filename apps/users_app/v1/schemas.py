@@ -17,6 +17,16 @@ class UserCreateSchema(BaseModel):
     password: str
 
 
+class ExtraUserCreateSchema(BaseModel):
+    is_verified: bool = False
+
+
+class UserCreateResponseSchema(UserSchema, ExtraUserCreateSchema):
+    id: uuid.UUID
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class VerifyOTPSchema(BaseModel):
     email: EmailStr
     code: str
