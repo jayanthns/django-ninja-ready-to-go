@@ -44,7 +44,7 @@ class TestUserViews:
         assert resp["data"] == user_data
         assert "trace_id" in resp
         assert resp["error"] == {}
-        mock_user_service.register.assert_awaited_with(payload.dict())
+        mock_user_service.register.assert_awaited_with(payload.model_dump())
 
         # Verify Logs
         assert req.logger.info.call_count == 4

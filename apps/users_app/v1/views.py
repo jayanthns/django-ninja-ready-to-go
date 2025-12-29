@@ -27,7 +27,7 @@ async def register_user(request, payload: UserCreateSchema):
     request.logger.info("[1] Entering register_user endpoint")
     try:
         request.logger.info(f"[2] Attempting to register user with email: {payload.email}")
-        user = await UserService.register(payload.dict())
+        user = await UserService.register(payload.model_dump())
         request.logger.info("[3] User registered successfully")
         request.logger.info("[4] Exiting register_user endpoint")
         return 200, {"data": user, "trace_id": str(request.trace_id), "error": {}}
