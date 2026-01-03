@@ -46,9 +46,16 @@ def validation_errors(request: HttpRequest, exc: NinjaValidationError):
     trace_id = getattr(request, "trace_id", str(uuid.uuid4()))
 
     errors = exc.errors  # <-- this is already a list.
+    if not errors:
+        return api.create_response(request, {"error": "Unknown Code Error"}, status=500)
+
     first = errors[0]  # <-- FIX HERE
 
-    field = first["loc"][-1]  # payload field name
+    if first["loc"]:
+        field = first["loc"][-1]  # payload field name
+    else:
+        field = "__root__"
+
     message = first["msg"]
 
     request.logger.warning(f"[Validation Failed] {field}: {message}")

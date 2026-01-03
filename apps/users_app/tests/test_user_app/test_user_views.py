@@ -81,32 +81,33 @@ class TestUserViews:
         req.logger.error.assert_has_calls(error_calls)
 
     @patch("apps.users_app.v1.views.UserService")
-    async def test_register_user_integrity_error(self, mock_user_service):
+    @pytest.mark.parametrize(
+        "error_text, expected_field, expected_message",
+        [
+            ("Email already registered", "email", "Email 'test@example.com' already registered."),
+            ("username already exists", "username", "Username 'testuser' already exists."),
+            ("Unknown constraint", "unknown", "A unique constraint failed. Please try again."),
+        ],
+    )
+    async def test_register_user_integrity_error(
+        self, mock_user_service, error_text, expected_field, expected_message
+    ):
         req = await self._make_request()
         payload = UserCreateSchema(username="testuser", email="test@example.com", password="password123")
 
-        mock_user_service.register = AsyncMock(side_effect=IntegrityError("Email already registered"))
-
-        info_calls = [
-            call("[1] Entering register_user endpoint"),
-            call(f"[2] Attempting to register user with email: {payload.email}"),
-            call("[4] Exiting register_user endpoint with error"),
-        ]
-
-        warning_calls = [call(f"[3] Registration failed - Email '{payload.email}' already registered.")]
+        mock_user_service.register = AsyncMock(side_effect=IntegrityError(error_text))
 
         status, resp = await register_user(req, payload)
 
         assert status == 400
-        assert resp["error"]["message"] == f"Email '{payload.email}' already registered."
+        assert resp["error"]["field"] == expected_field
+        assert resp["error"]["message"] == expected_message
         assert resp["data"] is None
         mock_user_service.register.assert_awaited_with(payload.model_dump())
 
         # Verify Logs
         assert req.logger.info.call_count == 3
-        assert req.logger.warning.call_count == 1
-        req.logger.info.assert_has_calls(info_calls)
-        req.logger.warning.assert_has_calls(warning_calls)
+        req.logger.warning.assert_called_once_with(f"[3] Registration failed - {expected_message}")
 
     @patch("apps.users_app.v1.views.User")
     @patch("apps.users_app.v1.views.UserService")
