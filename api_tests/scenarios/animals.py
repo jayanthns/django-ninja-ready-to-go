@@ -38,8 +38,10 @@ def run(client: APIClient):
 
     data = resp.json()
     # Get returns DIRECT object
-    assert_structure(data, animal_obj_structure, path="get_animal_response")
-    assert data["id"] == animal_id
+    # The response is now standardized: { "data": expected_structure, "trace_id": ..., "error": ... }
+    expected_response = {"data": animal_obj_structure, "trace_id": str, "error": (dict, type(None))}
+    assert_structure(data, expected_response, path="get_animal_response")
+    assert data["data"]["id"] == animal_id
 
     # 4. Update Animal
     print("  - Updating animal...")
@@ -48,9 +50,9 @@ def run(client: APIClient):
     assert resp.status_code == 200, f"Update animal failed: {resp.text}"
 
     data = resp.json()
-    # Update returns DIRECT object
-    assert_structure(data, animal_obj_structure, path="update_animal_response")
-    assert data["age"] == 6
+    # Update returns standardized object
+    assert_structure(data, expected_response, path="update_animal_response")
+    assert data["data"]["age"] == 6
 
     # 5. Delete Animal
     print("  - Deleting animal...")
@@ -58,8 +60,9 @@ def run(client: APIClient):
     assert resp.status_code == 200, f"Delete animal failed: {resp.text}"
 
     data = resp.json()
-    # Delete returns DIRECT message
-    assert_structure(data, {"message": str}, path="delete_animal_response")
-    assert data["message"] == "Animal deleted successfully"
+    # Delete returns standardized message
+    delete_structure = {"data": {"message": str}, "trace_id": str, "error": (dict, type(None))}
+    assert_structure(data, delete_structure, path="delete_animal_response")
+    assert data["data"]["message"] == "Animal deleted successfully"
 
     print("Animal Scenarios Passed.")

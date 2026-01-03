@@ -18,7 +18,7 @@ def run(client: APIClient):
     data = resp.json()
     from api_tests.assertions import assert_structure
 
-    expected_user = {"id": str, "username": str, "email": str}
+    expected_user = {"id": str, "username": str, "email": str, "is_verified": bool}
     expected_response = {"data": expected_user, "trace_id": str, "error": (dict, type(None))}
     assert_structure(data, expected_response, path="register_response")
     assert data["data"]["email"] == "test_auth@example.com"

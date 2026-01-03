@@ -75,6 +75,30 @@ dramatiq:
 	echo "Running Dramatiq worker with queue: $${QUEUE:-django_ninja_dramatiq_queue}"; \
 	dramatiq-gevent main.dramatiq -Q $${QUEUE:-django_ninja_dramatiq_queue}
 
+workers:
+	@echo "Starting Celery and Dramatiq workers..."
+	@trap 'kill 0' SIGINT; \
+	$(MAKE) celery & \
+	$(MAKE) dramatiq & \
+	wait
+
+run-bg-tasks:
+	@echo "Starting Celery and Dramatiq workers..."
+	@trap 'kill 0' SIGINT; \
+	export PYTHONUNBUFFERED=1; \
+	$(MAKE) celery 2>&1 | sed 's/^/[Celery]   /' & \
+	$(MAKE) dramatiq 2>&1 | sed 's/^/[Dramatiq] /' & \
+	wait
+
+run-all:
+	@echo "Starting Django Server and Workers..."
+	@trap 'kill 0' SIGINT; \
+	export PYTHONUNBUFFERED=1; \
+	$(MAKE) run 2>&1 | sed 's/^/[Django]   /' & \
+	$(MAKE) celery 2>&1 | sed 's/^/[Celery]   /' & \
+	$(MAKE) dramatiq 2>&1 | sed 's/^/[Dramatiq] /' & \
+	wait
+
 generate-docs:
 	@echo "Generating API documentation..."
 	@$(VENV_ACTIVATE) && python manage.py generate_api_docs
@@ -462,6 +486,8 @@ help:
 	@echo "  run_uvicorn: Run the uvicorn server"
 	@echo "  celery: Run the Celery worker"
 	@echo "  dramatiq: Run the Dramatiq worker"
+	@echo "  run-bg-tasks: Run both Celery and Dramatiq workers (interleaved logs)"
+	@echo "  run-all: Run Django server + all workers (interleaved logs)"
 	@echo "  generate-docs          Generate static API documentation (Swagger, ReDoc)"
 	@echo "  swagger                Generate and serve Swagger UI"
 	@echo "  redoc                  Generate and serve ReDoc"
@@ -533,4 +559,4 @@ help:
 	@echo "  test-api: Run API test suite"
 	@echo "  help: Show this help message"
 
-.PHONY: run makemigrations migrate clean-migrations clean-pyc shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report test-api d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec d-supervisor-logs d-uvicorn-logs d-gunicorn-logs d-celery-logs d-all-logs d-volumes d-clean-volumes d-wipe-local-data help generate-docs swagger redoc celery dramatiq
+.PHONY: run makemigrations migrate clean-migrations clean-pyc shell shell_plus createsuperuser run_gunicorn init install update-deps package-sync isort_check black_check flake8 static-tests pytest-run dynamic-test run-tests pytest pytest-v pytest-q pytest-lf pytest-x pytest-slow pytest-k pytest-w pytest-open-report test-report test-api d-shell d-db d-redis d-db-logs d-redis-logs d-db-and-redis d-db-and-redis-down d-db-and-redis-restart d-up d-down d-restart d-logs d-ps d-build d-pull d-push d-exec d-supervisor-logs d-uvicorn-logs d-gunicorn-logs d-celery-logs d-all-logs d-volumes d-clean-volumes d-wipe-local-data help generate-docs swagger redoc celery dramatiq workers run-bg-tasks run-all

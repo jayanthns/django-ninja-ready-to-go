@@ -74,8 +74,8 @@ def start_server(db_name, port):
     proc = subprocess.Popen(
         ["uvicorn", "main.asgi:application", "--host", "127.0.0.1", "--port", str(port)],
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        # stdout=subprocess.PIPE,
+        # stderr=subprocess.PIPE,
     )
 
     # Wait for server to start
