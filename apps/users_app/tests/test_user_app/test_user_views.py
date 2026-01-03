@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, call, MagicMock, patch
 
 import pytest
 from django.db import IntegrityError
@@ -93,12 +93,12 @@ class TestUserViews:
             call("[4] Exiting register_user endpoint with error"),
         ]
 
-        warning_calls = [call(f"[3] Registration failed: Email {payload.email} already exists")]
+        warning_calls = [call(f"[3] Registration failed - Email '{payload.email}' already registered.")]
 
         status, resp = await register_user(req, payload)
 
         assert status == 400
-        assert resp["error"]["message"] == "Email already registered"
+        assert resp["error"]["message"] == f"Email '{payload.email}' already registered."
         assert resp["data"] is None
         mock_user_service.register.assert_awaited_with(payload.model_dump())
 

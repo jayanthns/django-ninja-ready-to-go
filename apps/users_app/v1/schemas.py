@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserSchema(BaseModel):
@@ -14,7 +14,7 @@ class UserSchema(BaseModel):
 class UserCreateSchema(BaseModel):
     username: str
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8, max_length=32)
 
 
 class ExtraUserCreateSchema(BaseModel):

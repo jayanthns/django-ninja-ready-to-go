@@ -16,7 +16,16 @@ class UserService(BaseCRUDService):
     # Registration
     # ----------------------------
     @classmethod
-    async def register(cls, data):
+    async def register(cls, data: dict) -> User:
+        """
+        Docstring for register
+
+        Args:
+            data (dict): User registration data
+        Returns:
+            User: Created user instance
+
+        """
         if isinstance(data, dict) and "password" in data:
             data["password"] = make_password(data["password"])
 

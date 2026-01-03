@@ -15,10 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import uuid
+
 from django.contrib import admin
-from django.http import Http404
+from django.http import Http404, HttpRequest
 from django.urls import path
 from ninja import NinjaAPI, Router
+from ninja.errors import ValidationError as NinjaValidationError
 
 # Create a global API instance
 api = NinjaAPI(title="My Project API")
@@ -34,6 +37,34 @@ def on_404(request, exc):
             "data": None,
         },
         status=404,
+    )
+
+
+@api.exception_handler(NinjaValidationError)
+def validation_errors(request: HttpRequest, exc: NinjaValidationError):
+
+    trace_id = getattr(request, "trace_id", str(uuid.uuid4()))
+
+    errors = exc.errors  # <-- this is already a list.
+    first = errors[0]  # <-- FIX HERE
+
+    field = first["loc"][-1]  # payload field name
+    message = first["msg"]
+
+    request.logger.warning(f"[Validation Failed] {field}: {message}")
+    request.logger.info("[Validation Handler] Response returned with error")
+
+    return api.create_response(
+        request,
+        {
+            "trace_id": trace_id,
+            "error": {
+                "field": field,
+                "message": message,
+            },
+            "data": None,
+        },
+        status=422,
     )
 
 

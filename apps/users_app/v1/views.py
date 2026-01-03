@@ -8,7 +8,6 @@ from apps.users_app.v1.schemas import (
     ResetPasswordRequestSchema,
     UserCreateResponseSchema,
     UserCreateSchema,
-    UserSchema,
     VerifyOTPResponseSchema,
     VerifyOTPSchema,
 )
@@ -25,28 +24,52 @@ router = Router()
     response={
         200: create_api_response_schema(UserCreateResponseSchema),
         400: create_api_response_schema(UserCreateResponseSchema),
-        # TODO Pass an example of how to use the dynamic response schema
     },
 )
 async def register_user(request, payload: UserCreateSchema):
+    def _handle_integrity_error(e, payload, request):
+        """Parse IntegrityError and decide message."""
+        error_text = str(e).lower()
+
+        if "username" in error_text:
+            field = "username"
+            message = f"Username '{payload.username}' already exists."
+        elif "email" in error_text:
+            field = "email"
+            message = f"Email '{payload.email}' already registered."
+        else:
+            field = "unknown"
+            message = "A unique constraint failed. Please try again."
+
+        request.logger.warning(f"[3] Registration failed - {message}")
+        request.logger.info("[4] Exiting register_user endpoint with error")
+
+        return 400, {
+            "error": {"field": field, "message": message},
+            "trace_id": str(request.trace_id),
+            "data": None,
+        }
+
     request.logger.info("[1] Entering register_user endpoint")
+
     try:
+
         request.logger.info(f"[2] Attempting to register user with email: {payload.email}")
         user = await UserService.register(payload.model_dump())
         request.logger.info("[3] User registered successfully")
         request.logger.info("[4] Exiting register_user endpoint")
+
         return 200, {"data": user, "trace_id": str(request.trace_id), "error": {}}
-    except IntegrityError:
-        request.logger.warning(f"[3] Registration failed: Email {payload.email} already exists")
-        request.logger.info("[4] Exiting register_user endpoint with error")
-        return 400, {
-            "error": {"message": "Email already registered"},
-            "trace_id": str(request.trace_id),
-            "data": None,
-        }
+
+    except IntegrityError as e:
+
+        return _handle_integrity_error(e, payload, request)
+
     except Exception as e:
+
         request.logger.error(f"[3] Registration failed with exception: {e}")
         request.logger.info("[4] Exiting register_user endpoint with error")
+
         return 400, {
             "error": {"message": "Registration failed"},
             "trace_id": str(request.trace_id),
