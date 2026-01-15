@@ -528,6 +528,7 @@ dependencies = [
     { name = "pydantic", extra = ["email"] },
     { name = "python-dotenv" },
     { name = "python-json-logger" },
+    { name = "redis" },
     { name = "uvicorn" },
     { name = "xlrd" },
 ]
@@ -583,6 +584,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = "==3.14.0" },
     { name = "python-dotenv", specifier = "==1.0.1" },
     { name = "python-json-logger", specifier = "==2.0.7" },
+    { name = "redis", specifier = ">=7.1.0" },
     { name = "requests-mock", marker = "extra == 'dev'", specifier = "==1.12.1" },
     { name = "uvicorn", specifier = "==0.30.6" },
     { name = "xlrd", specifier = "==2.0.2" },

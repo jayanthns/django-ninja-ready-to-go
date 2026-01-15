@@ -28,6 +28,7 @@ dependencies = [
     "celery==5.3.6",
     "dramatiq==1.10.0",
     "gevent==24.2.1",
+    "redis>=7.1.0",
 ]
 
 [project.optional-dependencies]

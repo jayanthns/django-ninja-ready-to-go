@@ -69,6 +69,9 @@ celery:
 	echo "Running Celery worker with queue: $${QUEUE:-django_ninja_ready_to_go_queue} and pool: $${POOL:-gevent}"; \
 	celery -A main worker --loglevel=info -Q $${QUEUE:-django_ninja_ready_to_go_queue} -P $${POOL:-gevent}
 
+beat:
+	@$(VENV_ACTIVATE) && celery -A main beat --loglevel=info
+
 dramatiq:
 	@$(VENV_ACTIVATE) && \
 	QUEUE=$$(grep "^DRAMATIQ_QUEUE_NAME=" .env 2>/dev/null | cut -d '=' -f2 | tr -d '"' | tr -d "'"); \
@@ -79,14 +82,16 @@ workers:
 	@echo "Starting Celery and Dramatiq workers..."
 	@trap 'kill 0' SIGINT; \
 	$(MAKE) celery & \
+	$(MAKE) beat & \
 	$(MAKE) dramatiq & \
 	wait
 
 run-bg-tasks:
-	@echo "Starting Celery and Dramatiq workers..."
+	@echo "Starting Celery, Beat, and Dramatiq workers..."
 	@trap 'kill 0' SIGINT; \
 	export PYTHONUNBUFFERED=1; \
 	$(MAKE) celery 2>&1 | sed 's/^/[Celery]   /' & \
+	$(MAKE) beat 2>&1 | sed 's/^/[Beat]     /' & \
 	$(MAKE) dramatiq 2>&1 | sed 's/^/[Dramatiq] /' & \
 	wait
 
@@ -96,6 +101,7 @@ run-all:
 	export PYTHONUNBUFFERED=1; \
 	$(MAKE) run 2>&1 | sed 's/^/[Django]   /' & \
 	$(MAKE) celery 2>&1 | sed 's/^/[Celery]   /' & \
+	$(MAKE) beat 2>&1 | sed 's/^/[Beat]     /' & \
 	$(MAKE) dramatiq 2>&1 | sed 's/^/[Dramatiq] /' & \
 	wait
 
